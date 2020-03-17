@@ -22,6 +22,8 @@ import (
 	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/state"
 )
 
+const epochDuration = 1 * time.Second
+
 // TestMineOnce10Null calls mine once off of a base tipset with a ticket that
 // will win after 10 rounds and verifies that the output has 1 ticket and a
 // +10 height.
@@ -171,14 +173,14 @@ func TestWorkerCalled(t *testing.T) {
 		return true
 	})
 
-	fakeClock, chainClock, blockTime := testClock(t)
+	fakeClock, chainClock := clock.NewFakeChain(1234567890, epochDuration, 1234567890)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	scheduler := NewScheduler(w, headFunc(ts), chainClock)
 	scheduler.Start(ctx)
 	fakeClock.BlockUntil(1)
-	fakeClock.Advance(blockTime)
+	fakeClock.Advance(epochDuration)
 
 	wg.Wait()
 	assert.True(t, called)
@@ -190,13 +192,13 @@ func TestCorrectNullBlocksGivenEpoch(t *testing.T) {
 	h, err := ts.Height()
 	require.NoError(t, err)
 
-	fakeClock, chainClock, blockTime := testClock(t)
+	fakeClock, chainClock := clock.NewFakeChain(1234567890, epochDuration, 1234567890)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Move forward 20 epochs
 	for i := 0; i < 19; i++ {
-		fakeClock.Advance(blockTime)
+		fakeClock.Advance(epochDuration)
 	}
 
 	var wg sync.WaitGroup
@@ -211,7 +213,7 @@ func TestCorrectNullBlocksGivenEpoch(t *testing.T) {
 	scheduler.Start(ctx)
 	fakeClock.BlockUntil(1)
 	// Move forward 1 epoch for a total of 21
-	fakeClock.Advance(blockTime)
+	fakeClock.Advance(epochDuration)
 
 	wg.Wait()
 }
@@ -222,7 +224,7 @@ func TestWaitsForEpochStart(t *testing.T) {
 	tf.UnitTest(t)
 	ts := testHead(t)
 
-	fakeClock, chainClock, blockTime := testClock(t)
+	fakeClock, chainClock := clock.NewFakeChain(1234567890, epochDuration, 1234567890)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -237,7 +239,7 @@ func TestWaitsForEpochStart(t *testing.T) {
 	}()
 	w := NewTestWorker(t, func(_ context.Context, workHead block.TipSet, _ uint64, _ chan<- Output) bool {
 		// This doesn't get called until the clock has advanced one blocktime
-		assert.Equal(t, genTime.Add(blockTime), chainClock.Now())
+		assert.Equal(t, genTime.Add(epochDuration), chainClock.Now())
 		wg.Done()
 		return true
 	})
@@ -245,7 +247,7 @@ func TestWaitsForEpochStart(t *testing.T) {
 	scheduler := NewScheduler(w, headFunc(ts), chainClock)
 	scheduler.Start(ctx)
 	fakeClock.BlockUntil(1)
-	fakeClock.Advance(blockTime / time.Duration(2)) // advance half a blocktime
+	fakeClock.Advance(epochDuration / time.Duration(2)) // advance half a blocktime
 	// Test relies on race, that this sleep would be enough time for the mining job
 	// to hit wg.Done() if it was triggered partway through the epoch
 	time.Sleep(300 * time.Millisecond)
@@ -256,7 +258,7 @@ func TestWaitsForEpochStart(t *testing.T) {
 	default:
 	}
 
-	fakeClock.Advance(blockTime / time.Duration(2))
+	fakeClock.Advance(epochDuration / time.Duration(2))
 	wg.Wait()
 }
 
@@ -265,7 +267,7 @@ func TestCancelsLateWork(t *testing.T) {
 	tf.UnitTest(t)
 	ts := testHead(t)
 
-	fakeClock, chainClock, blockTime := testClock(t)
+	fakeClock, chainClock := clock.NewFakeChain(1234567890, epochDuration, 1234567890)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -285,9 +287,9 @@ func TestCancelsLateWork(t *testing.T) {
 	scheduler := NewScheduler(w, headFunc(ts), chainClock)
 	scheduler.Start(ctx)
 	fakeClock.BlockUntil(1)
-	fakeClock.Advance(blockTime) // schedule first work item
+	fakeClock.Advance(epochDuration) // schedule first work item
 	fakeClock.BlockUntil(1)
-	fakeClock.Advance(blockTime) // enter next epoch, should cancel first work item
+	fakeClock.Advance(epochDuration) // enter next epoch, should cancel first work item
 
 	wg.Wait()
 }
@@ -333,7 +335,7 @@ func TestSkips(t *testing.T) {
 	tf.UnitTest(t)
 	ts := testHead(t)
 
-	fakeClock, chainClock, blockTime := testClock(t)
+	fakeClock, chainClock := clock.NewFakeChain(1234567890, epochDuration, 1234567890)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -354,10 +356,10 @@ func TestSkips(t *testing.T) {
 	scheduler.Pause()
 	scheduler.Start(ctx)
 	fakeClock.BlockUntil(1)
-	fakeClock.Advance(blockTime)
+	fakeClock.Advance(epochDuration)
 	fakeClock.BlockUntil(1)
 	scheduler.Continue()
-	fakeClock.Advance(blockTime)
+	fakeClock.Advance(epochDuration)
 	wg.Wait()
 }
 
@@ -368,17 +370,6 @@ func testHead(t *testing.T) block.TipSet {
 	ts, err := block.NewTipSet(baseBlock)
 	require.NoError(t, err)
 	return ts
-}
-
-func testClock(t *testing.T) (clock.Fake, clock.ChainEpochClock, time.Duration) {
-	// return a fake clock for running tests a ChainEpochClock for
-	// using in the scheduler, and the testing blocktime
-	gt := time.Unix(1234567890, 1234567890%1000000000)
-	fc := clock.NewFake(gt)
-	DefaultEpochDurationTest := 1 * time.Second
-	chainClock := clock.NewChainClockFromClock(uint64(gt.Unix()), DefaultEpochDurationTest, fc)
-
-	return fc, chainClock, DefaultEpochDurationTest
 }
 
 func headFunc(ts block.TipSet) func() (block.TipSet, error) {

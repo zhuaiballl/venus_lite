@@ -330,8 +330,7 @@ func (w *DefaultWorker) Mine(ctx context.Context, base block.TipSet, nullBlkCoun
 		log.Debugf("Worker.Mine generates new winning block! %s", next.Cid().String())
 	}
 	outCh <- NewOutput(next, err)
-	won = true
-	return
+	return true
 }
 
 func (w *DefaultWorker) getPowerTable(baseKey block.TipSetKey) (consensus.PowerTableView, error) {

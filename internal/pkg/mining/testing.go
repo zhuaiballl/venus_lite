@@ -32,21 +32,6 @@ func NewTestWorker(t *testing.T, f func(context.Context, block.TipSet, uint64, c
 	}
 }
 
-// MakeEchoMine returns a test worker function that itself returns the first
-// block of the input tipset as output.
-func MakeEchoMine(t *testing.T) func(context.Context, block.TipSet, uint64, chan<- Output) bool {
-	echoMine := func(c context.Context, ts block.TipSet, nullBlockCount uint64, outCh chan<- Output) bool {
-		require.True(t, ts.Defined())
-		b := ts.At(0)
-		select {
-		case outCh <- Output{NewBlock: b}:
-		case <-c.Done():
-		}
-		return true
-	}
-	return echoMine
-}
-
 // NthTicket returns a ticket with a vrf proof equal to a byte slice wrapping
 // the input uint8 value.
 func NthTicket(i uint8) block.Ticket {
