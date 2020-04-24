@@ -267,6 +267,7 @@ func extractGenesisBlock(source io.ReadCloser, rep repo.Repo) (*block.Block, err
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("bsBlk raw: %x\n", bsBlk)
 	cur, err := block.DecodeBlock(bsBlk.RawData())
 	if err != nil {
 		return nil, err
