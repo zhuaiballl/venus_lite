@@ -142,6 +142,8 @@ func (store *Store) Load(ctx context.Context) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "error loading head tipset")
 	}
+	rawGFC, _ := encoding.Encode(headTs.At(1))
+	fmt.Printf("rawGFC: %x\n", rawGFC)
 
 	startHeight := headTs.At(0).Height
 	fmt.Printf("Head tipset loaded at height %d\n", startHeight)
