@@ -273,6 +273,7 @@ func extractGenesisBlock(source io.ReadCloser, rep repo.Repo) (*block.Block, err
 		fmt.Printf("error decoding car file: %s\n", err)
 		return nil, err
 	}
+	fmt.Printf("the block %v\n", cur)
 
 	// the root block of the car file has parents, this file must contain a chain.
 	var gensisBlk *block.Block
@@ -283,7 +284,7 @@ func extractGenesisBlock(source io.ReadCloser, rep repo.Repo) (*block.Block, err
 			if err != nil {
 				return nil, err
 			}
-			fmt.Printf("raw: %x\n", bsBlk)			
+			fmt.Printf("raw: %x\n", bsBlk)
 			cur, err = block.DecodeBlock(bsBlk.RawData())
 			if err != nil {
 				return nil, err
