@@ -267,7 +267,7 @@ func extractGenesisBlock(source io.ReadCloser, rep repo.Repo) (*block.Block, err
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("raw: %x\n", bsBlk)
+	fmt.Printf("raw: %x\n", bsBlk.RawData())
 	cur, err := block.DecodeBlock(bsBlk.RawData())
 	if err != nil {
 		fmt.Printf("error decoding car file: %s\n", err)

@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"sync"
 
@@ -141,7 +142,9 @@ func (store *Store) Load(ctx context.Context) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "error loading head tipset")
 	}
+
 	startHeight := headTs.At(0).Height
+	fmt.Printf("Head tipset loaded at height %d\n", startHeight)
 	logStore.Infof("start loading chain at tipset: %s, height: %d", headTsKey.String(), startHeight)
 	// Ensure we only produce 10 log messages regardless of the chain height.
 	logStatusEvery := startHeight / 10
@@ -154,6 +157,7 @@ func (store *Store) Load(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Iter ancestors\n")
 
 		height, err := iterator.Value().Height()
 		if err != nil {
@@ -215,6 +219,7 @@ func (store *Store) loadStateRootAndReceipts(ts block.TipSet) (cid.Cid, cid.Cid,
 		return cid.Undef, cid.Undef, err
 	}
 	key := datastore.NewKey(makeKey(ts.String(), h))
+	fmt.Printf("loading state root and receipts for ts %s at hegith %d\n", key, h)
 	bb, err := store.ds.Get(key)
 	if err != nil {
 		return cid.Undef, cid.Undef, errors.Wrapf(err, "failed to read tipset key %s", ts.String())
