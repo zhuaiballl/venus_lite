@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/ipfs/go-cid"
@@ -70,6 +71,7 @@ func LoadTipSetBlocks(ctx context.Context, store BlockProvider, key block.TipSet
 			return block.UndefTipSet, err
 		}
 		blocks = append(blocks, blk)
+		fmt.Printf("loaded block cid: %s\n", blk.Cid())
 	}
 	return block.NewTipSet(blocks...)
 }

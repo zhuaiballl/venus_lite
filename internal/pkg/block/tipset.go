@@ -2,6 +2,7 @@ package block
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 
 	"github.com/filecoin-project/specs-actors/actors/abi"
@@ -73,6 +74,7 @@ func NewTipSet(blocks ...*Block) (TipSet, error) {
 		return cmp < 0
 	})
 	for i, blk := range sorted {
+		fmt.Printf("cid: %s\n", blk.Cid())
 		cids[i] = blk.Cid()
 	}
 	// Duplicate blocks (CIDs) are rejected here, pass that error through.
