@@ -157,8 +157,8 @@ func (store *Store) Load(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Iter ancestors\n")
-
+		fmt.Printf("Iter ancestors tipset %s\n", iterator.Value())
+		fmt.Printf("tipset key tho: %s\n", iterator.Value().Key())
 		height, err := iterator.Value().Height()
 		if err != nil {
 			return err
