@@ -142,7 +142,7 @@ func (store *Store) Load(ctx context.Context) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "error loading head tipset")
 	}
-	rawGFC, _ := encoding.Encode(headTs.At(1))
+	rawGFC, _ := encoding.Encode(headTs.At(0))
 	fmt.Printf("rawGFC: %x\n", rawGFC)
 
 	startHeight := headTs.At(0).Height
