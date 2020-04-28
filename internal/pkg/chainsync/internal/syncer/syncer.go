@@ -18,6 +18,7 @@ import (
 	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
 	"github.com/filecoin-project/go-filecoin/internal/pkg/chainsync/status"
 	"github.com/filecoin-project/go-filecoin/internal/pkg/clock"
+	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
 	"github.com/filecoin-project/go-filecoin/internal/pkg/metrics"
 	"github.com/filecoin-project/go-filecoin/internal/pkg/metrics/tracing"
 	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
@@ -225,6 +226,8 @@ func (syncer *Syncer) fetchAndValidateHeaders(ctx context.Context, ci *block.Cha
 		for j := 0; j < numEntries; j++ {
 			fmt.Printf("header #%d, drand round: %d, rand: %x\n", i, first.DrandEntries[j].Round, first.DrandEntries[j].Signature)
 		}
+		raw, _ := encoding.Encode(header)
+		fmt.Printf("header raw: %x\n", raw)
 	}
 	// DEBUG DEBUG DEBUG
 
