@@ -3,6 +3,7 @@ package drand
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"time"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
@@ -76,6 +77,7 @@ func roundsInIntervalWhenNoGaps(startTime, endTime time.Time, startTimeOfRound f
 	// Find first round after startTime
 	genesisTime := startTimeOfRound(Round(0))
 	truncatedStartRound := Round(startTime.Sub(genesisTime) / roundDuration)
+	fmt.Printf("[helper] truncatedStartRound: %d\n", truncatedStartRound)
 	var round Round
 	if startTimeOfRound(truncatedStartRound).Equal(startTime) {
 		round = truncatedStartRound
@@ -83,6 +85,7 @@ func roundsInIntervalWhenNoGaps(startTime, endTime time.Time, startTimeOfRound f
 		round = truncatedStartRound + 1
 	}
 	roundTime := startTimeOfRound(round)
+	fmt.Printf("[helper] roundTime: %v\n", roundTime)
 	var rounds []Round
 	// Advance a round time until we hit endTime, adding rounds
 	for roundTime.Before(endTime) {

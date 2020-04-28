@@ -57,7 +57,10 @@ func NewGRPC(addresses []Address, distKeyCoeff [][]byte, drandGenTime time.Time,
 	}
 
 	// First filecoin round is the first drand round before filecoinGenesisTime
+	fmt.Printf("drand round duration: %v\n", rd)
+	fmt.Printf("filecoin gen time: %v\n", filecoinGenTime)	
 	searchStart := filecoinGenTime.Add(-1 * rd)
+	fmt.Printf("search start: %v\n", searchStart)			
 	startTimeOfRound := func(round Round) time.Time {
 		return drandGenTime.Add(rd * time.Duration(round))
 	}
