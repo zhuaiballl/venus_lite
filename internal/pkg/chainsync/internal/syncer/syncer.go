@@ -226,7 +226,7 @@ func (syncer *Syncer) fetchAndValidateHeaders(ctx context.Context, ci *block.Cha
 		for j := 0; j < numEntries; j++ {
 			fmt.Printf("header #%d, drand round: %d, rand: %x\n", i, first.DrandEntries[j].Round, first.DrandEntries[j].Signature)
 		}
-		raw, _ := encoding.Encode(header)
+		raw, _ := encoding.Encode(first)
 		fmt.Printf("header raw: %x\n", raw)
 	}
 	// DEBUG DEBUG DEBUG
