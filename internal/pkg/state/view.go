@@ -146,7 +146,7 @@ func (v *View) MinerSectorCount(ctx context.Context, maddr addr.Address) (int, e
 }
 
 // DeadlineInfo returns information about the next proving period
-func (v *View) MinerDeadlines(ctx context.Context, maddr addr.Address, currentEpoch abi.ChainEpoch) (*miner.Deadlines, error) {
+func (v *View) MinerDeadlines(ctx context.Context, maddr addr.Address) (*miner.Deadlines, error) {
 	minerState, err := v.loadMinerActor(ctx, maddr)
 	if err != nil {
 		return nil, err
@@ -163,6 +163,14 @@ func (v *View) MinerInfo(ctx context.Context, maddr addr.Address) (miner.MinerIn
 	}
 
 	return minerState.Info, err
+}
+
+func (v *View) MinerProvingPeriodStart(ctx context.Context, maddr addr.Address) (abi.ChainEpoch, error) {
+	minerState, err := v.loadMinerActor(ctx, maddr)
+	if err != nil {
+		return 0, err
+	}
+	return minerState.ProvingPeriodStart, nil
 }
 
 // MinerSectorsForEach Iterates over the sectors in a miner's proving set.

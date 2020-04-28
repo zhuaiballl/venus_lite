@@ -37,7 +37,7 @@ type MinerStateView interface {
 	MinerPeerID(ctx context.Context, maddr address.Address) (peer.ID, error)
 	MinerSectorSize(ctx context.Context, maddr address.Address) (abi.SectorSize, error)
 	MinerSectorCount(ctx context.Context, maddr address.Address) (int, error)
-	MinerDeadlines(ctx context.Context, maddr address.Address, currentEpoch abi.ChainEpoch) (*miner.Deadlines, error)
+	MinerDeadlines(ctx context.Context, maddr address.Address) (*miner.Deadlines, error)
 	PowerNetworkTotal(ctx context.Context) (*state.NetworkPower, error)
 	MinerClaimedPower(ctx context.Context, miner address.Address) (raw, qa abi.StoragePower, err error)
 	MinerInfo(ctx context.Context, maddr address.Address) (miner.MinerInfo, error)
@@ -201,15 +201,6 @@ type MinerStatus struct {
 
 // MinerGetStatus queries the power of a given miner.
 func MinerGetStatus(ctx context.Context, plumbing minerStatusPlumbing, minerAddr address.Address, key block.TipSetKey) (MinerStatus, error) {
-	ts, err := plumbing.ChainTipSet(key)
-	if err != nil {
-		return MinerStatus{}, err
-	}
-	epoch, err := ts.Height()
-	if err != nil {
-		return MinerStatus{}, err
-	}
-
 	view, err := plumbing.MinerStateView(key)
 	if err != nil {
 		return MinerStatus{}, err
@@ -230,7 +221,7 @@ func MinerGetStatus(ctx context.Context, plumbing minerStatusPlumbing, minerAddr
 	if err != nil {
 		return MinerStatus{}, err
 	}
-	deadlines, err := view.MinerDeadlines(ctx, minerAddr, epoch)
+	deadlines, err := view.MinerDeadlines(ctx, minerAddr)
 	if err != nil {
 		return MinerStatus{}, err
 	}
