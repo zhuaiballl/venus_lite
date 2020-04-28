@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/filecoin-project/sector-storage/ffiwrapper"
@@ -211,6 +212,7 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		for i, a := range drandConfig.Addresses {
 			addrs[i] = drand.NewAddress(a, drandConfig.Secure)
 		}
+		fmt.Printf("genblk timestamp ints: %d\n", genBlk.Timestamp)
 		dGRPC, err := drand.NewGRPC(addrs, drandConfig.DistKey, time.Unix(drandConfig.StartTimeUnix, 0),
 			time.Unix(int64(genBlk.Timestamp), 0), time.Duration(drandConfig.RoundSeconds)*time.Second)
 		if err != nil {
