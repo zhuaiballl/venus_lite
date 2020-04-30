@@ -340,6 +340,7 @@ func (g *GenesisGenerator) setupMiners(ctx context.Context) ([]*RenderedMinerInf
 		dealIDs := []abi.DealID{}
 		if len(m.CommittedSectors) > 0 {
 			ownerKey := g.keys[m.Owner]
+			fmt.Printf("publish deals for miner %s\n", m.Owner)
 			dealIDs, err = g.publishDeals(actorAddr, ownerAddr, ownerKey, m.CommittedSectors)
 			if err != nil {
 				fmt.Printf("error from publish deals\n")
@@ -522,7 +523,7 @@ func (g *GenesisGenerator) publishDeals(actorAddr, clientAddr address.Address, c
 			ClientSignature: sig,
 		})
 	}
-
+	fmt.Printf("provider: %s number of deals %d\n", len(params.Deals))
 	// apply deal builtin.MethodsMarket.PublishStorageDeals
 	out, err := g.vm.ApplyGenesisMessage(clientAddr, builtin.StorageMarketActorAddr, builtin.MethodsMarket.PublishStorageDeals, big.Zero(), params, &g.chainRand)
 	if err != nil {
