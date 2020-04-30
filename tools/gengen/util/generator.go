@@ -332,18 +332,17 @@ func (g *GenesisGenerator) setupMiners(ctx context.Context) ([]*RenderedMinerInf
 		if err != nil {
 			return nil, err
 		}
-
 		mState, err := g.loadMinerState(ctx, actorAddr)
 		if err != nil {
 			return nil, err
 		}
-
 		// Add configured deals to the market actor with miner as provider and worker as client
 		dealIDs := []abi.DealID{}
 		if len(m.CommittedSectors) > 0 {
 			ownerKey := g.keys[m.Owner]
 			dealIDs, err = g.publishDeals(actorAddr, ownerAddr, ownerKey, m.CommittedSectors)
 			if err != nil {
+				fmt.Printf("error from publish deals\n")
 				return nil, err
 			}
 		}
@@ -485,10 +484,12 @@ func (g *GenesisGenerator) publishDeals(actorAddr, clientAddr address.Address, c
 	// Add 0 balance to escrow and locked table
 	_, err := g.vm.ApplyGenesisMessage(clientAddr, builtin.StorageMarketActorAddr, builtin.MethodsMarket.AddBalance, big.Zero(), &clientAddr, &g.chainRand)
 	if err != nil {
+		fmt.Printf("err a\n")
 		return nil, err
 	}
 	_, err = g.vm.ApplyGenesisMessage(clientAddr, builtin.StorageMarketActorAddr, builtin.MethodsMarket.AddBalance, big.Zero(), &actorAddr, &g.chainRand)
 	if err != nil {
+		fmt.Printf("err b\n")
 		return nil, err
 	}
 
@@ -525,6 +526,7 @@ func (g *GenesisGenerator) publishDeals(actorAddr, clientAddr address.Address, c
 	// apply deal builtin.MethodsMarket.PublishStorageDeals
 	out, err := g.vm.ApplyGenesisMessage(clientAddr, builtin.StorageMarketActorAddr, builtin.MethodsMarket.PublishStorageDeals, big.Zero(), params, &g.chainRand)
 	if err != nil {
+		fmt.Printf("err c\n")
 		return nil, err
 	}
 

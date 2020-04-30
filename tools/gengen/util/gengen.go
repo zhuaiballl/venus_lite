@@ -227,19 +227,22 @@ func GenGen(ctx context.Context, cfg *GenesisCfg, bs blockstore.Blockstore) (*Re
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Printf("inited\n")
 	err = generator.setupBuiltInActors(ctx)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("builtined\n")
 	err = generator.setupPrealloc()
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("prealloced\n")
 	minerInfos, err := generator.setupMiners(ctx)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("mined\n")
 	genCid, err := generator.genBlock(ctx)
 	if err != nil {
 		return nil, err

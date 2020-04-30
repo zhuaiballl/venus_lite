@@ -49,7 +49,7 @@ require (
 	github.com/ipfs/go-ds-badger2 v0.0.0-20200211201106-609c9d2a39c7
 	github.com/ipfs/go-fs-lock v0.0.1
 	github.com/ipfs/go-graphsync v0.0.6-0.20200408061628-e1a98fc64c42
-	github.com/ipfs/go-hamt-ipld v0.0.15-0.20200219230615-d4e402c05ab0
+	github.com/ipfs/go-hamt-ipld v0.0.15-0.20200427192427-f3547695a9a2
 	github.com/ipfs/go-ipfs-blockstore v0.1.4
 	github.com/ipfs/go-ipfs-chunker v0.0.1
 	github.com/ipfs/go-ipfs-cmdkit v0.0.1
@@ -125,3 +125,5 @@ require (
 )
 
 replace github.com/filecoin-project/filecoin-ffi => ./vendors/filecoin-ffi
+
+replace github.com/filecoin-project/specs-actors => /Users/zenground0/Ground/go/src/github.com/filecoin-project/specs-actors

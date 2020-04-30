@@ -231,6 +231,7 @@ github.com/filecoin-project/specs-actors v0.2.0 h1:bKxloHLegeYJttIJbQjl4/tdsKOUt
 github.com/filecoin-project/specs-actors v0.2.0/go.mod h1:nQYnFbQ7Y0bHZyq6HDEuVlCPR+U3z5Q3wMOQ+2aiV+Y=
 github.com/filecoin-project/specs-actors v0.3.0 h1:QxgAuTrZr5TPqjyprZk0nTYW5o0JWpzbb5v+4UHHvN0=
 github.com/filecoin-project/specs-actors v0.3.0/go.mod h1:nQYnFbQ7Y0bHZyq6HDEuVlCPR+U3z5Q3wMOQ+2aiV+Y=
+github.com/filecoin-project/specs-actors v1.0.0 h1:H0G6n2R8MnfvYuI0irmY7Bj5FI/JHUxnIldg/YX472I=
 github.com/filecoin-project/specs-storage v0.0.0-20200410185809-9fbaaa08f275 h1:6OTcpsTQBQM0f/A67oEi4E4YtYd6fzkMqbU8cPIWMMs=
 github.com/filecoin-project/specs-storage v0.0.0-20200410185809-9fbaaa08f275/go.mod h1:xJ1/xl9+8zZeSSSFmDC3Wr6uusCTxyYPI0VeNVSFmPE=
 github.com/filecoin-project/specs-storage v0.0.0-20200417134612-61b2d91a6102/go.mod h1:xJ1/xl9+8zZeSSSFmDC3Wr6uusCTxyYPI0VeNVSFmPE=
@@ -513,6 +514,8 @@ github.com/ipfs/go-hamt-ipld v0.0.15-0.20200131012125-dd88a59d3f2e/go.mod h1:9aQ
 github.com/ipfs/go-hamt-ipld v0.0.15-0.20200204200533-99b8553ef242/go.mod h1:kq3Pi+UP3oHhAdKexE+kHHYRKMoFNuGero0R7q3hWGg=
 github.com/ipfs/go-hamt-ipld v0.0.15-0.20200219230615-d4e402c05ab0 h1:x3OVefKdg4e3MEnAp9ae1zA8lZF3wQ1XQzrk2FI+2rI=
 github.com/ipfs/go-hamt-ipld v0.0.15-0.20200219230615-d4e402c05ab0/go.mod h1:kq3Pi+UP3oHhAdKexE+kHHYRKMoFNuGero0R7q3hWGg=
+github.com/ipfs/go-hamt-ipld v0.0.15-0.20200427192427-f3547695a9a2 h1:FDkU4MGqiRmR4++F9htlLOKkLv81HelVX7slQXYgaVg=
+github.com/ipfs/go-hamt-ipld v0.0.15-0.20200427192427-f3547695a9a2/go.mod h1:kq3Pi+UP3oHhAdKexE+kHHYRKMoFNuGero0R7q3hWGg=
 github.com/ipfs/go-ipfs-blockstore v0.0.1 h1:O9n3PbmTYZoNhkgkEyrXTznbmktIXif62xLX+8dPHzc=
 github.com/ipfs/go-ipfs-blockstore v0.0.1/go.mod h1:d3WClOmRQKFnJ0Jz/jj/zmksX0ma1gROTlovZKBmN08=
 github.com/ipfs/go-ipfs-blockstore v0.1.0 h1:V1GZorHFUIB6YgTJQdq7mcaIpUfCM3fCyVi+MTo9O88=
