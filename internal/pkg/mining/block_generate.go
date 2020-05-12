@@ -6,6 +6,7 @@ package mining
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -135,6 +136,7 @@ func (w *DefaultWorker) Generate(
 	if err != nil {
 		return NewOutputErr(errors.Wrap(err, "failed to convert worker address to signing address"))
 	}
+	fmt.Printf("[Mining] Sig data: %x\n", next.SignatureData())
 	blockSig, err := w.workerSigner.SignBytes(ctx, next.SignatureData(), workerSigningAddr)
 	if err != nil {
 		return NewOutputErr(errors.Wrap(err, "failed to sign block"))

@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	address "github.com/filecoin-project/go-address"
@@ -247,6 +248,7 @@ func (c *Expected) validateMining(ctx context.Context,
 		if blk.BlockSig == nil {
 			return errors.Errorf("invalid nil block signature")
 		}
+		fmt.Printf("[Consensus] Sig data: %x\n", blk.SignatureData())
 		if err := crypto.ValidateSignature(blk.SignatureData(), workerSignerAddr, *blk.BlockSig); err != nil {
 			return errors.Wrap(err, "block signature invalid")
 		}
