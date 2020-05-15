@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	address "github.com/filecoin-project/go-address"
@@ -193,6 +194,7 @@ func (c *Expected) validateMining(ctx context.Context,
 	keyPowerTable := NewPowerTableView(keyStateView, faultsStateView)
 
 	tsHeight, err := ts.Height()
+	fmt.Println("applying ", tsHeight)
 	if err != nil {
 		return errors.Wrap(err, "could not get new tipset's height")
 	}
