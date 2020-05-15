@@ -281,6 +281,8 @@ func (syncer *Syncer) syncOne(ctx context.Context, grandParent, parent, next blo
 		return err
 	}
 
+	logSyncer.Infof("Tipset %s -- expected parent receipt root %s", parent, parentReceiptRoot)
+
 	// Run a state transition to validate the tipset and compute
 	// a new state to add to the store.
 	root, receipts, err := syncer.fullValidator.RunStateTransition(ctx, next, nextBlsMessages, nextSecpMessages, parentWeight, stateRoot, parentReceiptRoot)
@@ -301,7 +303,6 @@ func (syncer *Syncer) syncOne(ctx context.Context, grandParent, parent, next blo
 	if err != nil {
 		return errors.Wrapf(err, "could not store message rerceipts for tip set %s", next.String())
 	}
-	logSyncer.Infof("Tipset %s -- expected parent receipt root %s", parent, parentReceiptRoot)
 
 	err = syncer.chainStore.PutTipSetMetadata(ctx, &chain.TipSetMetadata{
 		TipSet:          next,
