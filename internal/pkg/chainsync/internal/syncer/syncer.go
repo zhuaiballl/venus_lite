@@ -301,6 +301,7 @@ func (syncer *Syncer) syncOne(ctx context.Context, grandParent, parent, next blo
 	if err != nil {
 		return errors.Wrapf(err, "could not store message rerceipts for tip set %s", next.String())
 	}
+	logSyncer.Infof("Tipset %s -- expected parent receipt root %s", parent, parentReceiptRoot)
 
 	err = syncer.chainStore.PutTipSetMetadata(ctx, &chain.TipSetMetadata{
 		TipSet:          next,
@@ -552,9 +553,9 @@ func (syncer *Syncer) handleNewTipSet(ctx context.Context, ci *block.ChainInfo) 
 			}
 		}
 
-		if i%500 == 0 {
-			logSyncer.Infof("processing block %d of %v for chain with head at %v", i, len(tipsets), ci.Head.String())
-		}
+		//		if i%500 == 0 {
+		logSyncer.Infof("processing %s tipset %d of %d for chain with head at %v", ts, i, len(tipsets), ci.Head.String())
+		//		}
 		grandParent = parent
 		parent = ts
 	}
