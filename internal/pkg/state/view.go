@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"fmt"
+	xerrors "github.com/pkg/errors"
 
 	"github.com/filecoin-project/go-bitfield"
 	"github.com/filecoin-project/sector-storage/ffiwrapper"
@@ -324,12 +325,13 @@ func (v *View) MinerProvingPeriodStart(ctx context.Context, maddr addr.Address) 
 }
 
 // MinerSectorsForEach Iterates over the sectors in a miner's proving set.
-func (v *View) MinerSectorsForEach(ctx context.Context, maddr addr.Address,
+func (v *View) MinerSectorsForEach(ctx context.Context, maddr addr.Address, provingSectorsOnly bool,
 	f func(abi.SectorNumber, cid.Cid, abi.RegisteredProof, []abi.DealID) error) error {
 	minerState, err := v.loadMinerActor(ctx, maddr)
 	if err != nil {
 		return err
 	}
+	notProving, err := abi.BitFieldUnion(minerState.Faults, minerState.Recoveries)
 
 	sectors, err := v.asArray(ctx, minerState.Sectors)
 	if err != nil {
@@ -339,6 +341,16 @@ func (v *View) MinerSectorsForEach(ctx context.Context, maddr addr.Address,
 	// This version for the new actors
 	var sector miner.SectorOnChainInfo
 	return sectors.ForEach(&sector, func(secnum int64) error {
+		if provingSectorsOnly {
+			set, err := notProving.IsSet(uint64(secnum))
+			if err != nil {
+				return xerrors.Errorf("filter check error: %w", err)
+			}
+
+			if set {
+				return nil
+			}
+		}
 		// Add more fields here as required by new callers.
 		return f(sector.Info.SectorNumber, sector.Info.SealedCID, sector.Info.RegisteredProof, sector.Info.DealIDs)
 	})

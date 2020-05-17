@@ -17,7 +17,7 @@ type PowerStateView interface {
 	state.AccountStateView
 	MinerSectorConfiguration(ctx context.Context, maddr addr.Address) (*state.MinerSectorConfiguration, error)
 	MinerControlAddresses(ctx context.Context, maddr addr.Address) (owner, worker addr.Address, err error)
-	MinerSectorsForEach(ctx context.Context, maddr addr.Address, f func(id abi.SectorNumber, sealedCID cid.Cid, rpp abi.RegisteredProof, dealIDs []abi.DealID) error) error
+	MinerSectorsForEach(ctx context.Context, maddr addr.Address, provingSectorsOnly bool, f func(id abi.SectorNumber, sealedCID cid.Cid, rpp abi.RegisteredProof, dealIDs []abi.DealID) error) error
 	PowerNetworkTotal(ctx context.Context) (*state.NetworkPower, error)
 	MinerClaimedPower(ctx context.Context, miner addr.Address) (raw, qa abi.StoragePower, err error)
 }
@@ -82,7 +82,7 @@ func (v PowerTableView) SignerAddress(ctx context.Context, a addr.Address) (addr
 // SortedSectorInfos returns the sector information for a given miner
 func (v PowerTableView) SortedSectorInfos(ctx context.Context, mAddr addr.Address) ([]abi.SectorInfo, error) {
 	var infos []abi.SectorInfo
-	err := v.state.MinerSectorsForEach(ctx, mAddr, func(id abi.SectorNumber, sealedCID cid.Cid, rpp abi.RegisteredProof, _ []abi.DealID) error {
+	err := v.state.MinerSectorsForEach(ctx, mAddr, true, func(id abi.SectorNumber, sealedCID cid.Cid, rpp abi.RegisteredProof, _ []abi.DealID) error {
 		infos = append(infos, abi.SectorInfo{
 			SectorNumber:    id,
 			SealedCID:       sealedCID,
