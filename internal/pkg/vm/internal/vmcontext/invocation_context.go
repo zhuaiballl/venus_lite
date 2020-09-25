@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"runtime/debug"
+
 	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/internal/gascost"
 	"github.com/filecoin-project/go-state-types/cbor"
-	"runtime/debug"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -281,7 +282,7 @@ func (ctx *invocationContext) resolveTarget(target address.Address) (*actor.Acto
 
 	// get a view into the actor stateView
 	var state init_.State
-	if _, err := ctx.rt.store.Get(ctx.rt.context, initActorEntry.Head.Cid, &state); err != nil {
+	if _, err := ctx.rt.store.Get(ctx.rt.context, initActorEntry.Head, &state); err != nil {
 		panic(err)
 	}
 

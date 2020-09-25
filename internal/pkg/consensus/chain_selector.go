@@ -39,34 +39,50 @@ func NewChainSelector(cs cbor.IpldStore, state StateViewer, gCid cid.Cid) *Chain
 	}
 }
 
+// The invoker must make sure x >= 1, In this file, x is the network quality adjusted power only
 func log2b(x fbig.Int) fbig.Int {
 	bits := x.BitLen()
 	return fbig.NewInt(int64(bits - 1))
 }
 
 // Weight returns the EC weight of this TipSet as a filecoin big int.
+// Todo: QalityAdjustedPower should be used for the weight calculation
 func (c *ChainSelector) Weight(ctx context.Context, ts block.TipSet, pStateID cid.Cid) (fbig.Int, error) {
-	// Retrieve parent weight.
+	// w[r+1] = w[r] + (wPowerFactor[r+1] + wBlocksFactor[r+1]) * 2^8
+	// 		wPowerFactor[r+1] = log2b(networkQAP[r+1])
+	//		wBlocksFactor[r+1] = wPowerFactor[r+1] * wRatio * winCounts / e
+	//						   = log2b(networkQAP[r+1]) * wBlocksFactorNum *  winCounts / (e * wBlocksFactorDen)
+
+	// Retrieve parent weight: w[r]
 	parentWeight, err := ts.ParentWeight()
+
 	if err != nil {
 		return fbig.Zero(), err
 	}
 	if !pStateID.Defined() {
 		return fbig.Zero(), errors.New("undefined state passed to chain selector new weight")
 	}
+
+	// Get log2b(networkQAP[r+1])
 	powerTableView := NewPowerTableView(c.state.PowerStateView(pStateID), c.state.FaultStateView(pStateID))
-	networkPower, err := powerTableView.NetworkTotalPower(ctx)
+	networkPower, err := powerTableView.NetworkTotalPower(ctx) // To change to QalityAdjustedPower
 	if err != nil {
 		return fbig.Zero(), err
 	}
-	powerMeasure := log2b(networkPower)
+	wPowerFactor := fbig.Zero()
+	if networkPower.GreaterThan(fbig.Zero()) {
+		wPowerFactor = fbig.Mul(wPrecision, log2b(networkPower))
+	} else {
+		// This is not expected in normal case
+		return fbig.Zero(), errors.New("Network Power is 0. Your node might be disconnected to Filecoin network")
+	}
 
-	wPowerFactor := fbig.Mul(wPrecision, powerMeasure)
-	wBlocksFactorNum := fbig.Mul(wRatioNum, fbig.Mul(powerMeasure, fbig.NewInt(int64(ts.Len()))))
+	// Calculate wBlockFactor[r+1]
+	wBlocksFactorNum := fbig.Mul(wRatioNum, fbig.Mul(wPowerFactor, fbig.NewInt(int64(ts.Len()))))
 	wBlocksFactorDen := fbig.Mul(wRatioDen, fbig.NewInt(int64(expectedLeadersPerEpoch)))
-	wBlocksFactor := fbig.Div(fbig.Mul(wBlocksFactorNum, wPrecision), wBlocksFactorDen)
-	deltaWeight := fbig.Add(wPowerFactor, wBlocksFactor)
+	wBlocksFactor := fbig.Div(wBlocksFactorNum, wBlocksFactorDen)
 
+	deltaWeight := fbig.Add(wPowerFactor, wBlocksFactor)
 	return fbig.Add(parentWeight, deltaWeight), nil
 }
 
