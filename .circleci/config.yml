@@ -764,7 +764,7 @@ commands:
             mkdir -p /tmp/statediff
             git clone https://github.com/filecoin-project/statediff.git /tmp/statediff
             cd /tmp/statediff
-            go install ./cmd/statediff || exit 0
+            go install ./cmd/statediff
             cd
 
             # Parallelism and timeout set to support medium-class containers, for builds on forked repos.
