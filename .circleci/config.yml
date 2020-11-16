@@ -760,9 +760,8 @@ commands:
             export TEST_PACKAGES="$(go list ./... | circleci tests split)"
 
             # Install state-diff
+            go get -u -v github.com/filecoin-project/statediff
             go install github.com/filecoin-project/statediff
-            echo $GOPATH
-            ls $GOPATH/bin
             export PATH=$GOPATH/bin:$PATH
             statediff
 
