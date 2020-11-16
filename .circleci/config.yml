@@ -356,6 +356,7 @@ jobs:
           command: |
             ./scripts/publish-release.sh
 
+
   build_docker_img:
     docker:
       - image: circleci/golang:1.14.1-stretch
@@ -760,9 +761,11 @@ commands:
             export TEST_PACKAGES="$(go list ./... | circleci tests split)"
 
             # Install state-diff
-            go get -u -v github.com/filecoin-project/statediff
-            go install github.com/filecoin-project/statediff
-            export PATH=$GOPATH/bin:$PATH
+            mkdir -p /tmp/statediff
+            git clone https://github.com/filecoin-project/statediff.git /tmp/statediff
+            cd /tmp/statediff
+            go install ./cmd/statediff || exit 0
+            cd
             statediff
 
             # Parallelism and timeout set to support medium-class containers, for builds on forked repos.
