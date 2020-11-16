@@ -766,6 +766,7 @@ commands:
             cd /tmp/statediff
             go install ./cmd/statediff
             cd
+            cd venus
 
             # Parallelism and timeout set to support medium-class containers, for builds on forked repos.
             go run ./build test -cover -coverprofile coverage.out -covermode=atomic -timeout=30m -parallel=4 -functional=<< parameters.functional >> -integration=<< parameters.integration >> -unit=<< parameters.unit >> -v 2>&1 | tee test-results/go-test-suite/go-test.out
