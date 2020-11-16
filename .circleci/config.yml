@@ -763,7 +763,7 @@ commands:
             go install github.com/filecoin-project/statediff
             echo $GOPATH
             ls $GOPATH/bin
-            export PATH=$PATH:$GOPATH/bin
+            export PATH=$GOPATH/bin:$PATH
             statediff
 
             # Parallelism and timeout set to support medium-class containers, for builds on forked repos.
