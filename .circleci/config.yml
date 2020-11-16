@@ -324,7 +324,6 @@ jobs:
           at: "."
       - mkdir_test_results
       - go_test:
-          sector_builder_tests: "<< parameters.sector_builder_tests >>"
           unit: false
           integration: false
           functional: true
@@ -560,21 +559,6 @@ workflows:
           <<: *master_filter
     jobs:
       - build_macos
-
-  run_sector_builder_tests:
-    triggers:
-      - schedule:
-          cron: "0 0,6,12,18 * * *"
-          <<: *master_filter
-    jobs:
-      - deps_linux
-      - build_linux:
-          requires:
-            - deps_linux
-      - functional_test_linux:
-          sector_builder_tests: true
-          requires:
-            - build_linux
 
   build_nightly_devnet:
     triggers:
