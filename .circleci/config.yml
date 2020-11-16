@@ -762,6 +762,7 @@ commands:
             # Install state-diff
             go install github.com/filecoin-project/statediff
             echo $GOPATH
+            ls $GOPATH/bin
             export PATH=$PATH:$GOPATH/bin
             statediff
 
