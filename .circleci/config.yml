@@ -760,6 +760,7 @@ commands:
             export TEST_PACKAGES="$(go list ./... | circleci tests split)"
             # Install state-diff
             go install github.com/filecoin-project/statediff
+            statediff
             # Parallelism and timeout set to support medium-class containers, for builds on forked repos.
             go run ./build test -cover -coverprofile coverage.out -covermode=atomic -timeout=30m -parallel=4 -functional=<< parameters.functional >> -integration=<< parameters.integration >> -unit=<< parameters.unit >> -v 2>&1 | tee test-results/go-test-suite/go-test.out
             mkdir -p /tmp/artifacts
