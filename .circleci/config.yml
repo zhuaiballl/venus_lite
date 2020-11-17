@@ -305,8 +305,6 @@ jobs:
           command: |
             ./scripts/publish-release.sh
 
-
-
   build_docker_img:
     docker:
       - image: circleci/golang:1.14.1-stretch
