@@ -2,14 +2,18 @@ package state
 
 import (
 	"context"
+	"github.com/filecoin-project/go-bitfield"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
-	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/pkg/errors"
+
+	"github.com/filecoin-project/venus/internal/pkg/specactors/builtin"
+	"github.com/filecoin-project/venus/internal/pkg/specactors/builtin/miner"
+	"github.com/filecoin-project/venus/internal/pkg/util/ffiwrapper"
 )
 
 // FakeStateView is a fake state view.
@@ -42,7 +46,7 @@ type FakeMinerState struct {
 	ProvingPeriodEnd    abi.ChainEpoch
 	PoStFailures        int
 	Sectors             []miner.SectorOnChainInfo
-	Deadlines           []*abi.BitField
+	Deadlines           []*bitfield.BitField
 	ClaimedRawPower     abi.StoragePower
 	ClaimedQAPower      abi.StoragePower
 	PledgeRequirement   abi.TokenAmount
@@ -78,26 +82,13 @@ func (v *FakeStateView) MinerSectorCount(ctx context.Context, maddr address.Addr
 	return uint64(len(m.Sectors)), nil
 }
 
-func (v *FakeStateView) MinerSectorStates(_ context.Context, maddr address.Address) (*MinerSectorStates, error) {
-	m, ok := v.Miners[maddr]
-	if !ok {
-		return nil, errors.Errorf("no miner %s", maddr)
-	}
-	return &MinerSectorStates{
-		Deadlines:  m.Deadlines,
-		Faults:     abi.NewBitField(),
-		Recoveries: abi.NewBitField(),
-		NewSectors: abi.NewBitField(),
-	}, nil
-}
-
 func (v *FakeStateView) MinerGetSector(_ context.Context, maddr address.Address, sectorNum abi.SectorNumber) (*miner.SectorOnChainInfo, bool, error) {
 	m, ok := v.Miners[maddr]
 	if !ok {
 		return nil, false, errors.Errorf("no miner %s", maddr)
 	}
 	for _, s := range m.Sectors {
-		if s.Info.SectorNumber == sectorNum {
+		if s.SectorNumber == sectorNum {
 			return &s, true, nil
 		}
 	}
@@ -149,6 +140,14 @@ func (v *FakeStateView) MinerClaimedPower(ctx context.Context, miner address.Add
 	return m.ClaimedRawPower, m.ClaimedQAPower, nil
 }
 
+func (v *FakeStateView) GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Verifier, st cid.Cid, maddr address.Address, rand abi.PoStRandomness) ([]builtin.SectorInfo, error) {
+	_, ok := v.Miners[maddr]
+	if !ok {
+		return nil, errors.Errorf("no miner %s", maddr)
+	}
+	return []builtin.SectorInfo{}, nil
+}
+
 func (v *FakeStateView) MinerPledgeCollateral(_ context.Context, maddr address.Address) (locked abi.TokenAmount, total abi.TokenAmount, err error) {
 	m, ok := v.Miners[maddr]
 	if !ok {
@@ -157,18 +156,19 @@ func (v *FakeStateView) MinerPledgeCollateral(_ context.Context, maddr address.A
 	return m.PledgeRequirement, m.PledgeBalance, nil
 }
 
-func (v *FakeStateView) MinerDeadlines(ctx context.Context, maddr address.Address) (*miner.Deadlines, error) {
-	return nil, nil
-}
-
-func (v *FakeStateView) MinerInfo(ctx context.Context, maddr address.Address) (miner.MinerInfo, error) {
+func (v *FakeStateView) MinerInfo(ctx context.Context, maddr address.Address) (*miner.MinerInfo, error) {
 	m, ok := v.Miners[maddr]
 	if !ok {
-		return miner.MinerInfo{}, errors.Errorf("no miner %s", maddr)
+		return nil, errors.Errorf("no miner %s", maddr)
 	}
-	return miner.MinerInfo{
+	return &miner.MinerInfo{
 		Owner:  m.Owner,
 		Worker: m.Worker,
-		PeerId: m.PeerID,
+		PeerId: &m.PeerID,
 	}, nil
+}
+
+func NewBitField() *bitfield.BitField {
+	bit := bitfield.New()
+	return &bit
 }

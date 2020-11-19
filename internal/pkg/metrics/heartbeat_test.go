@@ -5,14 +5,15 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"github.com/filecoin-project/venus/internal/pkg/enccid"
 	"testing"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/go-address"
-	fbig "github.com/filecoin-project/specs-actors/actors/abi/big"
+	fbig "github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -20,14 +21,12 @@ import (
 	net "github.com/libp2p/go-libp2p-core/network"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	e "github.com/filecoin-project/go-filecoin/internal/pkg/enccid"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/metrics"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/metrics"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 var testCid cid.Cid
@@ -94,8 +93,8 @@ func TestHeartbeatConnectSuccess(t *testing.T) {
 			Nickname:        "BobHoblaw",
 		},
 		func() (block.TipSet, error) {
-			tipSet := chain.NewBuilder(t, address.Undef).NewGenesis()
-			return tipSet, nil
+			tipSet := chain.NewBuilder(t, address.Undef).Genesis()
+			return *tipSet, nil
 		},
 	)
 
@@ -123,8 +122,8 @@ func TestHeartbeatConnectFailure(t *testing.T) {
 			Nickname:        "BobHoblaw",
 		},
 		func() (block.TipSet, error) {
-			tipSet := chain.NewBuilder(t, address.Undef).NewGenesis()
-			return tipSet, nil
+			tipSet := chain.NewBuilder(t, address.Undef).Genesis()
+			return *tipSet, nil
 		},
 	)
 	assert.Error(t, hbs.Connect(ctx))
@@ -175,7 +174,7 @@ func TestHeartbeatRunSuccess(t *testing.T) {
 			Nickname:        "BobHoblaw",
 		},
 		func() (block.TipSet, error) {
-			return expTs, nil
+			return *expTs, nil
 		},
 		metrics.WithMinerAddressGetter(func() address.Address {
 			return addr
@@ -188,15 +187,15 @@ func TestHeartbeatRunSuccess(t *testing.T) {
 	assert.Error(t, runCtx.Err(), context.Canceled.Error())
 }
 
-func mustMakeTipset(t *testing.T, height abi.ChainEpoch) block.TipSet {
+func mustMakeTipset(t *testing.T, height abi.ChainEpoch) *block.TipSet {
 	ts, err := block.NewTipSet(&block.Block{
-		Miner:           vmaddr.NewForTestGetter()(),
+		Miner:           types.NewForTestGetter()(),
 		Ticket:          block.Ticket{VRFProof: []byte{0}},
 		Parents:         block.TipSetKey{},
 		ParentWeight:    fbig.Zero(),
 		Height:          height,
-		MessageReceipts: e.NewCid(types.EmptyMessagesCID),
-		Messages:        e.NewCid(types.EmptyTxMetaCID),
+		MessageReceipts: enccid.NewCid(types.EmptyMessagesCID),
+		Messages:        enccid.NewCid(types.EmptyTxMetaCID),
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -4,14 +4,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/discovery"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/net"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/util/moresync"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/pkg/errors"
+
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/discovery"
+	"github.com/filecoin-project/venus/internal/pkg/net"
+	"github.com/filecoin-project/venus/internal/pkg/util/moresync"
 )
 
 var log = logging.Logger("node") // nolint: deadcode
@@ -26,6 +29,8 @@ type DiscoverySubmodule struct {
 
 	// HelloHandler handle peer connections for the "hello" protocol.
 	HelloHandler *discovery.HelloProtocolHandler
+	// HelloHandler handle peer connections for the "hello" protocol.
+	ExchangeHandler exchange.Server
 }
 
 type discoveryConfig interface {
@@ -33,7 +38,13 @@ type discoveryConfig interface {
 }
 
 // NewDiscoverySubmodule creates a new discovery submodule.
-func NewDiscoverySubmodule(ctx context.Context, config discoveryConfig, bsConfig *config.BootstrapConfig, network *NetworkSubmodule) (DiscoverySubmodule, error) {
+func NewDiscoverySubmodule(ctx context.Context,
+	config discoveryConfig,
+	bsConfig *config.BootstrapConfig,
+	network *NetworkSubmodule,
+	chainStore *chain.Store,
+	messageStore *chain.MessageStore,
+) (DiscoverySubmodule, error) {
 	periodStr := bsConfig.Period
 	period, err := time.ParseDuration(periodStr)
 	if err != nil {
@@ -56,10 +67,11 @@ func NewDiscoverySubmodule(ctx context.Context, config discoveryConfig, bsConfig
 	peerTracker := discovery.NewPeerTracker(network.Host.ID())
 
 	return DiscoverySubmodule{
-		Bootstrapper:   bootstrapper,
-		BootstrapReady: moresync.NewLatch(uint(minPeerThreshold)),
-		PeerTracker:    peerTracker,
-		HelloHandler:   discovery.NewHelloProtocolHandler(network.Host, config.GenesisCid(), network.NetworkName),
+		Bootstrapper:    bootstrapper,
+		BootstrapReady:  moresync.NewLatch(uint(minPeerThreshold)),
+		PeerTracker:     peerTracker,
+		HelloHandler:    discovery.NewHelloProtocolHandler(network.Host, network.PeerMgr, config.GenesisCid(), network.NetworkName),
+		ExchangeHandler: exchange.NewServer(chainStore, messageStore, network.Host),
 	}, nil
 }
 
@@ -78,28 +90,30 @@ func (m *DiscoverySubmodule) Start(node discoveryNode) error {
 	// Register peer tracker disconnect function with network.
 	m.PeerTracker.RegisterDisconnect(node.Network().Host.Network())
 
-	// Start up 'hello' handshake service
+	// Start up 'hello' handshake service,recv HelloMessage ???
 	peerDiscoveredCallback := func(ci *block.ChainInfo) {
-		m.PeerTracker.Track(ci)
-		m.BootstrapReady.Done()
 		err := node.Syncer().ChainSyncManager.BlockProposer().SendHello(ci)
 		if err != nil {
 			log.Errorf("error receiving chain info from hello %s: %s", ci, err)
 			return
 		}
+		m.PeerTracker.Track(ci)
+		m.BootstrapReady.Done()
 	}
 
 	// chain head callback
-	chainHeadCallback := func() (block.TipSet, error) {
+	chainHeadCallback := func() (*block.TipSet, error) {
 		return node.Chain().State.GetTipSet(node.Chain().State.Head())
 	}
 
 	// Register the "hello" protocol with the network
 	m.HelloHandler.Register(peerDiscoveredCallback, chainHeadCallback)
 
+	//registre exchange protocol
+	m.ExchangeHandler.Register()
+
 	// Wait for bootstrap to be sufficient connected
 	m.BootstrapReady.Wait()
-
 	return nil
 }
 

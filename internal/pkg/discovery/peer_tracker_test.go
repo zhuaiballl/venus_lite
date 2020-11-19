@@ -2,19 +2,22 @@ package discovery_test
 
 import (
 	"context"
+	"github.com/filecoin-project/venus/internal/pkg/util/test"
+	"github.com/libp2p/go-libp2p-core/network"
 	"sort"
 	"testing"
+	"time"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/discovery"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/discovery"
 	"github.com/libp2p/go-libp2p-core/peer"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func TestPeerTrackerTracks(t *testing.T) {
@@ -130,10 +133,23 @@ func TestPeerTrackerNetworkDisconnect(t *testing.T) {
 	// register tracker OnDisconnect callback in self's network
 	tracker.RegisterDisconnect(self.Network())
 
+	disconnect := make(chan error)
+	notifee := &network.NotifyBundle{}
+	notifee.DisconnectedF = func(network network.Network, conn network.Conn) {
+		disconnect <- nil
+	}
+	self.Network().Notify(notifee)
 	// disconnect from tracked a and untracked c
 	require.NoError(t, mn.DisconnectPeers(selfID, aID))
 	require.NoError(t, mn.DisconnectPeers(selfID, cID))
 
+	select {
+	case <-time.After(time.Second * 5):
+		t.Errorf("time out for wait disconnect notify")
+	case <-disconnect:
+	}
+
 	tracked := tracker.List()
-	assert.Equal(t, []*block.ChainInfo{bCI}, tracked)
+	time.Sleep(time.Second)
+	test.Equal(t, []*block.ChainInfo{bCI}, tracked)
 }

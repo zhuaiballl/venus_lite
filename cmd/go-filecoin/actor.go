@@ -6,11 +6,9 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
-	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 // ActorView represents a generic way to represent details about any actor to the user.
@@ -23,7 +21,7 @@ type ActorView struct {
 }
 
 var actorCmd = &cmds.Command{
-	Helptext: cmdkit.HelpText{
+	Helptext: cmds.HelpText{
 		Tagline: "Interact with actors. Actors are built-in smart contracts.",
 	},
 	Subcommands: map[string]*cmds.Command{
@@ -38,12 +36,8 @@ var actorLsCmd = &cmds.Command{
 			return err
 		}
 
-		for result := range results {
-			if result.Error != nil {
-				return result.Error
-			}
-
-			output := makeActorView(result.Actor, result.Key)
+		for addr, actor := range results {
+			output := makeActorView(actor, addr)
 			if err := re.Emit(output); err != nil {
 				return err
 			}
@@ -67,7 +61,7 @@ var actorLsCmd = &cmds.Command{
 	},
 }
 
-func makeActorView(act *actor.Actor, addr address.Address) *ActorView {
+func makeActorView(act *types.Actor, addr address.Address) *ActorView {
 	return &ActorView{
 		Address: addr.String(),
 		Code:    act.Code.Cid,

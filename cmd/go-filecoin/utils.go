@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"github.com/pkg/errors"
@@ -100,6 +100,7 @@ func optionalAddr(o interface{}) (ret address.Address, err error) {
 	return
 }
 
+//nolint
 func optionalSectorSizeWithDefault(o interface{}, def abi.SectorSize) (abi.SectorSize, error) {
 	if o != nil {
 		n, err := strconv.ParseUint(o.(string), 10, 64)

@@ -3,7 +3,7 @@ package syncer
 import (
 	"sync"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/block"
 )
 
 // BadTipSetCache keeps track of bad tipsets that the syncer should not try to
@@ -20,7 +20,7 @@ type BadTipSetCache struct {
 // AddChain adds the chain of tipsets to the BadTipSetCache.  For now it just
 // does the simplest thing and adds all blocks of the chain to the cache.
 // TODO: might want to cache a random subset once cache size is limited.
-func (cache *BadTipSetCache) AddChain(chain []block.TipSet) {
+func (cache *BadTipSetCache) AddChain(chain []*block.TipSet) {
 	for _, ts := range chain {
 		cache.Add(ts.String())
 	}

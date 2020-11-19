@@ -2,16 +2,15 @@ package test
 
 import (
 	"context"
-	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/node"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/genesis"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/repo"
-	gengen "github.com/filecoin-project/go-filecoin/tools/gengen/util"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/node"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/genesis"
+	"github.com/filecoin-project/venus/internal/pkg/repo"
+	gengen "github.com/filecoin-project/venus/tools/gengen/util"
 )
 
 // NodeBuilder creates and configures Filecoin nodes for in-process testing.
@@ -45,6 +44,9 @@ func NewNodeBuilder(tb testing.TB) *NodeBuilder {
 				// Bind only locally, defer port selection until binding.
 				c.API.Address = "/ip4/127.0.0.1/tcp/0"
 				c.Swarm.Address = "/ip4/127.0.0.1/tcp/0"
+			}),
+			node.ConfigOpt(func(c *config.Config) {
+				c.Bootstrap.MinPeerThreshold = 0
 			}),
 		},
 		builderOpts: []node.BuilderOpt{},
@@ -82,14 +84,9 @@ func (b *NodeBuilder) Build(ctx context.Context) *node.Node {
 	// Initialise repo.
 	repo := repo.NewInMemoryRepo()
 
-	// Apply configuration changes (must happen before node.OptionsFromRepo()).
-	sectorDir, err := ioutil.TempDir("", "go-fil-test-sectors")
-	b.requireNoError(err)
-	repo.Config().SectorBase.RootDirPath = sectorDir
-	for _, m := range b.configMutations {
-		m(repo.Config())
+	for _, opt := range b.configMutations {
+		opt(repo.Config())
 	}
-
 	b.requireNoError(node.Init(ctx, repo, b.gif, b.initOpts...))
 
 	// Initialize the node.

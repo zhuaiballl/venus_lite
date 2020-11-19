@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 var mockSigner = NewMockSigner(MustGenerateKeyInfo(1, 42))
@@ -87,8 +86,9 @@ func makeMessage(t *testing.T, signer MockSigner, nonce uint64) *SignedMessage {
 		NewAttoFILFromFIL(2),
 		abi.MethodNum(2352),
 		[]byte("params"),
-		NewGasPrice(1000),
-		gas.NewGas(100))
+		NewGasFeeCap(1000),
+		NewGasPremium(100),
+		NewGas(100))
 	smsg, err := NewSignedMessage(context.TODO(), *msg, &signer)
 	require.NoError(t, err)
 

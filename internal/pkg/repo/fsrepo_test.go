@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 func TestInitRepoDirect(t *testing.T) {
@@ -99,21 +99,7 @@ func TestFSRepoOpen(t *testing.T) {
 		expected := fmt.Sprintf("binary needs update to handle repo version, got 99 expected %d. Update binary to latest release", Version)
 		assert.EqualError(t, err, expected)
 	})
-	t.Run("[fail] binary version newer than repo", func(t *testing.T) {
-		container, err := ioutil.TempDir("", "")
-		require.NoError(t, err)
-		defer RequireRemoveAll(t, container)
-		repoPath := path.Join(container, "repo")
 
-		assert.NoError(t, InitFSRepo(repoPath, 1, config.NewDefaultConfig()))
-		// set wrong version
-		assert.NoError(t, WriteVersion(repoPath, 0))
-
-		_, err = OpenFSRepo(repoPath, 1)
-		expected := fmt.Sprintf("out of date repo version, got 0 expected %d. Migrate with tools/migration/go-filecoin-migrate", Version)
-
-		assert.EqualError(t, err, expected)
-	})
 	t.Run("[fail] version corrupt", func(t *testing.T) {
 		container, err := ioutil.TempDir("", "")
 		require.NoError(t, err)

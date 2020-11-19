@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/porcelain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/state"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/porcelain"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/state"
 )
 
 const protocolTestParamBlockTime = time.Second
@@ -54,8 +54,7 @@ func TestProtocolParams(t *testing.T) {
 		}
 
 		expected := &porcelain.ProtocolParams{
-			AutoSealInterval: 120,
-			Network:          "protocolTest",
+			Network: "protocolTest",
 			SupportedSectors: []porcelain.SectorInfo{
 				{constants.DevSectorSize, abi.PaddedPieceSize(constants.DevSectorSize).Unpadded()},
 				{constants.FiveHundredTwelveMiBSectorSize, abi.PaddedPieceSize(constants.FiveHundredTwelveMiBSectorSize).Unpadded()},

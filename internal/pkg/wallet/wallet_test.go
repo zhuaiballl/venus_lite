@@ -2,6 +2,7 @@ package wallet_test
 
 import (
 	"bytes"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 	"testing"
 
 	"github.com/filecoin-project/go-address"
@@ -10,10 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bls "github.com/filecoin-project/filecoin-ffi"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/wallet"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/wallet"
 )
 
 func TestWalletSimple(t *testing.T) {
@@ -43,7 +43,7 @@ func TestWalletSimple(t *testing.T) {
 	assert.Equal(t, fs, backend)
 
 	t.Log("find unknown address")
-	randomAddr := vmaddr.NewForTestGetter()()
+	randomAddr := types.NewForTestGetter()()
 
 	assert.False(t, w.HasAddress(randomAddr))
 

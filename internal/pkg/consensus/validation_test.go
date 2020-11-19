@@ -3,25 +3,24 @@ package consensus_test
 import (
 	"context"
 	"fmt"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
 	"testing"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/ipfs/go-cid"
-
-	bls "github.com/filecoin-project/filecoin-ffi"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/consensus"
-	e "github.com/filecoin-project/go-filecoin/internal/pkg/enccid"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/state"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/actors/builtin"
+
+	bls "github.com/filecoin-project/filecoin-ffi"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/consensus"
+	"github.com/filecoin-project/venus/internal/pkg/enccid"
+	"github.com/filecoin-project/venus/internal/pkg/state"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 var keys = types.MustGenerateKeyInfo(2, 42)
@@ -56,7 +55,7 @@ func TestMessagePenaltyChecker(t *testing.T) {
 
 	t.Run("non-account actor fails", func(t *testing.T) {
 		badActor := newActor(t, 1000, 100)
-		badActor.Code = e.NewCid(types.CidFromString(t, "somecid"))
+		badActor.Code = enccid.NewCid(types.CidFromString(t, "somecid"))
 		msg := newMessage(t, alice, bob, 100, 5, 1, 0)
 		api := NewMockIngestionValidatorAPI()
 		api.ActorAddr = alice
@@ -93,8 +92,16 @@ func TestBLSSignatureValidationConfiguration(t *testing.T) {
 	from, err := address.NewBLSAddress(pubKey[:])
 	require.NoError(t, err)
 
-	msg := types.NewMeteredMessage(from, addresses[1], 0, types.ZeroAttoFIL, methodID, []byte("params"), types.NewGasPrice(1), gas.NewGas(300))
-	unsigned := &types.SignedMessage{Message: *msg}
+	msg := types.NewMeteredMessage(from, addresses[1], 0, types.ZeroAttoFIL, methodID, []byte("params"), types.NewGasFeeCap(1), types.NewGasPremium(1), types.NewGas(300))
+	mmsgCid, err := msg.Cid()
+	require.NoError(t, err)
+
+	var signer = types.NewMockSigner(keys)
+	signer.AddrKeyInfo[msg.From] = keys[0]
+	sig, err := signer.SignBytes(ctx, mmsgCid.Bytes(), msg.From)
+	require.NoError(t, err)
+	unsigned := &types.SignedMessage{Message: *msg, Signature: sig}
+
 	actor := newActor(t, 1000, 0)
 
 	t.Run("syntax validator does not ignore missing signature", func(t *testing.T) {
@@ -138,21 +145,21 @@ func TestMessageSyntaxValidator(t *testing.T) {
 	})
 
 	t.Run("block gas limit fails", func(t *testing.T) {
-		msg, err := types.NewSignedMessage(ctx, *newMessage(t, alice, bob, 100, 5, 1, types.BlockGasLimit+1), signer)
+		msg, err := types.NewSignedMessage(ctx, *newMessage(t, alice, bob, 100, 5, 1, constants.BlockGasLimit+1), signer)
 		require.NoError(t, err)
 		assert.Errorf(t, validator.ValidateSignedMessageSyntax(ctx, msg), "block limit")
 	})
 
 }
 
-func newActor(t *testing.T, balanceAF int, nonce uint64) *actor.Actor {
-	actor := actor.NewActor(builtin.AccountActorCodeID, abi.NewTokenAmount(int64(balanceAF)), cid.Undef)
+func newActor(t *testing.T, balanceAF int, nonce uint64) *types.Actor {
+	actor := types.NewActor(builtin.AccountActorCodeID, abi.NewTokenAmount(int64(balanceAF)), cid.Undef)
 	actor.CallSeqNum = nonce
 	return actor
 }
 
 func newMessage(t *testing.T, from, to address.Address, nonce uint64, valueAF int,
-	gasPrice int64, gasLimit gas.Unit) *types.UnsignedMessage {
+	gasPrice int64, gasLimit types.Unit) *types.UnsignedMessage {
 	val, ok := types.NewAttoFILFromString(fmt.Sprintf("%d", valueAF), 10)
 	require.True(t, ok, "invalid attofil")
 	return types.NewMeteredMessage(
@@ -162,35 +169,47 @@ func newMessage(t *testing.T, from, to address.Address, nonce uint64, valueAF in
 		val,
 		methodID,
 		[]byte("params"),
-		types.NewGasPrice(gasPrice),
+		types.NewGasFeeCap(gasPrice),
+		types.NewGasPremium(1),
 		gasLimit,
 	)
 }
 
 // FakeIngestionValidatorAPI provides a latest state
 type FakeIngestionValidatorAPI struct {
+	Block     *block.Block
 	ActorAddr address.Address
-	Actor     *actor.Actor
+	Actor     *types.Actor
 }
 
 // NewMockIngestionValidatorAPI creates a new FakeIngestionValidatorAPI.
 func NewMockIngestionValidatorAPI() *FakeIngestionValidatorAPI {
-	return &FakeIngestionValidatorAPI{Actor: &actor.Actor{}}
+	block := &block.Block{
+		Height: 10,
+	}
+	return &FakeIngestionValidatorAPI{
+		Actor: &types.Actor{},
+		Block: block,
+	}
 }
 
 func (api *FakeIngestionValidatorAPI) Head() block.TipSetKey {
-	return block.NewTipSetKey()
+	return block.NewTipSetKey(api.Block.Cid())
 }
 
-func (api *FakeIngestionValidatorAPI) GetActorAt(ctx context.Context, key block.TipSetKey, a address.Address) (*actor.Actor, error) {
+func (api *FakeIngestionValidatorAPI) GetTipSet(key block.TipSetKey) (*block.TipSet, error) {
+	return block.NewTipSet(api.Block)
+}
+
+func (api *FakeIngestionValidatorAPI) GetActorAt(ctx context.Context, key block.TipSetKey, a address.Address) (*types.Actor, error) {
 	if a == api.ActorAddr {
 		return api.Actor, nil
 	}
-	return &actor.Actor{
+	return &types.Actor{
 		Balance: abi.NewTokenAmount(0),
 	}, nil
 }
 
-func (api *FakeIngestionValidatorAPI) AccountStateView(baseKey block.TipSetKey) (state.AccountStateView, error) {
+func (api *FakeIngestionValidatorAPI) AccountStateView(baseKey block.TipSetKey, height abi.ChainEpoch) (state.AccountStateView, error) {
 	return &state.FakeStateView{}, nil
 }

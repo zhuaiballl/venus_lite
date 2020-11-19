@@ -3,12 +3,12 @@ package message
 import (
 	"context"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 // InboxMaxAgeTipsets is maximum age (in non-empty tipsets) to permit messages to stay in the pool after reception.
@@ -30,7 +30,7 @@ type Inbox struct {
 
 // messageProvider provides message collections given their cid.
 type messageProvider interface {
-	LoadMessages(context.Context, cid.Cid) ([]*types.SignedMessage, []*types.UnsignedMessage, error)
+	LoadMetaMessages(context.Context, cid.Cid) ([]*types.SignedMessage, []*types.UnsignedMessage, error)
 }
 
 // NewInbox constructs a new inbox.
@@ -68,7 +68,7 @@ func (ib *Inbox) Pool() *Pool {
 // This removes messages from the pool that are found in the newly adopted chain and adds back
 // those from the removed chain (if any) that do not appear in the new chain.
 // The `oldChain` and `newChain` lists are expected in descending height order, and each may be empty.
-func (ib *Inbox) HandleNewHead(ctx context.Context, oldChain, newChain []block.TipSet) error {
+func (ib *Inbox) HandleNewHead(ctx context.Context, oldChain, newChain []*block.TipSet) error {
 	chainHeight, err := reorgHeight(oldChain, newChain)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (ib *Inbox) HandleNewHead(ctx context.Context, oldChain, newChain []block.T
 	for _, tipset := range oldChain {
 		for i := 0; i < tipset.Len(); i++ {
 			block := tipset.At(i)
-			secpMsgs, _, err := ib.messageProvider.LoadMessages(ctx, block.Messages.Cid)
+			secpMsgs, _, err := ib.messageProvider.LoadMetaMessages(ctx, block.Messages.Cid)
 			if err != nil {
 				return err
 			}
@@ -98,7 +98,7 @@ func (ib *Inbox) HandleNewHead(ctx context.Context, oldChain, newChain []block.T
 	var removeCids []cid.Cid
 	for _, tipset := range newChain {
 		for i := 0; i < tipset.Len(); i++ {
-			secpMsgs, _, err := ib.messageProvider.LoadMessages(ctx, tipset.At(i).Messages.Cid)
+			secpMsgs, _, err := ib.messageProvider.LoadMetaMessages(ctx, tipset.At(i).Messages.Cid)
 			if err != nil {
 				return err
 			}
@@ -127,7 +127,7 @@ func (ib *Inbox) HandleNewHead(ctx context.Context, oldChain, newChain []block.T
 // height. This prevents us from prematurely timing messages that arrive during long chains of null blocks.
 // Also when blocks fill, the rate of message processing will correspond more closely to rate of tip
 // sets than to the expected block time over short timescales.
-func timeoutMessages(ctx context.Context, pool *Pool, chains chain.TipSetProvider, head block.TipSet, maxAgeTipsets uint) error {
+func timeoutMessages(ctx context.Context, pool *Pool, chains chain.TipSetProvider, head *block.TipSet, maxAgeTipsets uint) error {
 	var err error
 
 	var minimumHeight abi.ChainEpoch

@@ -5,14 +5,17 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing/cst"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/consensus"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/repo"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/slashing"
-	appstate "github.com/filecoin-project/go-filecoin/internal/pkg/state"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor/builtin"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vmsupport"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing/cst"
+	"github.com/filecoin-project/venus/internal/pkg/beacon"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/consensus"
+	"github.com/filecoin-project/venus/internal/pkg/fork"
+	"github.com/filecoin-project/venus/internal/pkg/repo"
+	"github.com/filecoin-project/venus/internal/pkg/slashing"
+	appstate "github.com/filecoin-project/venus/internal/pkg/state"
+	"github.com/filecoin-project/venus/internal/pkg/vm/register"
+	"github.com/filecoin-project/venus/internal/pkg/vmsupport"
 )
 
 // ChainSubmodule enhances the `Node` with chain capabilities.
@@ -26,6 +29,8 @@ type ChainSubmodule struct {
 	Processor  *consensus.DefaultProcessor
 
 	StatusReporter *chain.StatusReporter
+
+	Fork fork.IFork
 }
 
 // xxx go back to using an interface here
@@ -33,7 +38,7 @@ type ChainSubmodule struct {
 	GenesisCid() cid.Cid
 	GetHead() block.TipSetKey
 	GetTipSet(block.TipSetKey) (block.TipSet, error)
-	GetTipSetState(ctx context.Context, tsKey block.TipSetKey) (state.Tree, error)
+	GetTipSetState(ctx context.Context, tsKey block.TipSetKey) (state.state, error)
 	GetTipSetStateRoot(tsKey block.TipSetKey) (cid.Cid, error)
 	GetTipSetReceiptsRoot(tsKey block.TipSetKey) (cid.Cid, error)
 	HeadEvents() *ps.PubSub
@@ -50,16 +55,20 @@ type chainConfig interface {
 }
 
 // NewChainSubmodule creates a new chain submodule.
-func NewChainSubmodule(config chainConfig, repo chainRepo, blockstore *BlockstoreSubmodule, verifier *ProofVerificationSubmodule) (ChainSubmodule, error) {
+func NewChainSubmodule(config chainConfig, repo chainRepo, blockstore *BlockstoreSubmodule, verifier *ProofVerificationSubmodule, checkPoint block.TipSetKey, drand beacon.Schedule) (ChainSubmodule, error) {
 	// initialize chain store
 	chainStatusReporter := chain.NewStatusReporter()
-	chainStore := chain.NewStore(repo.ChainDatastore(), blockstore.CborStore, chainStatusReporter, config.GenesisCid())
+	chainStore := chain.NewStore(repo.ChainDatastore(), blockstore.CborStore, blockstore.Blockstore, chainStatusReporter, checkPoint, config.GenesisCid())
 
 	actorState := appstate.NewTipSetStateViewer(chainStore, blockstore.CborStore)
 	messageStore := chain.NewMessageStore(blockstore.Blockstore)
-	chainState := cst.NewChainStateReadWriter(chainStore, messageStore, blockstore.Blockstore, builtin.DefaultActors)
+	chainState := cst.NewChainStateReadWriter(chainStore, messageStore, blockstore.Blockstore, register.DefaultActors, drand)
 	faultChecker := slashing.NewFaultChecker(chainState)
 	syscalls := vmsupport.NewSyscalls(faultChecker, verifier.ProofVerifier)
+	fork, err := fork.NewChainFork(chainState, blockstore.CborStore, blockstore.Blockstore)
+	if err != nil {
+		return ChainSubmodule{}, err
+	}
 	processor := consensus.NewDefaultProcessor(syscalls, chainState)
 
 	return ChainSubmodule{
@@ -69,6 +78,7 @@ func NewChainSubmodule(config chainConfig, repo chainRepo, blockstore *Blockstor
 		State:          chainState,
 		Processor:      processor,
 		StatusReporter: chainStatusReporter,
+		Fork:           fork,
 	}, nil
 }
 

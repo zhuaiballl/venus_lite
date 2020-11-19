@@ -5,17 +5,17 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 type chainHeadPlumbing interface {
 	ChainHeadKey() block.TipSetKey
-	ChainTipSet(key block.TipSetKey) (block.TipSet, error)
+	ChainTipSet(key block.TipSetKey) (*block.TipSet, error)
 }
 
 // ChainHead gets the current head tipset from plumbing.
-func ChainHead(plumbing chainHeadPlumbing) (block.TipSet, error) {
+func ChainHead(plumbing chainHeadPlumbing) (*block.TipSet, error) {
 	return plumbing.ChainTipSet(plumbing.ChainHeadKey())
 }
 

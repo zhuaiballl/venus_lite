@@ -1,20 +1,19 @@
 package commands
 
 import (
-	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
-	"github.com/filecoin-project/go-filecoin/build/flags"
+	"github.com/filecoin-project/venus/build/flags"
 )
 
 type versionInfo struct {
-	// Commit, is the git sha that was used to build this version of go-filecoin.
+	// Commit, is the git sha that was used to build this version of venus.
 	Commit string
 }
 
 var versionCmd = &cmds.Command{
-	Helptext: cmdkit.HelpText{
-		Tagline: "Show go-filecoin version information",
+	Helptext: cmds.HelpText{
+		Tagline: "Show venus version information",
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		return re.Emit(&versionInfo{

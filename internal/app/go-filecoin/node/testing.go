@@ -13,13 +13,15 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/fixtures/fortest"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/proofs"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/wallet"
-	gengen "github.com/filecoin-project/go-filecoin/tools/gengen/util"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/venus/fixtures/fortest"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/proofs"
+	"github.com/filecoin-project/venus/internal/pkg/vm"
+	"github.com/filecoin-project/venus/internal/pkg/wallet"
+	gengen "github.com/filecoin-project/venus/tools/gengen/util"
 )
 
 // ChainSeed is a generalized struct for configuring node
@@ -35,10 +37,11 @@ func MakeChainSeed(t *testing.T, cfg *gengen.GenesisCfg) *ChainSeed {
 
 	mds := ds.NewMapDatastore()
 	bstore := blockstore.NewBlockstore(mds)
-
-	info, err := gengen.GenGen(context.TODO(), cfg, bstore)
+	vmStorage := vm.NewStorage(bstore)
+	info, err := gengen.GenGen(context.TODO(), cfg, vmStorage)
 	require.NoError(t, err)
-
+	err = vmStorage.Flush()
+	require.NoError(t, err)
 	return &ChainSeed{
 		info:   info,
 		bstore: bstore,
@@ -92,7 +95,6 @@ func (cs *ChainSeed) GiveMiner(t *testing.T, nd *Node, which int) (address.Addre
 	t.Helper()
 	cfg := nd.Repo.Config()
 	m := cs.info.Miners[which]
-	cfg.Mining.MinerAddress = m.Address
 
 	require.NoError(t, nd.Repo.ReplaceConfig(cfg))
 
@@ -117,15 +119,6 @@ func (cs *ChainSeed) Addr(t *testing.T, key int) address.Address {
 
 // ConfigOpt mutates a node config post initialization
 type ConfigOpt func(*config.Config)
-
-// MinerConfigOpt is a config option that sets a node's miner address to one of
-// the chain seed's miner addresses
-func (cs *ChainSeed) MinerConfigOpt(which int) ConfigOpt {
-	return func(cfg *config.Config) {
-		m := cs.info.Miners[which]
-		cfg.Mining.MinerAddress = m.Address
-	}
-}
 
 // MinerInitOpt is a node init option that imports the key for the miner's owner
 func (cs *ChainSeed) MinerInitOpt(which int) InitOpt {
@@ -217,6 +210,7 @@ func MakeTestGenCfg(t *testing.T, numSectors int) *gengen.GenesisCfg {
 				PeerID:           mustPeerID(PeerKeys[0]).Pretty(),
 				CommittedSectors: commCfgs,
 				SealProofType:    constants.DevSealProofType,
+				MarketBalance:    abi.NewTokenAmount(0),
 			},
 		},
 		Network: "gfctest",

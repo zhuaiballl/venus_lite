@@ -2,19 +2,22 @@ package runtime
 
 import (
 	"fmt"
-
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/cbor"
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/exitcode"
 	specsruntime "github.com/filecoin-project/specs-actors/actors/runtime"
-	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
 )
 
 // Runtime has operations in the VM that are exposed to all actors.
 type Runtime interface {
 	// CurrentEpoch is the current chain epoch.
 	CurrentEpoch() abi.ChainEpoch
+
+	NtwkVersion() network.Version
 }
 
 // InvocationContext is passed to the actors on each method call.
@@ -34,7 +37,7 @@ type InvocationContext interface {
 	// StateHandle handles access to the actor state.
 	State() specsruntime.StateHandle
 	// Send allows actors to invoke methods on other actors
-	Send(toAddr address.Address, methodNum abi.MethodNum, params specsruntime.CBORMarshaler, value abi.TokenAmount) (specsruntime.SendReturn, exitcode.ExitCode)
+	Send(toAddr address.Address, methodNum abi.MethodNum, params cbor.Marshaler, value abi.TokenAmount, out cbor.Er) exitcode.ExitCode
 	// Balance is the current balance on the current actors account.
 	//
 	// Note: the value received for this invocation is already reflected on the balance.

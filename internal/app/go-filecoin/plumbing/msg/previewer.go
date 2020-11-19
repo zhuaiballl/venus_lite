@@ -4,20 +4,20 @@ import (
 	"context"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/state"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/vm/state"
 )
 
 // Abstracts over a store of blockchain state.
 type previewerChainReader interface {
 	GetHead() block.TipSetKey
 	GetTipSetState(context.Context, block.TipSetKey) (state.Tree, error)
-	GetTipSet(block.TipSetKey) (block.TipSet, error)
+	GetTipSet(block.TipSetKey) (*block.TipSet, error)
 }
 
 // Dragons: delete
@@ -42,6 +42,6 @@ func NewPreviewer(chainReader previewerChainReader, cst cbor.IpldStore, bs bstor
 }
 
 // Preview sends a read-only message to an actor.
-func (p *Previewer) Preview(ctx context.Context, optFrom, to address.Address, method abi.MethodNum, params ...interface{}) (gas.Unit, error) {
+func (p *Previewer) Preview(ctx context.Context, optFrom, to address.Address, method abi.MethodNum, params ...interface{}) (types.Unit, error) {
 	panic("unimplemented")
 }

@@ -3,18 +3,15 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/filecoin-project/go-address"
-	cmdkit "github.com/ipfs/go-ipfs-cmdkit"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	files "github.com/ipfs/go-ipfs-files"
-
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
 )
 
 var walletCmd = &cmds.Command{
-	Helptext: cmdkit.HelpText{
+	Helptext: cmds.HelpText{
 		Tagline: "Manage your filecoin wallets",
 	},
 	Subcommands: map[string]*cmds.Command{
@@ -25,13 +22,14 @@ var walletCmd = &cmds.Command{
 }
 
 var addrsCmd = &cmds.Command{
-	Helptext: cmdkit.HelpText{
+	Helptext: cmds.HelpText{
 		Tagline: "Interact with addresses",
 	},
 	Subcommands: map[string]*cmds.Command{
-		"ls":      addrsLsCmd,
-		"new":     addrsNewCmd,
-		"default": defaultAddressCmd,
+		"ls":          addrsLsCmd,
+		"new":         addrsNewCmd,
+		"default":     defaultAddressCmd,
+		"set-default": setDefaultAddressCmd,
 	},
 }
 
@@ -62,8 +60,8 @@ var addrsNewCmd = &cmds.Command{
 		}
 		return re.Emit(&AddressResult{addr})
 	},
-	Options: []cmdkit.Option{
-		cmdkit.StringOption("type", "The type of address to create: bls or secp256k1 (default)").WithDefault("secp256k1"),
+	Options: []cmds.Option{
+		cmds.StringOption("type", "The type of address to create: bls or secp256k1 (default)").WithDefault("secp256k1"),
 	},
 	Type: &AddressResult{},
 }
@@ -94,9 +92,29 @@ var defaultAddressCmd = &cmds.Command{
 	Type: &AddressResult{},
 }
 
+var setDefaultAddressCmd = &cmds.Command{
+	Arguments: []cmds.Argument{
+		cmds.StringArg("address", true, false, "Address to set default for"),
+	},
+	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
+		addr, err := address.NewFromString(req.Arguments[0])
+		if err != nil {
+			return err
+		}
+
+		err = GetPorcelainAPI(env).SetWalletDefaultAddress(addr)
+		if err != nil {
+			return err
+		}
+
+		return re.Emit(&AddressResult{addr})
+	},
+	Type: &AddressResult{},
+}
+
 var balanceCmd = &cmds.Command{
-	Arguments: []cmdkit.Argument{
-		cmdkit.StringArg("address", true, false, "Address to get balance for"),
+	Arguments: []cmds.Argument{
+		cmds.StringArg("address", true, false, "Address to get balance for"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		addr, err := address.NewFromString(req.Arguments[0])
@@ -119,8 +137,8 @@ type WalletSerializeResult struct {
 }
 
 var walletImportCmd = &cmds.Command{
-	Arguments: []cmdkit.Argument{
-		cmdkit.FileArg("walletFile", true, false, "File containing wallet data to import").EnableStdin(),
+	Arguments: []cmds.Argument{
+		cmds.FileArg("walletFile", true, false, "File containing wallet data to import").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		iter := req.Files.Entries()
@@ -159,8 +177,8 @@ var walletImportCmd = &cmds.Command{
 }
 
 var walletExportCmd = &cmds.Command{
-	Arguments: []cmdkit.Argument{
-		cmdkit.StringArg("addresses", true, true, "Addresses of keys to export").EnableStdin(),
+	Arguments: []cmds.Argument{
+		cmds.StringArg("addresses", true, true, "Addresses of keys to export").EnableStdin(),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		addrs := make([]address.Address, len(req.Arguments))

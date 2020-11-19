@@ -3,7 +3,7 @@ package consensus
 // This interface is (mostly) stateless.  All of its methods are
 // pure functions that only depend on their inputs.
 
-// Note: State does creep in through the cbor and block stores used to keep state tree and
+// Note: state does creep in through the cbor and block stores used to keep state tree and
 // actor storage data in the Expected implementation.  However those stores
 // are global to the filecoin node so accessing the correct state is simple.
 // Furthermore these stores are providing content addressed values.
@@ -13,12 +13,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
-	fbig "github.com/filecoin-project/specs-actors/actors/abi/big"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/vm"
 )
 
 // Protocol is an interface defining a blockchain consensus protocol.  The
@@ -29,8 +29,13 @@ import (
 type Protocol interface {
 	// RunStateTransition returns the state root CID resulting from applying the input ts to the
 	// prior `stateID`.  It returns an error if the transition is invalid.
-	RunStateTransition(ctx context.Context, ts block.TipSet, blsMsgs [][]*types.UnsignedMessage, secpMsgs [][]*types.SignedMessage, parentWeight fbig.Int, parentStateRoot cid.Cid, parentReceiptRoot cid.Cid) (cid.Cid, []vm.MessageReceipt, error)
+	RunStateTransition(ctx context.Context, ts *block.TipSet, secpMessages [][]*types.SignedMessage, blsMessages [][]*types.UnsignedMessage, parentStateRoot cid.Cid) (root cid.Cid, receipts []types.MessageReceipt, err error)
 
 	// BlockTime returns the block time used by the consensus protocol.
 	BlockTime() time.Duration
+
+	// CallWithGas
+	CallWithGas(ctx context.Context, msg *types.UnsignedMessage) (*vm.Ret, error)
+
+	ValidateMining(ctx context.Context, parent, ts *block.TipSet, parentWeight big.Int, parentReceiptRoot cid.Cid) error
 }

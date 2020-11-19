@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/go-address"
-	fbig "github.com/filecoin-project/specs-actors/actors/abi/big"
+	fbig "github.com/filecoin-project/go-state-types/big"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-graphsync"
@@ -27,14 +27,14 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/clock"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	e "github.com/filecoin-project/go-filecoin/internal/pkg/enccid"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/clock"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
+	"github.com/filecoin-project/venus/internal/pkg/enccid"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/vm"
 )
 
 // fakeRequest captures the parameters necessary to uniquely
@@ -241,7 +241,7 @@ func (mgs *mockableGraphsync) stubSingleResponseWithLoader(pid peer.ID, s select
 		return bytes.NewBuffer(node.RawData()), nil
 	}
 	root := cidlink.Link{Cid: c}
-	nb := basicnode.Style.Any.NewBuilder()
+	nb := basicnode.Prototype.Any.NewBuilder()
 	err := root.Load(mgs.ctx, ipld.LinkContext{}, nb, linkLoader)
 	if err != nil {
 		mgs.stubs = append(mgs.stubs, requestResponse{
@@ -264,8 +264,8 @@ func (mgs *mockableGraphsync) stubSingleResponseWithLoader(pid peer.ID, s select
 		Cfg: &traversal.Config{
 			Ctx:        mgs.ctx,
 			LinkLoader: linkLoader,
-			LinkTargetNodeStyleChooser: func(lnk ipld.Link, lnkCtx ipld.LinkContext) (ipld.NodeStyle, error) {
-				return basicnode.Style.Any, nil
+			LinkTargetNodePrototypeChooser: func(lnk ipld.Link, lnkCtx ipld.LinkContext) (ipld.NodePrototype, error) {
+				return basicnode.Prototype.Any, nil
 			},
 		},
 	}.WalkAdv(node, s, visitor)
@@ -360,9 +360,9 @@ func simpleBlock() *block.Block {
 		ParentWeight:    fbig.Zero(),
 		Parents:         block.NewTipSetKey(),
 		Height:          0,
-		StateRoot:       e.NewCid(types.EmptyMessagesCID),
-		Messages:        e.NewCid(types.EmptyTxMetaCID),
-		MessageReceipts: e.NewCid(types.EmptyReceiptsCID),
+		StateRoot:       enccid.NewCid(types.EmptyMessagesCID),
+		Messages:        enccid.NewCid(types.EmptyTxMetaCID),
+		MessageReceipts: enccid.NewCid(types.EmptyReceiptsCID),
 		BlockSig:        &crypto.Signature{Type: crypto.SigTypeSecp256k1, Data: []byte{}},
 		BLSAggregateSig: &crypto.Signature{Type: crypto.SigTypeBLS, Data: []byte{}},
 	}
@@ -383,7 +383,7 @@ func requireSimpleValidBlock(t *testing.T, nonce uint64, miner address.Address) 
 		MhLength: -1,
 	}.Sum(bytes)
 	require.NoError(t, err)
-	b.StateRoot = e.NewCid(rawRoot)
+	b.StateRoot = enccid.NewCid(rawRoot)
 	b.Miner = miner
 	return b
 }
@@ -405,7 +405,7 @@ func (mv mockSyntaxValidator) ValidateUnsignedMessageSyntax(ctx context.Context,
 	return nil
 }
 
-func (mv mockSyntaxValidator) ValidateReceiptsSyntax(ctx context.Context, receipts []vm.MessageReceipt) error {
+func (mv mockSyntaxValidator) ValidateReceiptsSyntax(ctx context.Context, receipts []vm.BlockMessagesInfo) error {
 	return mv.validateReceiptsError
 }
 

@@ -22,23 +22,22 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr-net" //nolint
 	"github.com/pkg/errors"
-
-	"github.com/filecoin-project/go-filecoin/build/project"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/filecoin-project/venus/build/project"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 const (
 	// DefaultDaemonCmdTimeout is the default timeout for executing commands.
 	DefaultDaemonCmdTimeout = 1 * time.Minute
 	repoName                = "repo"
-	sectorsName             = "sectors"
 )
 
 // RunSuccessFirstLine executes the given command, asserts success and returns
@@ -60,9 +59,10 @@ type TestDaemon struct {
 	containerDir     string // Path to directory containing repo and sectors
 	genesisFile      string
 	keyFiles         []string
-	withMiner        address.Address
 	autoSealInterval string
+	networkName      string
 	isRelay          bool
+	offline          bool
 	initArgs         []string
 
 	firstRun bool
@@ -85,11 +85,6 @@ func (td *TestDaemon) RepoDir() string {
 	return path.Join(td.containerDir, repoName)
 }
 
-// SectorDir returns the sector root directory of the test daemon.
-func (td *TestDaemon) SectorDir() string {
-	return path.Join(td.containerDir, sectorsName)
-}
-
 // CmdAddr returns the command address of the test daemon (if it is running).
 func (td *TestDaemon) CmdAddr() (ma.Multiaddr, error) {
 	str, err := ioutil.ReadFile(filepath.Join(td.RepoDir(), "api"))
@@ -109,7 +104,8 @@ func (td *TestDaemon) Config() *config.Config {
 
 // GetMinerAddress returns the miner address for this daemon.
 func (td *TestDaemon) GetMinerAddress() address.Address {
-	return td.Config().Mining.MinerAddress
+	return td.Config().Wallet.DefaultAddress
+	//return td.Config().Mining.MinerAddress
 }
 
 // Run executes the given command against the test daemon.
@@ -407,7 +403,7 @@ func (td *TestDaemon) WaitForAPI() error {
 // CreateStorageMinerAddr issues a new message to the network, mines the message
 // and returns the address of the new miner
 // equivalent to:
-//     `go-filecoin miner create --from $TEST_ACCOUNT 20`
+//     `venus miner create --from $TEST_ACCOUNT 20`
 func (td *TestDaemon) CreateStorageMinerAddr(peer *TestDaemon, fromAddr address.Address) address.Address {
 	var wg sync.WaitGroup
 	var minerAddr address.Address
@@ -464,10 +460,10 @@ func (td *TestDaemon) UpdatePeerID() {
 
 // WaitForMessageRequireSuccess accepts a message cid and blocks until a message with matching cid is included in a
 // block. The receipt is then inspected to ensure that the corresponding message receipt had a 0 exit code.
-func (td *TestDaemon) WaitForMessageRequireSuccess(msgCid cid.Cid) *vm.MessageReceipt {
+func (td *TestDaemon) WaitForMessageRequireSuccess(msgCid cid.Cid) *types.MessageReceipt {
 	args := []string{"message", "wait", msgCid.String(), "--receipt=true", "--message=false"}
 	trim := strings.Trim(td.RunSuccess(args...).ReadStdout(), "\n")
-	rcpt := &vm.MessageReceipt{}
+	rcpt := &types.MessageReceipt{}
 	require.NoError(td.test, json.Unmarshal([]byte(trim), rcpt))
 	require.Equal(td.test, 0, int(rcpt.ExitCode))
 	return rcpt
@@ -476,7 +472,7 @@ func (td *TestDaemon) WaitForMessageRequireSuccess(msgCid cid.Cid) *vm.MessageRe
 // CreateAddress adds a new address to the daemons wallet and
 // returns it.
 // equivalent to:
-//     `go-filecoin address new`
+//     `venus address new`
 func (td *TestDaemon) CreateAddress() string {
 	td.test.Helper()
 	outNew := td.RunSuccess("address", "new")
@@ -585,7 +581,7 @@ func tryAPICheck(td *TestDaemon) error {
 		return err
 	}
 
-	_, host, err := manet.DialArgs(maddr)
+	_, host, err := manet.DialArgs(maddr) //nolint
 	if err != nil {
 		return err
 	}
@@ -618,7 +614,7 @@ func ContainerDir(dir string) func(*TestDaemon) {
 }
 
 // ShouldInit allows setting the `init` config option on the daemon. If
-// set, `go-filecoin init` is run before starting up the daemon.
+// set, `venus init` is run before starting up the daemon.
 func ShouldInit(i bool) func(*TestDaemon) {
 	return func(td *TestDaemon) {
 		td.init = i
@@ -667,13 +663,6 @@ func InitArgs(a ...string) func(*TestDaemon) {
 	}
 }
 
-// WithMiner allows setting the --with-miner flag on init.
-func WithMiner(m address.Address) func(*TestDaemon) {
-	return func(td *TestDaemon) {
-		td.withMiner = m
-	}
-}
-
 // IsRelay starts the daemon with the --is-relay option.
 func IsRelay(td *TestDaemon) {
 	td.isRelay = true
@@ -689,6 +678,8 @@ func NewDaemon(t *testing.T, options ...func(*TestDaemon)) *TestDaemon {
 		test:        t,
 		init:        true, // we want to init unless told otherwise
 		firstRun:    true,
+		offline:     false,
+		networkName: "integrationnet",
 		cmdTimeout:  DefaultDaemonCmdTimeout,
 		genesisFile: GenesisFilePath(), // default file includes all test addresses,
 	}
@@ -708,21 +699,20 @@ func NewDaemon(t *testing.T, options ...func(*TestDaemon)) *TestDaemon {
 	}
 
 	repoDirFlag := fmt.Sprintf("--repodir=%s", td.RepoDir())
-	sectorDirFlag := fmt.Sprintf("--sectordir=%s", td.SectorDir())
 
 	// build command options
-	initopts := []string{repoDirFlag, sectorDirFlag}
+	initopts := []string{repoDirFlag}
 
 	if td.genesisFile != "" {
 		initopts = append(initopts, fmt.Sprintf("--genesisfile=%s", td.genesisFile))
 	}
 
-	if td.withMiner != address.Undef {
-		initopts = append(initopts, fmt.Sprintf("--with-miner=%s", td.withMiner))
-	}
-
 	if td.autoSealInterval != "" {
 		initopts = append(initopts, fmt.Sprintf("--auto-seal-interval-seconds=%s", td.autoSealInterval))
+	}
+
+	if len(td.networkName) > 0 {
+		initopts = append(initopts, fmt.Sprintf("--network=%s", td.networkName))
 	}
 
 	for _, arg := range td.initArgs {
@@ -730,7 +720,7 @@ func NewDaemon(t *testing.T, options ...func(*TestDaemon)) *TestDaemon {
 	}
 
 	if td.init {
-		t.Logf("run: go-filecoin init %s", initopts)
+		t.Logf("run: venus init %s", initopts)
 		out, err := RunInit(td, initopts...)
 		if err != nil {
 			t.Log(string(out))
@@ -746,18 +736,20 @@ func NewDaemon(t *testing.T, options ...func(*TestDaemon)) *TestDaemon {
 	swarmAddr := "/ip4/127.0.0.1/tcp/0"
 	swarmListenFlag := fmt.Sprintf("--swarmlisten=%s", swarmAddr)
 
-	blockTimeFlag := fmt.Sprintf("--block-time=%s", BlockTimeTest)
-
-	td.daemonArgs = []string{filecoinBin, "daemon", repoDirFlag, cmdAPIAddrFlag, swarmListenFlag, blockTimeFlag}
+	td.daemonArgs = []string{filecoinBin, "daemon", repoDirFlag, cmdAPIAddrFlag, swarmListenFlag}
 
 	if td.isRelay {
 		td.daemonArgs = append(td.daemonArgs, "--is-relay")
 	}
 
+	if td.offline {
+		td.daemonArgs = append(td.daemonArgs, "--offline")
+	}
+
 	return td
 }
 
-// RunInit is the equivalent of executing `go-filecoin init`.
+// RunInit is the equivalent of executing `venus init`.
 func RunInit(td *TestDaemon, opts ...string) ([]byte, error) {
 	filecoinBin := MustGetFilecoinBinary()
 

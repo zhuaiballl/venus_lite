@@ -5,12 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/consensus"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/journal"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/message"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/net/msgsub"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/net/pubsub"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/consensus"
+	"github.com/filecoin-project/venus/internal/pkg/journal"
+	"github.com/filecoin-project/venus/internal/pkg/message"
+	"github.com/filecoin-project/venus/internal/pkg/net/msgsub"
+	"github.com/filecoin-project/venus/internal/pkg/net/pubsub"
 )
 
 // MessagingSubmodule enhances the `Node` with internal messaging capabilities.
@@ -38,7 +38,8 @@ type messagingRepo interface {
 }
 
 // NewMessagingSubmodule creates a new discovery submodule.
-func NewMessagingSubmodule(ctx context.Context, config messagingConfig, repo messagingRepo, network *NetworkSubmodule, chain *ChainSubmodule, wallet *WalletSubmodule) (MessagingSubmodule, error) {
+func NewMessagingSubmodule(ctx context.Context, config messagingConfig, repo messagingRepo, network *NetworkSubmodule, chain *ChainSubmodule,
+	wallet *WalletSubmodule, syncer *SyncerSubmodule) (MessagingSubmodule, error) {
 	msgSyntaxValidator := consensus.NewMessageSyntaxValidator()
 	msgSignatureValidator := consensus.NewMessageSignatureValidator(chain.State)
 	msgPool := message.NewPool(repo.Config().Mpool, msgSyntaxValidator)
@@ -58,7 +59,8 @@ func NewMessagingSubmodule(ctx context.Context, config messagingConfig, repo mes
 	msgQueue := message.NewQueue()
 	outboxPolicy := message.NewMessageQueuePolicy(chain.MessageStore, message.OutboxMaxAgeRounds)
 	msgPublisher := message.NewDefaultPublisher(pubsub.NewTopic(topic), msgPool)
-	outbox := message.NewOutbox(wallet.Signer, msgSyntaxValidator, msgQueue, msgPublisher, outboxPolicy, chain.ChainReader, chain.State, config.Journal().Topic("outbox"))
+	outbox := message.NewOutbox(wallet.Signer, msgSyntaxValidator, msgQueue, msgPublisher, outboxPolicy, chain.ChainReader, chain.State,
+		config.Journal().Topic("outbox"), syncer.Consensus)
 
 	return MessagingSubmodule{
 		Inbox:        inbox,

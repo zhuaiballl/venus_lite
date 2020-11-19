@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/filecoin-project/go-state-types/abi"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -12,9 +13,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	commands "github.com/filecoin-project/go-filecoin/cmd/go-filecoin"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	gengen "github.com/filecoin-project/go-filecoin/tools/gengen/util"
+	commands "github.com/filecoin-project/venus/cmd/go-filecoin"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	gengen "github.com/filecoin-project/venus/tools/gengen/util"
 )
 
 // GenesisInfo chains require information to start a single node with funds
@@ -55,6 +56,7 @@ func RequireGenerateGenesis(t *testing.T, funds int64, dir string, genesisTime t
 				Owner:            0,
 				CommittedSectors: commCfgs,
 				SealProofType:    constants.DevSealProofType,
+				MarketBalance:    abi.NewTokenAmount(0),
 			},
 		},
 		Network: "gfctest",
@@ -125,18 +127,18 @@ func RequireGenesis(t *testing.T, dir string, cfg *gengen.GenesisCfg) *GenesisIn
 func MustImportGenesisMiner(tn *TestNode, gi *GenesisInfo) {
 	ctx := context.Background()
 
-	tn.MustRunCmd(ctx, "go-filecoin", "config", "mining.minerAddress", fmt.Sprintf("\"%s\"", gi.MinerAddress))
+	tn.MustRunCmd(ctx, "venus", "config", "mining.minerAddress", fmt.Sprintf("\"%s\"", gi.MinerAddress))
 
-	tn.MustRunCmd(ctx, "go-filecoin", "wallet", "import", gi.KeyFile)
+	tn.MustRunCmd(ctx, "venus", "wallet", "import", gi.KeyFile)
 
-	tn.MustRunCmd(ctx, "go-filecoin", "config", "wallet.defaultAddress", fmt.Sprintf("\"%s\"", gi.WalletAddress))
+	tn.MustRunCmd(ctx, "venus", "config", "wallet.defaultAddress", fmt.Sprintf("\"%s\"", gi.WalletAddress))
 
 	// Get node id
 	id := idResult{}
-	tn.MustRunCmdJSON(ctx, &id, "go-filecoin", "id")
+	tn.MustRunCmdJSON(ctx, &id, "venus", "id")
 
 	// Update miner
-	tn.MustRunCmd(ctx, "go-filecoin", "miner", "update-peerid", "--from="+gi.WalletAddress, "--gas-price=1", "--gas-limit=300", gi.MinerAddress, id.ID)
+	tn.MustRunCmd(ctx, "venus", "miner", "update-peerid", "--from="+gi.WalletAddress, "--gas-price=1", "--gas-limit=300", gi.MinerAddress, id.ID)
 }
 
 // MustInitWithGenesis init TestNode, passing in the `--genesisfile` flag, by calling MustInit

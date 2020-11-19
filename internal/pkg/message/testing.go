@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/vm"
 )
 
 // FakeProvider is a chain and actor provider for testing.
@@ -25,7 +25,7 @@ type FakeProvider struct {
 	t *testing.T
 
 	head   block.TipSetKey // Provided by GetHead and expected by others
-	actors map[address.Address]*actor.Actor
+	actors map[address.Address]*types.Actor
 }
 
 // NewFakeProvider creates a new builder and wraps with a provider.
@@ -35,7 +35,7 @@ func NewFakeProvider(t *testing.T) *FakeProvider {
 	return &FakeProvider{
 		Builder: builder,
 		t:       t,
-		actors:  make(map[address.Address]*actor.Actor)}
+		actors:  make(map[address.Address]*types.Actor)}
 }
 
 // GetHead returns the head tipset key.
@@ -49,7 +49,7 @@ func (p *FakeProvider) Head() block.TipSetKey {
 }
 
 // GetActorAt returns the actor corresponding to (key, addr) if they match those last set.
-func (p *FakeProvider) GetActorAt(ctx context.Context, key block.TipSetKey, addr address.Address) (*actor.Actor, error) {
+func (p *FakeProvider) GetActorAt(ctx context.Context, key block.TipSetKey, addr address.Address) (*types.Actor, error) {
 	if !key.Equals(p.head) {
 		return nil, errors.Errorf("No such tipset %s, expected %s", key, p.head)
 	}
@@ -60,6 +60,11 @@ func (p *FakeProvider) GetActorAt(ctx context.Context, key block.TipSetKey, addr
 	return a, nil
 }
 
+func (p *FakeProvider) LoadMessages(ctx context.Context, cid cid.Cid) ([]*types.SignedMessage, []*types.UnsignedMessage, error) {
+	msg := &types.UnsignedMessage{From: address.TestAddress, CallSeqNum: 1}
+	return []*types.SignedMessage{{Message: *msg}}, []*types.UnsignedMessage{msg}, nil
+}
+
 // SetHead sets the head tipset
 func (p *FakeProvider) SetHead(head block.TipSetKey) {
 	_, e := p.GetTipSet(head)
@@ -68,12 +73,12 @@ func (p *FakeProvider) SetHead(head block.TipSetKey) {
 }
 
 // SetActor sets an actor to be mocked on chain
-func (p *FakeProvider) SetActor(addr address.Address, act *actor.Actor) {
+func (p *FakeProvider) SetActor(addr address.Address, act *types.Actor) {
 	p.actors[addr] = act
 }
 
 // SetHeadAndActor sets the head tipset, along with the from address and actor to be provided.
-func (p *FakeProvider) SetHeadAndActor(t *testing.T, head block.TipSetKey, addr address.Address, actor *actor.Actor) {
+func (p *FakeProvider) SetHeadAndActor(t *testing.T, head block.TipSetKey, addr address.Address, actor *types.Actor) {
 	p.SetHead(head)
 	p.SetActor(addr, actor)
 }
@@ -111,8 +116,12 @@ func (v FakeValidator) ValidateSignedMessageSyntax(ctx context.Context, msg *typ
 type NullPolicy struct {
 }
 
+func (p NullPolicy) MessagesForTipset(ctx context.Context, set *block.TipSet) ([]types.ChainMsg, error) {
+	panic("implement me")
+}
+
 // HandleNewHead does nothing.
-func (NullPolicy) HandleNewHead(ctx context.Context, target PolicyTarget, oldChain, newChain []block.TipSet) error {
+func (NullPolicy) HandleNewHead(ctx context.Context, target PolicyTarget, oldChain, newChain []*block.TipSet) error {
 	return nil
 }
 
@@ -125,4 +134,18 @@ type MockNetworkPublisher struct {
 func (p *MockNetworkPublisher) Publish(ctx context.Context, data []byte) error {
 	p.Data = data
 	return nil
+}
+
+type MockGasPredictor struct {
+	gas string
+}
+
+func NewGasPredictor(gas string) *MockGasPredictor {
+	return &MockGasPredictor{
+		gas: gas,
+	}
+}
+
+func (gas *MockGasPredictor) CallWithGas(ctx context.Context, msg *types.UnsignedMessage) (*vm.Ret, error) {
+	return &vm.Ret{}, nil
 }

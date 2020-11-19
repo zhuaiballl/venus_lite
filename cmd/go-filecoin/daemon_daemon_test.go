@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	manet "github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr-net" //nolint
 
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +23,7 @@ func TestDaemonStartupMessage(t *testing.T) {
 	daemon.ShutdownSuccess()
 
 	out := daemon.ReadStdout()
-	assert.Regexp(t, "^\"My peer ID is [a-zA-Z0-9]*", out)
+	assert.Regexp(t, "\"My peer ID is [a-zA-Z0-9]*", out)
 	assert.Regexp(t, "\\n\"Swarm listening on.*", out)
 }
 
@@ -52,7 +52,7 @@ func TestDaemonCORS(t *testing.T) {
 		maddr, err := td.CmdAddr()
 		assert.NoError(t, err)
 
-		_, host, err := manet.DialArgs(maddr)
+		_, host, err := manet.DialArgs(maddr) //nolint
 		assert.NoError(t, err)
 
 		url := fmt.Sprintf("http://%s/api/id", host)
@@ -92,7 +92,7 @@ func TestDaemonCORS(t *testing.T) {
 		maddr, err := td.CmdAddr()
 		assert.NoError(t, err)
 
-		_, host, err := manet.DialArgs(maddr)
+		_, host, err := manet.DialArgs(maddr) //nolint
 		assert.NoError(t, err)
 
 		url := fmt.Sprintf("http://%s/api/id", host)
@@ -114,7 +114,7 @@ func TestDaemonOverHttp(t *testing.T) {
 	maddr, err := td.CmdAddr()
 	require.NoError(t, err)
 
-	_, host, err := manet.DialArgs(maddr)
+	_, host, err := manet.DialArgs(maddr) //nolint
 	require.NoError(t, err)
 
 	url := fmt.Sprintf("http://%s/api/daemon", host)

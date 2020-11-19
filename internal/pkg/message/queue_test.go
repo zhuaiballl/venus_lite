@@ -9,10 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/message"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
+	"github.com/filecoin-project/venus/internal/pkg/message"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func TestMessageQueue(t *testing.T) {
@@ -20,7 +19,7 @@ func TestMessageQueue(t *testing.T) {
 
 	// Individual tests share a MessageMaker so not parallel (but quick)
 	keys := types.MustGenerateKeyInfo(2, 42)
-	mm := vm.NewMessageMaker(t, keys)
+	mm := types.NewMessageMaker(t, keys)
 
 	alice := mm.Addresses()[0]
 	bob := mm.Addresses()[1]

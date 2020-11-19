@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/filecoin-project/go-multistore"
 	ds "github.com/ipfs/go-datastore"
 	badgerds "github.com/ipfs/go-ds-badger2"
 	lockfile "github.com/ipfs/go-fs-lock"
@@ -19,19 +20,19 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/config"
 )
 
 const (
 	// apiFile is the filename containing the filecoin node's api address.
-	apiFile                = "api"
-	configFilename         = "config.json"
-	tempConfigFilename     = ".config.json.temp"
-	lockFile               = "repo.lock"
-	versionFilename        = "version"
-	walletDatastorePrefix  = "wallet"
-	chainDatastorePrefix   = "chain"
-	dealsDatastorePrefix   = "deals"
+	apiFile               = "api"
+	configFilename        = "config.json"
+	tempConfigFilename    = ".config.json.temp"
+	lockFile              = "repo.lock"
+	versionFilename       = "version"
+	walletDatastorePrefix = "wallet"
+	chainDatastorePrefix  = "chain"
+	// dealsDatastorePrefix   = "deals"
 	snapshotStorePrefix    = "snapshots"
 	snapshotFilenamePrefix = "snapshot"
 )
@@ -48,11 +49,12 @@ type FSRepo struct {
 	lk  sync.RWMutex
 	cfg *config.Config
 
-	ds       Datastore
-	keystore keystore.Keystore
-	walletDs Datastore
-	chainDs  Datastore
-	dealsDs  Datastore
+	ds        Datastore
+	stagingDs Datastore
+	mds       *multistore.MultiStore
+	keystore  keystore.Keystore
+	walletDs  Datastore
+	chainDs   Datastore
 
 	// lockfile is the file system lock to prevent others from opening the same repo.
 	lockfile io.Closer
@@ -140,7 +142,7 @@ func OpenFSRepo(repoPath string, version uint) (*FSRepo, error) {
 	}
 
 	if !hasConfig {
-		return nil, errors.Errorf("no repo found at %s; run: 'go-filecoin init [--repodir=%s]'", repoPath, repoPath)
+		return nil, errors.Errorf("no repo found at %s; run: 'venus init [--repodir=%s]'", repoPath, repoPath)
 	}
 
 	info, err := os.Stat(repoPath)
@@ -197,10 +199,6 @@ func (r *FSRepo) loadFromDisk() error {
 		return errors.Wrap(err, "failed to read version")
 	}
 
-	if localVersion < r.version {
-		return fmt.Errorf("out of date repo version, got %d expected %d. Migrate with tools/migration/go-filecoin-migrate", localVersion, Version)
-	}
-
 	if localVersion > r.version {
 		return fmt.Errorf("binary needs update to handle repo version, got %d expected %d. Update binary to latest release", localVersion, Version)
 	}
@@ -225,9 +223,10 @@ func (r *FSRepo) loadFromDisk() error {
 		return errors.Wrap(err, "failed to open chain datastore")
 	}
 
-	if err := r.openDealsDatastore(); err != nil {
-		return errors.Wrap(err, "failed to open deals datastore")
+	if err := r.openMultiStore(); err != nil {
+		return errors.Wrap(err, "failed to open staging datastore")
 	}
+
 	return nil
 }
 
@@ -289,11 +288,6 @@ func (r *FSRepo) ChainDatastore() Datastore {
 	return r.chainDs
 }
 
-// DealsDatastore returns the deals datastore.
-func (r *FSRepo) DealsDatastore() Datastore {
-	return r.dealsDs
-}
-
 // Version returns the version of the repo
 func (r *FSRepo) Version() uint {
 	return r.version
@@ -318,8 +312,12 @@ func (r *FSRepo) Close() error {
 		return errors.Wrap(err, "failed to close chain datastore")
 	}
 
-	if err := r.dealsDs.Close(); err != nil {
-		return errors.Wrap(err, "failed to close miner deals datastore")
+	if err := r.mds.Close(); err != nil {
+		return errors.Wrap(err, "failed to close mds datastore")
+	}
+
+	if err := r.stagingDs.Close(); err != nil {
+		return errors.Wrap(err, "failed to close stagingDs datastore")
 	}
 
 	if err := r.removeAPIFile(); err != nil {
@@ -434,14 +432,18 @@ func (r *FSRepo) openWalletDatastore() error {
 	return nil
 }
 
-func (r *FSRepo) openDealsDatastore() error {
-	ds, err := badgerds.NewDatastore(filepath.Join(r.path, dealsDatastorePrefix), badgerOptions())
+func (r *FSRepo) openMultiStore() error {
+	var err error
+	r.stagingDs, err = badgerds.NewDatastore(filepath.Join(r.path, "/staging"), badgerOptions())
 	if err != nil {
 		return err
 	}
 
-	r.dealsDs = ds
-
+	mds, err := multistore.NewMultiDstore(r.stagingDs)
+	if err != nil {
+		return err
+	}
+	r.mds = mds
 	return nil
 }
 
@@ -594,5 +596,6 @@ func (r *FSRepo) APIAddr() (string, error) {
 func badgerOptions() *badgerds.Options {
 	result := &badgerds.DefaultOptions
 	result.Truncate = true
+	result.MaxTableSize = 64 << 21
 	return result
 }

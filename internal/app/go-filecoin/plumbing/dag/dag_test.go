@@ -14,9 +14,9 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func TestDAGGet(t *testing.T) {
@@ -63,7 +63,7 @@ func TestDAGGet(t *testing.T) {
 		dserv := merkledag.NewDAGService(blkserv)
 		dag := NewDAG(dserv)
 
-		ipldnode := chain.NewBuilder(t, address.Undef).NewGenesis().At(0).ToNode()
+		ipldnode := chain.NewBuilder(t, address.Undef).Genesis().At(0).ToNode()
 
 		// put into out blockservice
 		assert.NoError(t, blkserv.AddBlock(ipldnode))

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/go-filecoin/build/project"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/build/project"
+	"github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 // GetFreePort gets a free port from the kernel
@@ -41,7 +41,7 @@ func MustGetFilecoinBinary() string {
 func GetFilecoinBinary() (string, error) {
 	bin, provided := testflags.BinaryPath()
 	if !provided {
-		bin = project.Root("go-filecoin")
+		bin = project.Root("venus")
 	}
 
 	_, err := os.Stat(bin)

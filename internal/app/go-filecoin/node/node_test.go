@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/node"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/node/test"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/proofs"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/repo"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	gengen "github.com/filecoin-project/go-filecoin/tools/gengen/util"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/node"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/node/test"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/proofs"
+	"github.com/filecoin-project/venus/internal/pkg/repo"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	gengen "github.com/filecoin-project/venus/tools/gengen/util"
 )
 
 func TestNodeConstruct(t *testing.T) {
@@ -65,6 +65,7 @@ func TestConnectsToBootstrapNodes(t *testing.T) {
 
 		require.NoError(t, node.Init(ctx, r, gengen.DefaultGenesis))
 		r.Config().Bootstrap.Addresses = []string{}
+		r.Config().Bootstrap.MinPeerThreshold = 0
 		opts, err := node.OptionsFromRepo(r)
 		require.NoError(t, err)
 
@@ -92,6 +93,7 @@ func TestConnectsToBootstrapNodes(t *testing.T) {
 		// Create a node with the nodes above as bootstrap nodes.
 		r := repo.NewInMemoryRepo()
 		r.Config().Swarm.Address = "/ip4/0.0.0.0/tcp/0"
+		r.Config().Bootstrap.MinPeerThreshold = 0
 
 		require.NoError(t, node.Init(ctx, r, gengen.DefaultGenesis))
 		r.Config().Bootstrap.Addresses = []string{peer1, peer2}
@@ -154,27 +156,8 @@ func TestNodeStartMining(t *testing.T) {
 
 	seed.GiveKey(t, minerNode, 0)
 	seed.GiveMiner(t, minerNode, 0) // TODO: update to accommodate new go-fil-markets integration
-	// Start mining give error for fail to get miner actor from the heaviest tipset stateroot
-	assert.Contains(t, minerNode.StartMining(ctx).Error(), "failed to setup mining")
 
 	assert.NoError(t, minerNode.Start(ctx))
-
-	t.Run("Start/Stop/Start results in a MiningScheduler that is started", func(t *testing.T) {
-		assert.NoError(t, minerNode.StartMining(ctx))
-		defer minerNode.StopMining(ctx)
-		assert.True(t, minerNode.BlockMining.MiningScheduler.IsStarted())
-		minerNode.StopMining(ctx)
-		assert.False(t, minerNode.BlockMining.MiningScheduler.IsStarted())
-		assert.NoError(t, minerNode.StartMining(ctx))
-		assert.True(t, minerNode.BlockMining.MiningScheduler.IsStarted())
-	})
-
-	t.Run("Start + Start gives an error message saying mining is already started", func(t *testing.T) {
-		assert.NoError(t, minerNode.StartMining(ctx))
-		defer minerNode.StopMining(ctx)
-		err := minerNode.StartMining(ctx)
-		assert.Error(t, err, "node is already mining")
-	})
 }
 
 func TestOptionWithError(t *testing.T) {
@@ -202,8 +185,6 @@ func TestOptionWithError(t *testing.T) {
 func TestNodeConfig(t *testing.T) {
 	tf.UnitTest(t)
 
-	defaultCfg := config.NewDefaultConfig()
-
 	// fake mining
 	verifier := &proofs.FakeVerifier{}
 
@@ -228,7 +209,6 @@ func TestNodeConfig(t *testing.T) {
 	cfg := n.Repo.Config()
 
 	assert.Equal(t, true, n.OfflineMode)
-	assert.Equal(t, defaultCfg.Mining, cfg.Mining)
 	assert.Equal(t, &config.SwarmConfig{
 		Address: "/ip4/127.0.0.1/tcp/0",
 	}, cfg.Swarm)

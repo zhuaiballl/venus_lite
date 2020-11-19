@@ -7,9 +7,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-pubsub"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/consensus"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/metrics"
+	"github.com/filecoin-project/venus/internal/pkg/consensus"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
+	"github.com/filecoin-project/venus/internal/pkg/metrics"
 )
 
 var blockTopicLogger = log.Logger("net/block_validator")
@@ -30,20 +30,15 @@ func NewBlockTopicValidator(bv consensus.BlockSyntaxValidator, opts ...pubsub.Va
 			var payload Payload
 			err := encoding.Decode(msg.GetData(), &payload)
 			if err != nil {
-				blockTopicLogger.Debugf("failed to decode blocksub payload from peer %s: %s", p.String(), err.Error())
+				blockTopicLogger.Warnf("failed to decode blocksub payload from peer %s: %s", p.String(), err.Error())
 				mDecodeBlkFail.Inc(ctx, 1)
 				return false
 			}
 			if err := bv.ValidateSyntax(ctx, &payload.Header); err != nil {
-				blockTopicLogger.Debugf("failed to validate block %s from peer %s: %s", payload.Header.Cid().String(), p.String(), err.Error())
+				blockTopicLogger.Warnf("failed to validate block %s from peer %s: %s", payload.Header.Cid().String(), p.String(), err.Error())
 				mInvalidBlk.Inc(ctx, 1)
 				return false
 			}
-			// Note: there is no validation here that the BLS and SECP message CIDs included in the payload
-			// produce the AMT roots referenced in the block header.
-			// At present, those lists are ignored by chain validation anyway.
-			// Such a check happens later in block semantic validation, but it would probably be a good idea to do
-			// it here too. https://github.com/filecoin-project/go-filecoin/issues/3903
 			return true
 		},
 	}

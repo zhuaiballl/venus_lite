@@ -5,14 +5,14 @@ import (
 	"io"
 	"testing"
 
+	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/internal/vmcontext"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/vm/internal/vmcontext"
 )
 
 func init() {
@@ -49,7 +49,7 @@ func (t *testActorStateHandleState) UnmarshalCBOR(r io.Reader) error {
 func setup() testSetup {
 	initialstate := testActorStateHandleState{FieldA: "fakestate"}
 
-	store := vm.NewTestStorage(&initialstate)
+	store := vmcontext.NewTestStorage(&initialstate)
 	initialhead := store.CidOf(&initialstate)
 	ctx := fakeActorStateHandleContext{
 		head:             initialhead,
@@ -59,7 +59,7 @@ func setup() testSetup {
 	h := vmcontext.NewActorStateHandle(&ctx)
 
 	cleanup := func() {
-		// the vmcontext is supposed to call validate after each actor method
+		// the vmcontext is supposed To call validate after each actor Method
 		implH := h.(extendedStateHandle)
 		implH.Validate(func(obj interface{}) cid.Cid { return store.CidOf(obj) })
 	}
@@ -74,7 +74,7 @@ func setup() testSetup {
 func TestActorStateHandle(t *testing.T) {
 	tf.UnitTest(t)
 
-	// this test case verifies that the `Validate` works when nothing was done with the state
+	// this test case verifies that the `Validate` works when nothing was done with the stateView
 	t.Run("noop", func(t *testing.T) {
 		ts := setup()
 		defer ts.cleanup()
@@ -85,7 +85,7 @@ func TestActorStateHandle(t *testing.T) {
 		defer ts.cleanup()
 
 		var out testActorStateHandleState
-		ts.h.Readonly(&out)
+		ts.h.StateReadonly(&out)
 
 		assert.Equal(t, out, ts.initialstate)
 	})
@@ -97,7 +97,7 @@ func TestActorStateHandle(t *testing.T) {
 		defer ts.cleanup()
 
 		var out testActorStateHandleState
-		ts.h.Readonly(&out)
+		ts.h.StateReadonly(&out)
 
 		out.FieldA = "changed!"
 	})
@@ -107,8 +107,8 @@ func TestActorStateHandle(t *testing.T) {
 		defer ts.cleanup()
 
 		var out testActorStateHandleState
-		ts.h.Readonly(&out)
-		ts.h.Readonly(&out)
+		ts.h.StateReadonly(&out)
+		ts.h.StateReadonly(&out)
 
 		assert.Equal(t, out, ts.initialstate)
 	})
@@ -118,11 +118,10 @@ func TestActorStateHandle(t *testing.T) {
 		defer ts.cleanup()
 
 		var out testActorStateHandleState
-		ts.h.Readonly(&out)
+		ts.h.StateReadonly(&out)
 
-		ts.h.Transaction(&out, func() interface{} {
+		ts.h.StateTransaction(&out, func() {
 			out.FieldA = "changed!"
-			return nil
 		})
 	})
 
@@ -131,19 +130,17 @@ func TestActorStateHandle(t *testing.T) {
 		defer ts.cleanup()
 
 		var out testActorStateHandleState
-		expected := "new state"
+		expected := "new stateView"
 
-		ts.h.Transaction(&out, func() interface{} {
-			// check state is not what we are going to use
+		ts.h.StateTransaction(&out, func() {
+			// check stateView is not what we are going To use
 			assert.NotEqual(t, out.FieldA, expected)
 			out.FieldA = expected
-
-			return nil
 		})
 		// check that it changed
 		assert.Equal(t, out.FieldA, expected)
 
-		ts.h.Readonly(&out)
+		ts.h.StateReadonly(&out)
 		// really check by loading it again
 		assert.Equal(t, out.FieldA, expected)
 	})
@@ -155,24 +152,23 @@ func TestActorStateHandle(t *testing.T) {
 		var out testActorStateHandleState
 
 		// should work, mutating is not compulsory
-		ts.h.Transaction(&out, func() interface{} {
-			return nil
-		})
+		ts.h.StateTransaction(&out, func() {})
 
 		assert.Equal(t, out, ts.initialstate)
 	})
 
-	t.Run("transaction returning value", func(t *testing.T) {
+	t.Run("transaction returning Value", func(t *testing.T) {
 		ts := setup()
 		defer ts.cleanup()
 
 		var out testActorStateHandleState
 
-		v := ts.h.Transaction(&out, func() interface{} {
-			return out.FieldA
+		lastResult := ""
+		ts.h.StateTransaction(&out, func() {
+			lastResult = out.FieldA
 		})
 
-		assert.Equal(t, v, ts.initialstate.FieldA)
+		assert.Equal(t, lastResult, ts.initialstate.FieldA)
 	})
 
 	t.Run("mutated after the transaction", func(t *testing.T) {
@@ -183,9 +179,10 @@ func TestActorStateHandle(t *testing.T) {
 
 		var out testActorStateHandleState
 
-		ts.h.Transaction(&out, func() interface{} {
-			out.FieldA = "changed!"
-			return nil
+		lastResult := ""
+		ts.h.StateTransaction(&out, func() {
+			lastResult = "changed!"
+			out.FieldA = lastResult
 		})
 
 		out.FieldA = "changed again!"
@@ -197,19 +194,20 @@ func TestActorStateHandle(t *testing.T) {
 
 		var out testActorStateHandleState
 
-		ts.h.Transaction(&out, func() interface{} {
-			out.FieldA = "changed!"
-			return nil
+		lastResult := ""
+		ts.h.StateTransaction(&out, func() {
+			lastResult = "changed!"
+			out.FieldA = lastResult
 		})
 
-		v := ts.h.Transaction(&out, func() interface{} {
-			out.FieldA = "again!"
-			return out.FieldA
+		ts.h.StateTransaction(&out, func() {
+			lastResult = "again!"
+			out.FieldA = lastResult
 		})
 
-		ts.h.Readonly(&out)
+		ts.h.StateReadonly(&out)
 		// really check by loading it again
-		assert.Equal(t, out.FieldA, v)
+		assert.Equal(t, out.FieldA, lastResult)
 	})
 }
 
@@ -217,7 +215,7 @@ func TestActorStateHandleNilState(t *testing.T) {
 	tf.UnitTest(t)
 
 	setup := func() (runtime.StateHandle, func()) {
-		store := vm.NewTestStorage(nil)
+		store := vmcontext.NewTestStorage(nil)
 		ctx := fakeActorStateHandleContext{
 			store:            store,
 			allowSideEffects: true,
@@ -226,7 +224,7 @@ func TestActorStateHandleNilState(t *testing.T) {
 		h := vmcontext.NewActorStateHandle(&ctx)
 
 		cleanup := func() {
-			// the vmcontext is supposed to call validate after each actor method
+			// the vmcontext is supposed To call validate after each actor Method
 			implH := h.(extendedStateHandle)
 			implH.Validate(func(obj interface{}) cid.Cid { return store.CidOf(obj) })
 		}
@@ -234,56 +232,50 @@ func TestActorStateHandleNilState(t *testing.T) {
 		return h, cleanup
 	}
 
-	t.Run("readonly on nil state is not allowed", func(t *testing.T) {
+	t.Run("readonly on nil stateView is not allowed", func(t *testing.T) {
 		defer mustPanic(t)
 
 		h, cleanup := setup()
 		defer cleanup()
 
 		var out testActorStateHandleState
-		h.Readonly(&out)
+		h.StateReadonly(&out)
 	})
 
-	t.Run("transaction on nil state", func(t *testing.T) {
+	t.Run("transaction on nil stateView", func(t *testing.T) {
 		h, cleanup := setup()
 		defer cleanup()
 
 		var out testActorStateHandleState
-		h.Transaction(&out, func() interface{} {
-			return nil
-		})
+		h.StateTransaction(&out, func() {})
 	})
 
-	t.Run("state initialized after transaction", func(t *testing.T) {
+	t.Run("stateView initialized after transaction", func(t *testing.T) {
 		h, cleanup := setup()
 		defer cleanup()
 
 		var out testActorStateHandleState
-		h.Transaction(&out, func() interface{} {
-			return nil
-		})
+		h.StateTransaction(&out, func() {})
 
-		h.Readonly(&out) // should not fail
+		h.StateReadonly(&out) // should not fail
 	})
 
-	t.Run("readonly nil pointer to state", func(t *testing.T) {
+	t.Run("readonly nil pointer To stateView", func(t *testing.T) {
 		defer mustPanic(t)
 
 		h, cleanup := setup()
 		defer cleanup()
 
-		h.Readonly(nil)
+		h.StateReadonly(nil)
 	})
 
-	t.Run("transaction nil pointer to state", func(t *testing.T) {
+	t.Run("transaction nil pointer To stateView", func(t *testing.T) {
 		defer mustPanic(t)
 
 		h, cleanup := setup()
 		defer cleanup()
 
-		h.Transaction(nil, func() interface{} {
-			return nil
-		})
+		h.StateTransaction(nil, func() {})
 	})
 }
 
@@ -301,24 +293,24 @@ func (ctx *fakeActorStateHandleContext) AllowSideEffects(allow bool) {
 	ctx.allowSideEffects = allow
 }
 
-func (ctx *fakeActorStateHandleContext) Create(obj runtime.CBORMarshaler) cid.Cid {
-	ctx.head = ctx.store.Put(obj)
+func (ctx *fakeActorStateHandleContext) Create(obj cbor.Marshaler) cid.Cid {
+	ctx.head = ctx.store.StorePut(obj)
 	return ctx.head
 }
 
-func (ctx *fakeActorStateHandleContext) Load(obj runtime.CBORUnmarshaler) cid.Cid {
-	found := ctx.store.Get(ctx.head, obj)
+func (ctx *fakeActorStateHandleContext) Load(obj cbor.Unmarshaler) cid.Cid {
+	found := ctx.store.StoreGet(ctx.head, obj)
 	if !found {
-		panic("inconsistent state")
+		panic("inconsistent stateView")
 	}
 	return ctx.head
 }
 
-func (ctx *fakeActorStateHandleContext) Replace(expected cid.Cid, obj runtime.CBORMarshaler) cid.Cid {
+func (ctx *fakeActorStateHandleContext) Replace(expected cid.Cid, obj cbor.Marshaler) cid.Cid {
 	if !ctx.head.Equals(expected) {
-		panic(fmt.Errorf("unexpected prior state %s expected %s", ctx.head, expected))
+		panic(fmt.Errorf("unexpected prior stateView %s expected %s", ctx.head, expected))
 	}
-	ctx.head = ctx.store.Put(obj)
+	ctx.head = ctx.store.StorePut(obj)
 	return ctx.head
 }
 

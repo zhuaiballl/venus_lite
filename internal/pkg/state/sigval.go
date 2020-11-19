@@ -6,8 +6,8 @@ import (
 	addr "github.com/filecoin-project/go-address"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 type AccountStateView interface {
@@ -49,6 +49,11 @@ func (v *SignatureValidator) ValidateBLSMessageAggregate(ctx context.Context, ms
 		}
 		return nil
 	}
+
+	if len(msgs) == 0 {
+		return nil
+	}
+
 	pubKeys := [][]byte{}
 	encodedMsgCids := [][]byte{}
 	for _, msg := range msgs {

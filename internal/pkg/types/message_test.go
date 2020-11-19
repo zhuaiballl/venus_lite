@@ -4,33 +4,31 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 func TestMessageMarshal(t *testing.T) {
 	tf.UnitTest(t)
 
-	addrGetter := vmaddr.NewForTestGetter()
+	addrGetter := NewForTestGetter()
 	msg := NewMeteredMessage(
 		addrGetter(),
 		addrGetter(),
 		42,
 		NewAttoFILFromFIL(17777),
-		builtin.MethodSend,
+		0,
 		[]byte("foobar"),
 		NewAttoFILFromFIL(3),
-		gas.NewGas(4),
+		NewAttoFILFromFIL(3),
+		NewGas(4),
 	)
 
 	// This check requests that you add a non-zero value for new fields above,
 	// then update the field count below.
-	require.Equal(t, 10, reflect.TypeOf(*msg).NumField())
+	require.Equal(t, 11, reflect.TypeOf(*msg).NumField())
 
 	marshalled, err := msg.Marshal()
 	assert.NoError(t, err)
@@ -48,21 +46,22 @@ func TestMessageMarshal(t *testing.T) {
 	assert.Equal(t, msg.Method, msgBack.Method)
 	assert.Equal(t, msg.Params, msgBack.Params)
 	assert.Equal(t, msg.GasLimit, msgBack.GasLimit)
-	assert.Equal(t, msg.GasPrice, msgBack.GasPrice)
+	assert.Equal(t, msg.GasFeeCap, msgBack.GasFeeCap)
+	assert.Equal(t, msg.GasPremium, msgBack.GasPremium)
 	assert.True(t, msg.Equals(&msgBack))
 }
 
 func TestMessageCid(t *testing.T) {
 	tf.UnitTest(t)
 
-	addrGetter := vmaddr.NewForTestGetter()
+	addrGetter := NewForTestGetter()
 
 	msg1 := NewUnsignedMessage(
 		addrGetter(),
 		addrGetter(),
 		0,
 		NewAttoFILFromFIL(999),
-		builtin.MethodSend,
+		0,
 		nil,
 	)
 
@@ -71,7 +70,7 @@ func TestMessageCid(t *testing.T) {
 		addrGetter(),
 		0,
 		NewAttoFILFromFIL(4004),
-		builtin.MethodSend,
+		0,
 		nil,
 	)
 
@@ -86,14 +85,14 @@ func TestMessageCid(t *testing.T) {
 func TestMessageString(t *testing.T) {
 	tf.UnitTest(t)
 
-	addrGetter := vmaddr.NewForTestGetter()
+	addrGetter := NewForTestGetter()
 
 	msg := NewUnsignedMessage(
 		addrGetter(),
 		addrGetter(),
 		0,
 		NewAttoFILFromFIL(999),
-		builtin.MethodSend,
+		0,
 		nil,
 	)
 

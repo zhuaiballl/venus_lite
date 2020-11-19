@@ -2,20 +2,15 @@ package porcelain
 
 import (
 	"context"
-	"io"
-	"time"
-
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/venus/internal/pkg/state"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/consensus"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 // API is the porcelain implementation, a set of convenience calls written on the
@@ -47,7 +42,7 @@ func New(plumbing *plumbing.API) *API {
 }
 
 // ChainHead returns the current head tipset
-func (a *API) ChainHead() (block.TipSet, error) {
+func (a *API) ChainHead() (*block.TipSet, error) {
 	return ChainHead(a)
 }
 
@@ -66,13 +61,13 @@ func (a *API) MessagePoolWait(ctx context.Context, messageCount uint) ([]*types.
 func (a *API) MinerCreate(
 	ctx context.Context,
 	accountAddr address.Address,
-	gasPrice types.AttoFIL,
-	gasLimit gas.Unit,
-	sealProofType abi.RegisteredProof,
+	gasBaseFee, gasPremium types.AttoFIL,
+	gasLimit types.Unit,
+	sealProofType abi.RegisteredSealProof,
 	pid peer.ID,
 	collateral types.AttoFIL,
 ) (_ address.Address, err error) {
-	return MinerCreate(ctx, a, accountAddr, gasPrice, gasLimit, sealProofType, pid, collateral)
+	return MinerCreate(ctx, a, accountAddr, gasBaseFee, gasPremium, gasLimit, sealProofType, pid, collateral)
 }
 
 // MinerPreviewCreate previews the Gas cost of creating a miner
@@ -81,7 +76,7 @@ func (a *API) MinerPreviewCreate(
 	fromAddr address.Address,
 	sectorSize abi.SectorSize,
 	pid peer.ID,
-) (usedGas gas.Unit, err error) {
+) (usedGas types.Unit, err error) {
 	return MinerPreviewCreate(ctx, a, fromAddr, sectorSize, pid)
 }
 
@@ -106,32 +101,22 @@ func (a *API) WalletDefaultAddress() (address.Address, error) {
 	return WalletDefaultAddress(a)
 }
 
-// SealPieceIntoNewSector writes the provided piece into a new sector
-func (a *API) SealPieceIntoNewSector(ctx context.Context, dealID abi.DealID, dealStart, dealEnd abi.ChainEpoch, pieceSize abi.UnpaddedPieceSize, pieceReader io.Reader) error {
-	return SealPieceIntoNewSector(ctx, a, dealID, dealStart, dealEnd, pieceSize, pieceReader)
-}
-
-// PingMinerWithTimeout pings a storage or retrieval miner, waiting the given
-// timeout and returning desciptive errors.
-func (a *API) PingMinerWithTimeout(
-	ctx context.Context,
-	minerPID peer.ID,
-	timeout time.Duration,
-) error {
-	return PingMinerWithTimeout(ctx, minerPID, timeout, a)
+// SetWalletDefaultAddress set the specified address as the default in the config.
+func (a *API) SetWalletDefaultAddress(addr address.Address) error {
+	return SetWalletDefaultAddress(a, addr)
 }
 
 // MinerSetWorkerAddress sets the miner worker address to the provided address
-func (a *API) MinerSetWorkerAddress(ctx context.Context, toAddr address.Address, gasPrice types.AttoFIL, gasLimit gas.Unit) (cid.Cid, error) {
-	return MinerSetWorkerAddress(ctx, a, toAddr, gasPrice, gasLimit)
+func (a *API) MinerSetWorkerAddress(ctx context.Context, toAddr address.Address, gasBaseFee, gasPremium types.AttoFIL, gasLimit types.Unit) (cid.Cid, error) {
+	return MinerSetWorkerAddress(ctx, a, toAddr, gasBaseFee, gasPremium, gasLimit)
 }
 
 // MessageWaitDone blocks until the message is on chain
-func (a *API) MessageWaitDone(ctx context.Context, msgCid cid.Cid) (*vm.MessageReceipt, error) {
+func (a *API) MessageWaitDone(ctx context.Context, msgCid cid.Cid) (*types.MessageReceipt, error) {
 	return MessageWaitDone(ctx, a, msgCid)
 }
 
-func (a *API) PowerStateView(baseKey block.TipSetKey) (consensus.PowerStateView, error) {
+func (a *API) PowerStateView(baseKey block.TipSetKey) (state.PowerStateView, error) {
 	return a.StateView(baseKey)
 }
 
@@ -139,7 +124,7 @@ func (a *API) MinerStateView(baseKey block.TipSetKey) (MinerStateView, error) {
 	return a.StateView(baseKey)
 }
 
-func (a *API) FaultsStateView(baseKey block.TipSetKey) (consensus.FaultStateView, error) {
+func (a *API) FaultsStateView(baseKey block.TipSetKey) (state.FaultStateView, error) {
 	return a.StateView(baseKey)
 }
 

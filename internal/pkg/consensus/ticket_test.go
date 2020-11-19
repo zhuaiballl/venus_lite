@@ -5,18 +5,16 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/drand"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/consensus"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/consensus"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func TestGenValidTicketChain(t *testing.T) {
@@ -51,7 +49,7 @@ func TestGenValidTicketChain(t *testing.T) {
 
 func requireValidTicket(ctx context.Context, t *testing.T, tm *consensus.TicketMachine, head block.TipSetKey, epoch abi.ChainEpoch,
 	miner, worker address.Address, signer types.Signer) {
-	electionEntry := &drand.Entry{}
+	electionEntry := &block.BeaconEntry{}
 	newPeriod := false
 	ticket, err := tm.MakeTicket(ctx, head, epoch, miner, electionEntry, newPeriod, worker, signer)
 	require.NoError(t, err)
@@ -67,10 +65,10 @@ func TestNextTicketFailsWithInvalidSigner(t *testing.T) {
 	require.NoError(t, err)
 
 	signer, _ := types.NewMockSignersAndKeyInfo(1)
-	badAddr := vmaddr.RequireIDAddress(t, 100)
+	badAddr := types.RequireIDAddress(t, 100)
 	rnd := consensus.FakeSampler{Seed: 0}
 	tm := consensus.NewTicketMachine(&rnd)
-	electionEntry := &drand.Entry{}
+	electionEntry := &block.BeaconEntry{}
 	newPeriod := false
 	badTicket, err := tm.MakeTicket(ctx, head, abi.ChainEpoch(1), miner, electionEntry, newPeriod, badAddr, signer)
 	assert.Error(t, err)

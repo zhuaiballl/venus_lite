@@ -6,23 +6,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/util/adt"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/clock"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/journal"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/message"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/clock"
+	"github.com/filecoin-project/venus/internal/pkg/journal"
+	"github.com/filecoin-project/venus/internal/pkg/message"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func newOutboxTestJournal(t *testing.T) journal.Writer {
@@ -39,11 +35,12 @@ func TestOutbox(t *testing.T) {
 		publisher := &message.MockPublisher{}
 		provider := message.NewFakeProvider(t)
 		bcast := true
+		gp := message.NewGasPredictor("gasPredictor")
 
 		ob := message.NewOutbox(w, message.FakeValidator{RejectMessages: true}, queue, publisher,
-			message.NullPolicy{}, provider, provider, newOutboxTestJournal(t))
+			message.NullPolicy{}, provider, provider, newOutboxTestJournal(t), gp)
 
-		cid, _, err := ob.Send(context.Background(), sender, sender, types.NewAttoFILFromFIL(2), types.NewGasPrice(0), gas.NewGas(0), bcast, builtin.MethodSend, adt.Empty)
+		cid, _, err := ob.Send(context.Background(), sender, sender, types.NewAttoFILFromFIL(2), types.NewGasFeeCap(0), types.NewGasPremium(0), types.NewGas(0), bcast, builtin.MethodSend, abi.Empty)
 		assert.Errorf(t, err, "for testing")
 		assert.False(t, cid.Defined())
 	})
@@ -51,19 +48,35 @@ func TestOutbox(t *testing.T) {
 	t.Run("send message enqueues and calls Publish, but respects bcast flag for broadcasting", func(t *testing.T) {
 		w, _ := types.NewMockSignersAndKeyInfo(1)
 		sender := w.Addresses[0]
-		toAddr := vmaddr.NewForTestGetter()()
+		toAddr := types.NewForTestGetter()()
 		queue := message.NewQueue()
 		publisher := &message.MockPublisher{}
 		provider := message.NewFakeProvider(t)
-
-		head := provider.BuildOneOn(block.UndefTipSet, func(b *chain.BlockBuilder) {
-			b.IncHeight(1000)
-		})
-		actr := actor.NewActor(builtin.AccountActorCodeID, abi.NewTokenAmount(0), cid.Undef)
+		gp := message.NewGasPredictor("gasPredictor")
+		actr := types.NewActor(builtin.AccountActorCodeID, abi.NewTokenAmount(0), cid.Undef)
 		actr.CallSeqNum = 42
-		provider.SetHeadAndActor(t, head.Key(), sender, actr)
 
-		ob := message.NewOutbox(w, message.FakeValidator{}, queue, publisher, message.NullPolicy{}, provider, provider, newOutboxTestJournal(t))
+		keys := types.MustGenerateKeyInfo(1, 42)
+		mm := types.NewMessageMaker(t, keys)
+		msgs := []*types.SignedMessage{
+			mm.NewSignedMessage(sender, 1),
+			mm.NewSignedMessage(sender, 2),
+			mm.NewSignedMessage(sender, 3),
+			mm.NewSignedMessage(sender, 4),
+			mm.NewSignedMessage(sender, 5),
+		}
+
+		head := provider.BuildManyOn(1001, block.UndefTipSet, func(b *chain.BlockBuilder) {
+			b.AddMessages(
+				msgs,
+				[]*types.UnsignedMessage{},
+			)
+		})
+		provider.SetHeadAndActor(t, head.Key(), sender, actr)
+		defaultPolicy := message.NewMessageQueuePolicy(provider, 10)
+
+		ob := message.NewOutbox(w, message.FakeValidator{}, queue, publisher, defaultPolicy, provider, provider, newOutboxTestJournal(t), gp)
+
 		require.Empty(t, queue.List(sender))
 		require.Nil(t, publisher.Message)
 
@@ -74,9 +87,9 @@ func TestOutbox(t *testing.T) {
 		}{{true, actr.CallSeqNum, 1000}, {false, actr.CallSeqNum + 1, 1000}}
 
 		for _, test := range testCases {
-			_, pubDone, err := ob.Send(context.Background(), sender, toAddr, types.ZeroAttoFIL, types.NewGasPrice(0), gas.NewGas(0), test.bcast, builtin.MethodSend, adt.Empty)
+			_, pubDone, err := ob.Send(context.Background(), sender, toAddr, types.ZeroAttoFIL, types.NewGasFeeCap(0), types.NewGasPremium(0), types.NewGas(0), test.bcast, builtin.MethodSend, abi.Empty)
 			require.NoError(t, err)
-			assert.Equal(t, uint64(test.height), queue.List(sender)[0].Stamp)
+			assert.ObjectsAreEqualValues(uint64(test.height), queue.List(sender)[0].Stamp)
 			require.NotNil(t, pubDone)
 			pubErr := <-pubDone
 			assert.NoError(t, pubErr)
@@ -94,27 +107,43 @@ func TestOutbox(t *testing.T) {
 
 		w, _ := types.NewMockSignersAndKeyInfo(1)
 		sender := w.Addresses[0]
-		toAddr := vmaddr.NewForTestGetter()()
+		toAddr := types.NewForTestGetter()()
 		queue := message.NewQueue()
 		publisher := &message.MockPublisher{}
 		provider := message.NewFakeProvider(t)
 		bcast := true
+		gp := message.NewGasPredictor("gasPredictor")
 
-		head := provider.BuildOneOn(block.UndefTipSet, func(b *chain.BlockBuilder) {
-			b.IncHeight(1000)
+		keys := types.MustGenerateKeyInfo(1, 42)
+		mm := types.NewMessageMaker(t, keys)
+		msgs := []*types.SignedMessage{
+			mm.NewSignedMessage(sender, 1),
+			mm.NewSignedMessage(sender, 2),
+			mm.NewSignedMessage(sender, 3),
+			mm.NewSignedMessage(sender, 4),
+			mm.NewSignedMessage(sender, 5),
+		}
+
+		head := provider.BuildManyOn(1001, block.UndefTipSet, func(b *chain.BlockBuilder) {
+			b.AddMessages(
+				msgs,
+				[]*types.UnsignedMessage{},
+			)
 		})
-		actr := actor.NewActor(builtin.AccountActorCodeID, abi.NewTokenAmount(0), cid.Undef)
+		actr := types.NewActor(builtin.AccountActorCodeID, abi.NewTokenAmount(0), cid.Undef)
 		actr.CallSeqNum = 42
-		provider.SetHeadAndActor(t, head.Key(), sender, actr)
 
-		s := message.NewOutbox(w, message.FakeValidator{}, queue, publisher, message.NullPolicy{}, provider, provider, newOutboxTestJournal(t))
+		provider.SetHeadAndActor(t, head.Key(), sender, actr)
+		defaultPolicy := message.NewMessageQueuePolicy(provider, 10)
+
+		s := message.NewOutbox(w, message.FakeValidator{}, queue, publisher, defaultPolicy, provider, provider, newOutboxTestJournal(t), gp)
 
 		var wg sync.WaitGroup
 		addTwentyMessages := func(batch int) {
 			defer wg.Done()
 			for i := 0; i < msgCount; i++ {
 				method := abi.MethodNum(batch*10000 + i)
-				_, _, err := s.Send(ctx, sender, toAddr, types.ZeroAttoFIL, types.NewGasPrice(0), gas.NewGas(0), bcast, method, adt.Empty)
+				_, _, err := s.Send(ctx, sender, toAddr, types.ZeroAttoFIL, types.NewGasFeeCap(0), types.NewGasPremium(0), types.NewGas(0), bcast, method, abi.Empty)
 				require.NoError(t, err)
 			}
 		}
@@ -140,25 +169,25 @@ func TestOutbox(t *testing.T) {
 
 		for i := 0; i < 60; i++ {
 			assert.True(t, nonces[actr.CallSeqNum+uint64(i)])
-
 		}
 	})
 
 	t.Run("fails with non-account actor", func(t *testing.T) {
 		w, _ := types.NewMockSignersAndKeyInfo(1)
 		sender := w.Addresses[0]
-		toAddr := vmaddr.NewForTestGetter()()
+		toAddr := types.NewForTestGetter()()
 		queue := message.NewQueue()
 		publisher := &message.MockPublisher{}
 		provider := message.NewFakeProvider(t)
+		gp := message.NewGasPredictor("gasPredictor")
 
-		head := provider.NewGenesis()
-		actr := actor.NewActor(builtin.StorageMarketActorCodeID, abi.NewTokenAmount(0), cid.Undef)
+		head := provider.Genesis()
+		actr := types.NewActor(builtin.StorageMarketActorCodeID, abi.NewTokenAmount(0), cid.Undef)
 		provider.SetHeadAndActor(t, head.Key(), sender, actr)
 
-		ob := message.NewOutbox(w, message.FakeValidator{}, queue, publisher, message.NullPolicy{}, provider, provider, newOutboxTestJournal(t))
+		ob := message.NewOutbox(w, message.FakeValidator{}, queue, publisher, message.NullPolicy{}, provider, provider, newOutboxTestJournal(t), gp)
 
-		_, _, err := ob.Send(context.Background(), sender, toAddr, types.ZeroAttoFIL, types.NewGasPrice(0), gas.NewGas(0), true, builtin.MethodSend, adt.Empty)
+		_, _, err := ob.Send(context.Background(), sender, toAddr, types.ZeroAttoFIL, types.NewGasFeeCap(0), types.NewGasPremium(0), types.NewGas(0), true, 0, abi.Empty)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "account or empty")
 	})

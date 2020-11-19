@@ -4,33 +4,30 @@ import (
 	"context"
 	"time"
 
-	"github.com/filecoin-project/sector-storage/ffiwrapper"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
-	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
-	"github.com/filecoin-project/specs-actors/actors/builtin/power"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-merkledag"
 	"github.com/libp2p/go-libp2p"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/internal/submodule"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing/cfg"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing/cst"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing/dag"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing/msg"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/porcelain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/clock"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/drand"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/journal"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/postgenerator"
-	drandapi "github.com/filecoin-project/go-filecoin/internal/pkg/protocol/drand"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/protocol/storage"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/repo"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/state"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/version"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/internal/submodule"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing/cfg"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing/cst"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing/dag"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing/msg"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/porcelain"
+	"github.com/filecoin-project/venus/internal/pkg/beacon"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/clock"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/journal"
+	drandapi "github.com/filecoin-project/venus/internal/pkg/protocol/drand"
+	"github.com/filecoin-project/venus/internal/pkg/repo"
+	"github.com/filecoin-project/venus/internal/pkg/specactors/policy"
+	"github.com/filecoin-project/venus/internal/pkg/util/ffiwrapper"
+	"github.com/filecoin-project/venus/internal/pkg/version"
 )
 
 // Builder is a helper to aid in the construction of a filecoin node.
@@ -39,14 +36,14 @@ type Builder struct {
 	libp2pOpts  []libp2p.Option
 	offlineMode bool
 	verifier    ffiwrapper.Verifier
-	postGen     postgenerator.PoStGenerator
 	propDelay   time.Duration
 	repo        repo.Repo
 	journal     journal.Journal
 	isRelay     bool
+	checkPoint  block.TipSetKey
 	chainClock  clock.ChainEpochClock
 	genCid      cid.Cid
-	drand       drand.IFace
+	drand       beacon.Schedule
 }
 
 // BuilderOpt is an option for building a filecoin node.
@@ -64,6 +61,14 @@ func OfflineMode(offlineMode bool) BuilderOpt {
 func IsRelay() BuilderOpt {
 	return func(c *Builder) error {
 		c.isRelay = true
+		return nil
+	}
+}
+
+// IsRelay configures node to act as a libp2p relay.
+func CheckPoint(checkPoint block.TipSetKey) BuilderOpt {
+	return func(c *Builder) error {
+		c.checkPoint = checkPoint
 		return nil
 	}
 }
@@ -104,15 +109,6 @@ func VerifierConfigOption(verifier ffiwrapper.Verifier) BuilderOpt {
 	}
 }
 
-// PoStGeneratorOption returns a builder option that sets the post generator to
-// use during block generation
-func PoStGeneratorOption(generator postgenerator.PoStGenerator) BuilderOpt {
-	return func(b *Builder) error {
-		b.postGen = generator
-		return nil
-	}
-}
-
 // ChainClockConfigOption returns a function that sets the chainClock to use in the node.
 func ChainClockConfigOption(clk clock.ChainEpochClock) BuilderOpt {
 	return func(c *Builder) error {
@@ -122,7 +118,7 @@ func ChainClockConfigOption(clk clock.ChainEpochClock) BuilderOpt {
 }
 
 // DrandConfigOption returns a function that sets the node's drand interface
-func DrandConfigOption(d drand.IFace) BuilderOpt {
+func DrandConfigOption(d beacon.Schedule) BuilderOpt {
 	return func(c *Builder) error {
 		c.drand = d
 		return nil
@@ -142,26 +138,27 @@ func JournalConfigOption(jrl journal.Journal) BuilderOpt {
 func MonkeyPatchNetworkParamsOption(params *config.NetworkParamsConfig) BuilderOpt {
 	return func(c *Builder) error {
 		if params.ConsensusMinerMinPower > 0 {
-			power.ConsensusMinerMinPower = big.NewIntUnsigned(params.ConsensusMinerMinPower)
+			policy.SetConsensusMinerMinPower(big.NewIntUnsigned(params.ConsensusMinerMinPower))
 		}
 		if len(params.ReplaceProofTypes) > 0 {
-			newSupportedTypes := make(map[abi.RegisteredProof]struct{})
-			for _, proofType := range params.ReplaceProofTypes {
-				newSupportedTypes[abi.RegisteredProof(proofType)] = struct{}{}
+			newSupportedTypes := make([]abi.RegisteredSealProof, len(params.ReplaceProofTypes))
+			for idx, proofType := range params.ReplaceProofTypes {
+				newSupportedTypes[idx] = abi.RegisteredSealProof(proofType)
 			}
 			// Switch reference rather than mutate in place to avoid concurrent map mutation (in tests).
-			miner.SupportedProofTypes = newSupportedTypes
+			policy.SetSupportedProofTypes(newSupportedTypes...)
 		}
+
 		return nil
 	}
 }
 
 // MonkeyPatchSetProofTypeOption returns a function that sets package variable
 // SuppurtedProofTypes to be only the given registered proof type
-func MonkeyPatchSetProofTypeOption(proofType abi.RegisteredProof) BuilderOpt {
+func MonkeyPatchSetProofTypeOption(proofType abi.RegisteredSealProof) BuilderOpt {
 	return func(c *Builder) error {
 		// Switch reference rather than mutate in place to avoid concurrent map mutation (in tests).
-		miner.SupportedProofTypes = map[abi.RegisteredProof]struct{}{proofType: {}}
+		policy.SetSupportedProofTypes(proofType)
 		return nil
 	}
 }
@@ -175,7 +172,6 @@ func New(ctx context.Context, opts ...BuilderOpt) (*Node, error) {
 		propDelay:   clock.DefaultPropagationDelay,
 		verifier:    ffiwrapper.ProofVerifier,
 	}
-
 	// apply builder options
 	for _, o := range opts {
 		if err := o(n); err != nil {
@@ -224,11 +220,6 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		return nil, errors.Wrap(err, "failed to build node.Network")
 	}
 
-	nd.Discovery, err = submodule.NewDiscoverySubmodule(ctx, (*builder)(b), b.repo.Config().Bootstrap, &nd.network)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to build node.Discovery")
-	}
-
 	nd.VersionTable, err = version.ConfigureProtocolVersions(nd.network.NetworkName)
 	if err != nil {
 		return nil, err
@@ -241,7 +232,7 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 
 	nd.ProofVerification = submodule.NewProofVerificationSubmodule(b.verifier)
 
-	nd.chain, err = submodule.NewChainSubmodule((*builder)(b), b.repo, &nd.Blockstore, &nd.ProofVerification)
+	nd.chain, err = submodule.NewChainSubmodule((*builder)(b), b.repo, &nd.Blockstore, &nd.ProofVerification, b.checkPoint, b.drand)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Chain")
 	}
@@ -250,7 +241,7 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to construct drand grpc")
 		}
-		dGRPC, err := DefaultDrandIfaceFromConfig(b.repo.Config(), genBlk.Timestamp)
+		dGRPC, err := beacon.DefaultDrandIfaceFromConfig(genBlk.Timestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -265,9 +256,15 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		}
 		b.chainClock = clock.NewChainClock(geneBlk.Timestamp, b.blockTime, b.propDelay)
 	}
+
 	nd.ChainClock = b.chainClock
 
-	nd.syncer, err = submodule.NewSyncerSubmodule(ctx, (*builder)(b), &nd.Blockstore, &nd.network, &nd.Discovery, &nd.chain, nd.ProofVerification.ProofVerifier)
+	nd.Discovery, err = submodule.NewDiscoverySubmodule(ctx, (*builder)(b), b.repo.Config().Bootstrap, &nd.network, nd.chain.ChainReader, nd.chain.MessageStore)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to build node.Discovery")
+	}
+
+	nd.syncer, err = submodule.NewSyncerSubmodule(ctx, (*builder)(b), &nd.Blockstore, &nd.network, &nd.Discovery, &nd.chain, nd.ProofVerification.ProofVerifier, b.checkPoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Syncer")
 	}
@@ -277,7 +274,7 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		return nil, errors.Wrap(err, "failed to build node.Wallet")
 	}
 
-	nd.Messaging, err = submodule.NewMessagingSubmodule(ctx, (*builder)(b), b.repo, &nd.network, &nd.chain, &nd.Wallet)
+	nd.Messaging, err = submodule.NewMessagingSubmodule(ctx, (*builder)(b), b.repo, &nd.network, &nd.chain, &nd.Wallet, &nd.syncer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Messaging")
 	}
@@ -287,15 +284,11 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		return nil, errors.Wrap(err, "failed to build node.StorageNetworking")
 	}
 
-	nd.BlockMining, err = submodule.NewBlockMiningSubmodule(ctx, b.postGen)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to build node.BlockMining")
-	}
-
 	waiter := msg.NewWaiter(nd.chain.ChainReader, nd.chain.MessageStore, nd.Blockstore.Blockstore, nd.Blockstore.CborStore)
 
 	nd.PorcelainAPI = porcelain.New(plumbing.New(&plumbing.APIDeps{
 		Chain:        nd.chain.State,
+		Fork:         nd.chain.Fork,
 		Sync:         cst.NewChainSyncProvider(nd.syncer.ChainSyncManager),
 		Config:       cfg.NewConfig(b.repo),
 		DAG:          dag.NewDAG(merkledag.NewDAGService(nd.Blockservice.Blockservice)),
@@ -305,28 +298,9 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		MsgWaiter:    waiter,
 		Network:      nd.network.Network,
 		Outbox:       nd.Messaging.Outbox,
-		PieceManager: nd.PieceManager,
 		Wallet:       nd.Wallet.Wallet,
 	}))
 
-	nd.StorageProtocol, err = submodule.NewStorageProtocolSubmodule(
-		ctx,
-		nd.PorcelainAPI.WalletDefaultAddress,
-		&nd.chain,
-		&nd.Messaging,
-		waiter,
-		nd.Wallet.Signer,
-		nd.Host(),
-		nd.Repo.Datastore(),
-		nd.Blockstore.Blockstore,
-		nd.network.GraphExchange,
-		state.NewViewer(nd.Blockstore.CborStore),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	nd.StorageAPI = storage.NewAPI(nd.StorageProtocol)
 	nd.DrandAPI = drandapi.New(b.drand, nd.PorcelainAPI)
 
 	return nd, nil
@@ -373,16 +347,6 @@ func (b builder) OfflineMode() bool {
 	return b.offlineMode
 }
 
-func (b builder) Drand() drand.IFace {
+func (b builder) Drand() beacon.Schedule {
 	return b.drand
-}
-
-func DefaultDrandIfaceFromConfig(cfg *config.Config, fcGenTS uint64) (drand.IFace, error) {
-	drandConfig := cfg.Drand
-	addrs := make([]drand.Address, len(drandConfig.Addresses))
-	for i, a := range drandConfig.Addresses {
-		addrs[i] = drand.NewAddress(a, drandConfig.Secure)
-	}
-	return drand.NewGRPC(addrs, drandConfig.DistKey, time.Unix(drandConfig.StartTimeUnix, 0),
-		time.Unix(int64(fcGenTS), 0), time.Duration(drandConfig.RoundSeconds)*time.Second)
 }

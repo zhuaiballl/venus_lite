@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/node/test"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/node/test"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 func TestProtocol(t *testing.T) {
@@ -20,7 +20,7 @@ func TestProtocol(t *testing.T) {
 	b := test.NewNodeBuilder(t)
 	node := b.
 		WithConfig(func(c *config.Config) {
-			c.Mining.AutoSealIntervalSeconds = 120
+
 		}).
 		Build(ctx)
 	require.NoError(t, node.Chain().ChainReader.Load(ctx))
@@ -31,5 +31,4 @@ func TestProtocol(t *testing.T) {
 
 	out := cmd.RunSuccess(ctx, "protocol").ReadStdout()
 	assert.Contains(t, out, "\"Network\": \"gfctest\"")
-	assert.Contains(t, out, "\"AutoSealInterval\": 120")
 }

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"reflect"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
-	"github.com/filecoin-project/specs-actors/actors/runtime"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
 	"github.com/pkg/errors"
+	cbg "github.com/whyrusleeping/cbor-gen"
 )
 
 // MethodSignature wraps a specific method and allows you to encode/decodes input/output bytes into concrete types.
@@ -38,12 +38,12 @@ func (ms *methodSignature) ArgInterface(argBytes []byte) (interface{}, error) {
 
 	// This would be better fixed in then encoding library.
 	obj := v.Elem().Interface()
-	if _, ok := obj.(runtime.CBORUnmarshaler); ok {
+	if _, ok := obj.(cbg.CBORUnmarshaler); ok {
 		buf := bytes.NewBuffer(argBytes)
 		auxv := reflect.New(t.Elem())
 		obj = auxv.Interface()
 
-		unmarsh := obj.(runtime.CBORUnmarshaler)
+		unmarsh := obj.(cbg.CBORUnmarshaler)
 		if err := unmarsh.UnmarshalCBOR(buf); err != nil {
 			return nil, err
 		}

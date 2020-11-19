@@ -3,13 +3,13 @@ package fsmeventsconnector
 import (
 	"context"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	fsm "github.com/filecoin-project/storage-fsm"
+	"github.com/filecoin-project/go-state-types/abi"
 	logging "github.com/ipfs/go-log/v2"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chainsampler"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/chainsampler"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
+	"github.com/filecoin-project/venus/internal/pkg/util/fsm"
 )
 
 var log = logging.Logger("fsm_events") // nolint: deadcode

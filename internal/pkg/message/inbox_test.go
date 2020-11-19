@@ -6,17 +6,17 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/venus/internal/pkg/block"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/message"
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/message"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func TestUpdateMessagePool(t *testing.T) {
@@ -325,7 +325,7 @@ func TestUpdateMessagePool(t *testing.T) {
 
 			// update pool with tipset that has no messages
 			next := requireChainWithMessages(t, chainProvider.Builder, head, msgsSet{msgs{}})[0]
-			assert.NoError(t, ib.HandleNewHead(ctx, nil, []block.TipSet{next}))
+			assert.NoError(t, ib.HandleNewHead(ctx, nil, []*block.TipSet{next}))
 
 			// assert all added messages still in pool
 			assertPoolEquals(t, p, m[:i+1]...)
@@ -336,7 +336,7 @@ func TestUpdateMessagePool(t *testing.T) {
 
 		// next tipset times out first message only
 		next := requireChainWithMessages(t, chainProvider.Builder, head, msgsSet{msgs{}})[0]
-		assert.NoError(t, ib.HandleNewHead(ctx, nil, []block.TipSet{next}))
+		assert.NoError(t, ib.HandleNewHead(ctx, nil, []*block.TipSet{next}))
 		assertPoolEquals(t, p, m[1:]...)
 
 		// adding a chain of 4 tipsets times out based on final state
@@ -373,7 +373,7 @@ func TestUpdateMessagePool(t *testing.T) {
 				bb.IncHeight(4) // 4 null blocks
 			})
 
-			assert.NoError(t, ib.HandleNewHead(ctx, nil, []block.TipSet{next}))
+			assert.NoError(t, ib.HandleNewHead(ctx, nil, []*block.TipSet{next}))
 
 			// assert all added messages still in pool
 			assertPoolEquals(t, p, m[:i+1]...)
@@ -383,14 +383,14 @@ func TestUpdateMessagePool(t *testing.T) {
 
 		// next tipset times out first message only
 		next := requireChainWithMessages(t, chainProvider.Builder, head, msgsSet{msgs{}})[0]
-		assert.NoError(t, ib.HandleNewHead(ctx, nil, []block.TipSet{next}))
+		assert.NoError(t, ib.HandleNewHead(ctx, nil, []*block.TipSet{next}))
 		assertPoolEquals(t, p, m[1:]...)
 	})
 }
 
-func newProviderWithGenesis(t *testing.T) (*message.FakeProvider, block.TipSet) {
+func newProviderWithGenesis(t *testing.T) (*message.FakeProvider, *block.TipSet) {
 	provider := message.NewFakeProvider(t)
-	head := provider.Builder.NewGenesis()
+	head := provider.Builder.Genesis()
 	provider.SetHead(head.Key())
 	return provider, head
 }
@@ -447,8 +447,8 @@ func assertPoolEquals(t *testing.T, p *message.Pool, expMsgs ...*types.SignedMes
 // Precondition: the root tipset must be defined.  The chain of tipsets is
 // returned in descending height order (head-first).
 // TODO: move this onto the builder, #3110
-func requireChainWithMessages(t *testing.T, builder *chain.Builder, root block.TipSet, msgSets ...[][]*types.SignedMessage) []block.TipSet {
-	var tipSets []block.TipSet
+func requireChainWithMessages(t *testing.T, builder *chain.Builder, root *block.TipSet, msgSets ...[][]*types.SignedMessage) []*block.TipSet {
+	var tipSets []*block.TipSet
 	parent := root
 	require.True(t, parent.Defined())
 

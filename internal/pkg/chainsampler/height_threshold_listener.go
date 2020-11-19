@@ -1,10 +1,9 @@
 package chainsampler
 
 import (
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin/miner"
-
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/specactors/policy"
 )
 
 // HeightThresholdListener listens for new heaviest chains and notifies when a height threshold is crossed.
@@ -36,7 +35,7 @@ func NewHeightThresholdListener(target abi.ChainEpoch, hitCh chan block.TipSetKe
 // all the common ancestors of the new tipset to the greatest common ancestor.
 // The tipsets must be ordered from newest (highest block height) to oldest.
 // Returns false if this handler is no longer valid.
-func (l *HeightThresholdListener) Handle(chain []block.TipSet) (bool, error) {
+func (l *HeightThresholdListener) Handle(chain []*block.TipSet) (bool, error) {
 	if len(chain) < 1 {
 		return true, nil
 	}
@@ -47,7 +46,7 @@ func (l *HeightThresholdListener) Handle(chain []block.TipSet) (bool, error) {
 	}
 
 	// check if we've hit finality and should stop listening
-	if h >= l.target+miner.ChainFinalityish {
+	if h >= l.target+policy.ChainFinality {
 		l.DoneCh <- struct{}{}
 		return false, nil
 	}
@@ -85,7 +84,7 @@ func (l *HeightThresholdListener) Handle(chain []block.TipSet) (bool, error) {
 	return true, nil
 }
 
-func (l *HeightThresholdListener) sendHit(chain []block.TipSet) error {
+func (l *HeightThresholdListener) sendHit(chain []*block.TipSet) error {
 	// assume chainStore not empty and first tipset height greater than target
 	firstTargetTipset := chain[0]
 	for _, ts := range chain {

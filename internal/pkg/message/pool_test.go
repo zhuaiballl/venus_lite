@@ -5,16 +5,15 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/config"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/message"
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
+	"github.com/filecoin-project/venus/internal/pkg/config"
+	"github.com/filecoin-project/venus/internal/pkg/message"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 var mockSigner, _ = types.NewMockSignersAndKeyInfo(10)
@@ -169,7 +168,7 @@ func TestLargestNonce(t *testing.T) {
 		m := types.NewSignedMsgs(2, mockSigner)
 		reqAdd(t, p, 0, m[0], m[1])
 
-		_, found := p.LargestNonce(vmaddr.NewForTestGetter()())
+		_, found := p.LargestNonce(types.NewForTestGetter()())
 		assert.False(t, found)
 	})
 

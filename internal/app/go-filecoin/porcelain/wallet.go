@@ -3,27 +3,24 @@ package porcelain
 import (
 	"context"
 
-	initact "github.com/filecoin-project/specs-actors/actors/builtin/init"
-
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 // ErrNoDefaultFromAddress is returned when a default wallet address couldn't be determined (eg, there are zero addresses in the wallet).
 var ErrNoDefaultFromAddress = errors.New("unable to determine a default wallet address")
 
 type wbPlumbing interface {
-	ActorGet(ctx context.Context, addr address.Address) (*actor.Actor, error)
+	ActorGet(ctx context.Context, addr address.Address) (*types.Actor, error)
 }
 
 // WalletBalance gets the current balance associated with an address
 func WalletBalance(ctx context.Context, plumbing wbPlumbing, addr address.Address) (abi.TokenAmount, error) {
 	act, err := plumbing.ActorGet(ctx, addr)
-	if err == types.ErrNotFound || err == initact.ErrAddressNotFound {
+	if err == types.ErrActorNotFound {
 		// if the account doesn't exit, the balance should be zero
 		return abi.NewTokenAmount(0), nil
 	}
@@ -61,4 +58,21 @@ func WalletDefaultAddress(plumbing wdaPlumbing) (address.Address, error) {
 	}
 
 	return address.Undef, ErrNoDefaultFromAddress
+}
+
+// SetWalletDefaultAddress set the specified address as the default in the config.
+func SetWalletDefaultAddress(plumbing wdaPlumbing, a address.Address) error {
+	addrs := plumbing.WalletAddresses()
+
+	for _, addr := range addrs {
+		if addr == a {
+			err := plumbing.ConfigSet("wallet.defaultAddress", a.String())
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return errors.New("addr not in the wallet list")
 }

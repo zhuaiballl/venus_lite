@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"testing"
 
-	manet "github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr-net" //nolint
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/build/project"
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/build/project"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 func TestInitOverHttp(t *testing.T) {
@@ -26,7 +26,7 @@ func TestInitOverHttp(t *testing.T) {
 	maddr, err := td.CmdAddr()
 	require.NoError(t, err)
 
-	_, host, err := manet.DialArgs(maddr)
+	_, host, err := manet.DialArgs(maddr) //nolint
 	require.NoError(t, err)
 
 	url := fmt.Sprintf("http://%s/api/init", host)

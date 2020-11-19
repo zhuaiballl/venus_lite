@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/filecoin-project/go-state-types/abi"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
 )
 
 // SignedMessage contains a message and its signature
@@ -61,6 +62,10 @@ func (smsg *SignedMessage) Marshal() ([]byte, error) {
 
 // Cid returns the canonical CID for the SignedMessage.
 func (smsg *SignedMessage) Cid() (cid.Cid, error) {
+	if smsg.Signature.Type == crypto.SigTypeBLS {
+		return smsg.Message.Cid()
+	}
+
 	obj, err := smsg.ToNode()
 	if err != nil {
 		return cid.Undef, errors.Wrap(err, "failed to marshal to cbor")
@@ -71,6 +76,10 @@ func (smsg *SignedMessage) Cid() (cid.Cid, error) {
 
 // ToNode converts the SignedMessage to an IPLD node.
 func (smsg *SignedMessage) ToNode() (ipld.Node, error) {
+	if smsg.Signature.Type == crypto.SigTypeBLS {
+		return smsg.Message.ToNode()
+	}
+
 	data, err := encoding.Encode(smsg)
 	if err != nil {
 		return nil, err
@@ -93,16 +102,6 @@ func (smsg *SignedMessage) ToNode() (ipld.Node, error) {
 
 }
 
-// OnChainLen returns the amount of bytes used to represent the message on chain.
-// TODO we can save this redundant encoding if we plumbed the size through from when the message was originally decoded from the network.
-func (smsg *SignedMessage) OnChainLen() int {
-	bits, err := encoding.Encode(smsg)
-	if err != nil {
-		panic(err)
-	}
-	return len(bits)
-}
-
 func (smsg *SignedMessage) String() string {
 	errStr := "(error encoding SignedMessage)"
 	cid, err := smsg.Cid()
@@ -121,3 +120,35 @@ func (smsg *SignedMessage) Equals(other *SignedMessage) bool {
 	return smsg.Message.Equals(&other.Message) &&
 		smsg.Signature.Equals(&other.Signature)
 }
+
+func (smsg *SignedMessage) ChainLength() int {
+	ser, err := smsg.Marshal()
+	if err != nil {
+		panic(err)
+	}
+	return len(ser)
+}
+
+func (smsg *SignedMessage) ToStorageBlock() (blocks.Block, error) {
+	if smsg.Signature.Type == crypto.SigTypeBLS {
+		return smsg.Message.ToStorageBlock()
+	}
+
+	data, err := smsg.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := abi.CidBuilder.Sum(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return blocks.NewBlockWithCid(data, c)
+}
+
+func (smsg *SignedMessage) VMMessage() *UnsignedMessage {
+	return &smsg.Message
+}
+
+var _ ChainMsg = &SignedMessage{}

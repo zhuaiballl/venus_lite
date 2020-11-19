@@ -8,17 +8,15 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/builtin"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/crypto"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/crypto"
 )
 
 // MockSigner implements the Signer interface
@@ -171,10 +169,11 @@ func NewSignedMessageForTestGetter(ms MockSigner) func() *SignedMessage {
 			newAddr,
 			0,
 			ZeroAttoFIL,
-			builtin.MethodSend,
+			0,
 			[]byte("params"),
 			ZeroAttoFIL,
-			gas.Zero,
+			ZeroAttoFIL,
+			Zero,
 		)
 		smsg, err := NewSignedMessage(context.TODO(), *msg, &ms)
 		if err != nil {
@@ -260,8 +259,9 @@ func NewSignedMsgs(n uint, ms MockSigner) []*SignedMessage {
 		msg := newMsg()
 		msg.From = ms.Addresses[0]
 		msg.CallSeqNum = uint64(i)
-		msg.GasPrice = ZeroAttoFIL // NewGasPrice(1)
-		msg.GasLimit = gas.NewGas(0)
+		msg.GasFeeCap = ZeroAttoFIL
+		msg.GasPremium = ZeroAttoFIL
+		msg.GasLimit = NewGas(0)
 		smsgs[i], err = NewSignedMessage(context.TODO(), *msg, ms)
 		if err != nil {
 			panic(err)
@@ -344,5 +344,28 @@ func AssertHaveSameCid(t *testing.T, m HasCid, n HasCid) {
 func AssertCidsEqual(t *testing.T, m cid.Cid, n cid.Cid) {
 	if !m.Equals(n) {
 		assert.Fail(t, "CIDs don't match", "not equal %v %v", m, n)
+	}
+}
+
+func RequireIDAddress(t *testing.T, i int) address.Address {
+	a, err := address.NewIDAddress(uint64(i))
+	if err != nil {
+		t.Fatalf("failed to make address: %v", err)
+	}
+	return a
+}
+
+// NewForTestGetter returns a closure that returns an address unique to that invocation.
+// The address is unique wrt the closure returned, not globally.
+func NewForTestGetter() func() address.Address {
+	i := 0
+	return func() address.Address {
+		s := fmt.Sprintf("address%d", i)
+		i++
+		newAddr, err := address.NewSecp256k1Address([]byte(s))
+		if err != nil {
+			panic(err)
+		}
+		return newAddr
 	}
 }

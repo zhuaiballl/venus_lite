@@ -5,19 +5,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/filecoin-project/venus/internal/pkg/net"
+	"github.com/filecoin-project/venus/internal/pkg/repo"
+	ds "github.com/ipfs/go-datastore"
+	"github.com/libp2p/go-libp2p-core/host"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/discovery"
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/discovery"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 type mockHelloCallback struct {
@@ -29,10 +35,10 @@ func (msb *mockHelloCallback) HelloCallback(ci *block.ChainInfo) {
 }
 
 type mockHeaviestGetter struct {
-	heaviest block.TipSet
+	heaviest *block.TipSet
 }
 
-func (mhg *mockHeaviestGetter) getHeaviestTipSet() (block.TipSet, error) {
+func (mhg *mockHeaviestGetter) getHeaviestTipSet() (*block.TipSet, error) {
 	return mhg.heaviest, nil
 }
 
@@ -56,8 +62,12 @@ func TestHelloHandshake(t *testing.T) {
 	msc1, msc2 := new(mockHelloCallback), new(mockHelloCallback)
 	hg1, hg2 := &mockHeaviestGetter{heavy1}, &mockHeaviestGetter{heavy2}
 
-	discovery.NewHelloProtocolHandler(a, genesisA.Cid(), "").Register(msc1.HelloCallback, hg1.getHeaviestTipSet)
-	discovery.NewHelloProtocolHandler(b, genesisA.Cid(), "").Register(msc2.HelloCallback, hg2.getHeaviestTipSet)
+	//peer manager
+	aPeerMgr, err := mockPeerMgr(ctx, t, a)
+	require.NoError(t, err)
+
+	discovery.NewHelloProtocolHandler(a, aPeerMgr, genesisA.Cid(), "").Register(msc1.HelloCallback, hg1.getHeaviestTipSet)
+	discovery.NewHelloProtocolHandler(b, aPeerMgr, genesisA.Cid(), "").Register(msc2.HelloCallback, hg2.getHeaviestTipSet)
 
 	msc1.On("HelloCallback", b.ID(), heavy2.Key(), abi.ChainEpoch(3)).Return()
 	msc2.On("HelloCallback", a.ID(), heavy1.Key(), abi.ChainEpoch(2)).Return()
@@ -112,8 +122,12 @@ func TestHelloBadGenesis(t *testing.T) {
 	msc1, msc2 := new(mockHelloCallback), new(mockHelloCallback)
 	hg1, hg2 := &mockHeaviestGetter{heavy1}, &mockHeaviestGetter{heavy2}
 
-	discovery.NewHelloProtocolHandler(a, genesisA.Cid(), "").Register(msc1.HelloCallback, hg1.getHeaviestTipSet)
-	discovery.NewHelloProtocolHandler(b, genesisB.Cid(), "").Register(msc2.HelloCallback, hg2.getHeaviestTipSet)
+	//peer manager
+	peerMgr, err := mockPeerMgr(ctx, t, a)
+	require.NoError(t, err)
+
+	discovery.NewHelloProtocolHandler(a, peerMgr, genesisA.Cid(), "").Register(msc1.HelloCallback, hg1.getHeaviestTipSet)
+	discovery.NewHelloProtocolHandler(b, peerMgr, genesisB.Cid(), "").Register(msc2.HelloCallback, hg2.getHeaviestTipSet)
 
 	msc1.On("HelloCallback", mock.Anything, mock.Anything, mock.Anything).Return()
 	msc2.On("HelloCallback", mock.Anything, mock.Anything, mock.Anything).Return()
@@ -141,7 +155,7 @@ func TestHelloMultiBlock(t *testing.T) {
 
 	builder := chain.NewBuilder(t, address.Undef)
 
-	genesisTipset := builder.NewGenesis()
+	genesisTipset := builder.Genesis()
 	assert.Equal(t, 1, genesisTipset.Len())
 
 	heavy1 := builder.AppendOn(genesisTipset, 3)
@@ -151,8 +165,12 @@ func TestHelloMultiBlock(t *testing.T) {
 	msc1, msc2 := new(mockHelloCallback), new(mockHelloCallback)
 	hg1, hg2 := &mockHeaviestGetter{heavy1}, &mockHeaviestGetter{heavy2}
 
-	discovery.NewHelloProtocolHandler(a, genesisTipset.At(0).Cid(), "").Register(msc1.HelloCallback, hg1.getHeaviestTipSet)
-	discovery.NewHelloProtocolHandler(b, genesisTipset.At(0).Cid(), "").Register(msc2.HelloCallback, hg2.getHeaviestTipSet)
+	//peer manager
+	peerMgr, err := mockPeerMgr(ctx, t, a)
+	require.NoError(t, err)
+
+	discovery.NewHelloProtocolHandler(a, peerMgr, genesisTipset.At(0).Cid(), "").Register(msc1.HelloCallback, hg1.getHeaviestTipSet)
+	discovery.NewHelloProtocolHandler(b, peerMgr, genesisTipset.At(0).Cid(), "").Register(msc2.HelloCallback, hg2.getHeaviestTipSet)
 
 	msc1.On("HelloCallback", b.ID(), heavy2.Key(), abi.ChainEpoch(3)).Return()
 	msc2.On("HelloCallback", a.ID(), heavy1.Key(), abi.ChainEpoch(2)).Return()
@@ -164,4 +182,11 @@ func TestHelloMultiBlock(t *testing.T) {
 
 	msc1.AssertExpectations(t)
 	msc2.AssertExpectations(t)
+}
+
+func mockPeerMgr(ctx context.Context, t *testing.T, h host.Host) (*net.PeerMgr, error) {
+	addrInfo, err := net.ParseAddresses(ctx, repo.NewInMemoryRepo().Config().Bootstrap.Addresses)
+	require.NoError(t, err)
+
+	return net.NewPeerMgr(h, dht.NewDHT(ctx, h, ds.NewMapDatastore()), 10, addrInfo)
 }

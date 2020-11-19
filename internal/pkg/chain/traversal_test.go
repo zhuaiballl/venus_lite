@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
 )
 
 func TestIterAncestors(t *testing.T) {
@@ -125,7 +125,7 @@ func TestCollectTipSetsOfHeightAtLeastStartingEpochIsNull(t *testing.T) {
 	tf.UnitTest(t)
 	ctx := context.Background()
 	builder := chain.NewBuilder(t, address.Undef)
-	head := builder.NewGenesis()
+	head := builder.Genesis()
 
 	// Add 30 tipsets to the head of the chainStore.
 	head = builder.AppendManyOn(30, head)
@@ -155,7 +155,7 @@ func TestFindCommonAncestorSameChain(t *testing.T) {
 	tf.UnitTest(t)
 	ctx := context.Background()
 	builder := chain.NewBuilder(t, address.Undef)
-	head := builder.NewGenesis()
+	head := builder.Genesis()
 	// Add 30 tipsets to the head of the chainStore.
 	head = builder.AppendManyOn(30, head)
 	headIterOne := chain.IterAncestors(ctx, builder, head)
@@ -169,7 +169,7 @@ func TestFindCommonAncestorFork(t *testing.T) {
 	tf.UnitTest(t)
 	ctx := context.Background()
 	builder := chain.NewBuilder(t, address.Undef)
-	head := builder.NewGenesis()
+	head := builder.Genesis()
 
 	// Add 3 tipsets to the head of the chainStore.
 	commonHeadTip := builder.AppendManyOn(3, head)
@@ -186,14 +186,14 @@ func TestFindCommonAncestorFork(t *testing.T) {
 	mainItr := chain.IterAncestors(ctx, builder, mainHead)
 	commonAncestor, err := chain.FindCommonAncestor(mainItr, forkItr)
 	assert.NoError(t, err)
-	assert.Equal(t, commonHeadTip, commonAncestor)
+	assert.ObjectsAreEqualValues(commonHeadTip, commonAncestor)
 }
 
 func TestFindCommonAncestorNoFork(t *testing.T) {
 	tf.UnitTest(t)
 	ctx := context.Background()
 	builder := chain.NewBuilder(t, address.Undef)
-	head := builder.NewGenesis()
+	head := builder.Genesis()
 
 	// Add 30 tipsets to the head of the chainStore.
 	head = builder.AppendManyOn(30, head)
@@ -215,7 +215,7 @@ func TestFindCommonAncestorNullBlockFork(t *testing.T) {
 	tf.UnitTest(t)
 	ctx := context.Background()
 	builder := chain.NewBuilder(t, address.Undef)
-	head := builder.NewGenesis()
+	head := builder.Genesis()
 
 	// Add 10 tipsets to the head of the chainStore.
 	commonHead := builder.AppendManyOn(10, head)
@@ -232,5 +232,5 @@ func TestFindCommonAncestorNullBlockFork(t *testing.T) {
 
 	commonAncestor, err := chain.FindCommonAncestor(afterNullItr, noNullItr)
 	assert.NoError(t, err)
-	assert.Equal(t, commonHead, commonAncestor)
+	assert.ObjectsAreEqualValues(commonHead, commonAncestor)
 }

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-
 	"testing"
 
 	"github.com/filecoin-project/go-address"
@@ -19,13 +18,12 @@ import (
 	"github.com/stretchr/testify/require"
 	typegen "github.com/whyrusleeping/cbor-gen"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/chain"
-	e "github.com/filecoin-project/go-filecoin/internal/pkg/enccid"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/chain"
+	"github.com/filecoin-project/venus/internal/pkg/enccid"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
 )
 
 func TestChainImportExportGenesis(t *testing.T) {
@@ -156,7 +154,7 @@ func TestChainImportExportMessages(t *testing.T) {
 	ctx, gene, cb, carW, carR, bstore := setupDeps(t)
 
 	keys := types.MustGenerateKeyInfo(1, 42)
-	mm := vm.NewMessageMaker(t, keys)
+	mm := types.NewMessageMaker(t, keys)
 	alice := mm.Addresses()[0]
 
 	ts1 := cb.AppendManyOn(1, gene)
@@ -188,7 +186,7 @@ func TestChainImportExportMultiTipSetWithMessages(t *testing.T) {
 	ctx, gene, cb, carW, carR, bstore := setupDeps(t)
 
 	keys := types.MustGenerateKeyInfo(1, 42)
-	mm := vm.NewMessageMaker(t, keys)
+	mm := types.NewMessageMaker(t, keys)
 	alice := mm.Addresses()[0]
 
 	ts1 := cb.AppendManyOn(1, gene)
@@ -219,7 +217,7 @@ func TestChainImportExportMultiTipSetWithMessages(t *testing.T) {
 	validateBlockstoreImport(ctx, t, ts3.Key(), gene.Key(), bstore)
 }
 
-func mustExportToBuffer(ctx context.Context, t *testing.T, head block.TipSet, cb *chain.Builder, msr *mockStateReader, carW *bufio.Writer) {
+func mustExportToBuffer(ctx context.Context, t *testing.T, head *block.TipSet, cb *chain.Builder, msr *mockStateReader, carW *bufio.Writer) {
 	err := chain.Export(ctx, head, cb, cb, msr, carW)
 	assert.NoError(t, err)
 	require.NoError(t, carW.Flush())
@@ -231,13 +229,12 @@ func mustImportFromBuffer(ctx context.Context, t *testing.T, bstore blockstore.B
 	return importedKey
 }
 
-func setupDeps(t *testing.T) (context.Context, block.TipSet, *chain.Builder, *bufio.Writer, *bufio.Reader, blockstore.Blockstore) {
+func setupDeps(t *testing.T) (context.Context, *block.TipSet, *chain.Builder, *bufio.Writer, *bufio.Reader, blockstore.Blockstore) {
 	// context for operations
 	ctx := context.Background()
 
 	// chain builder and its genesis
 	cb := chain.NewBuilder(t, address.Undef)
-	gene := cb.NewGenesis()
 	// buffers to read and write the car file from
 	var buf bytes.Buffer
 	carW := bufio.NewWriter(&buf)
@@ -246,7 +243,7 @@ func setupDeps(t *testing.T) (context.Context, block.TipSet, *chain.Builder, *bu
 	// a store to import the car file to and validate from.
 	mds := ds.NewMapDatastore()
 	bstore := blockstore.NewBlockstore(mds)
-	return ctx, gene, cb, carW, carR, bstore
+	return ctx, cb.Genesis(), cb, carW, carR, bstore
 
 }
 
@@ -283,7 +280,7 @@ func validateBlockstoreImport(ctx context.Context, t *testing.T, start, stop blo
 			rectAMT, err := amt.LoadAMT(ctx, as, blk.MessageReceipts.Cid)
 			require.NoError(t, err)
 
-			var rect vm.MessageReceipt
+			var rect types.MessageReceipt
 			requireAMTDecoding(ctx, t, bstore, rectAMT, &rect)
 
 			if parents.Len() == 0 {
@@ -304,7 +301,7 @@ func validateBlockstoreImport(ctx context.Context, t *testing.T, start, stop blo
 
 func requireAMTDecoding(ctx context.Context, t *testing.T, bstore blockstore.Blockstore, root *amt.Root, dest interface{}) {
 	err := root.ForEach(ctx, func(_ uint64, d *typegen.Deferred) error {
-		var c e.Cid
+		var c enccid.Cid
 		if err := encoding.Decode(d.Raw, &c); err != nil {
 			return err
 		}

@@ -11,24 +11,26 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/actor"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/state"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/vm"
+	"github.com/filecoin-project/venus/internal/pkg/vm/state"
 )
 
 // RequireMakeStateTree takes a map of addresses to actors and stores them on
 // the state tree, requiring that all its steps succeed.
-func RequireMakeStateTree(t *testing.T, cst cbor.IpldStore, acts map[address.Address]*actor.Actor) (cid.Cid, *state.State) {
+func RequireMakeStateTree(t *testing.T, cst cbor.IpldStore, acts map[address.Address]*types.Actor) (cid.Cid, *state.State) {
 	ctx := context.Background()
-	tree := state.NewState(cst)
+	tree, err := state.NewState(cst, state.StateTreeVersion0)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for addr, act := range acts {
 		err := tree.SetActor(ctx, addr, act)
 		require.NoError(t, err)
 	}
 
-	c, err := tree.Commit(ctx)
+	c, err := tree.Flush(ctx)
 	require.NoError(t, err)
 
 	return c, tree
@@ -36,14 +38,14 @@ func RequireMakeStateTree(t *testing.T, cst cbor.IpldStore, acts map[address.Add
 
 // RequireNewMinerActor creates a new miner actor with the given owner, pledge, and collateral,
 // and requires that its steps succeed.
-func RequireNewMinerActor(ctx context.Context, t *testing.T, st state.Tree, vms vm.Storage, owner address.Address, pledge uint64, pid peer.ID, coll types.AttoFIL) (*actor.Actor, address.Address) {
+func RequireNewMinerActor(ctx context.Context, t *testing.T, st state.State, vms vm.Storage, owner address.Address, pledge uint64, pid peer.ID, coll types.AttoFIL) (*types.Actor, address.Address) {
 	// Dragons: re-write using the new actor states structures directly
 
 	return nil, address.Undef
 }
 
 // RequireLookupActor converts the given address to an id address before looking up the actor in the state tree
-func RequireLookupActor(ctx context.Context, t *testing.T, st state.Tree, vms vm.Storage, actorAddr address.Address) (*actor.Actor, address.Address) {
+func RequireLookupActor(ctx context.Context, t *testing.T, st state.State, vms vm.Storage, actorAddr address.Address) (*types.Actor, address.Address) {
 	// Dragons: delete, nothing outside the vm should be concerned about actor id indexes
 
 	return nil, address.Undef
@@ -51,19 +53,19 @@ func RequireLookupActor(ctx context.Context, t *testing.T, st state.Tree, vms vm
 
 // RequireNewFakeActor instantiates and returns a new fake actor and requires
 // that its steps succeed.
-func RequireNewFakeActor(t *testing.T, vms vm.Storage, addr address.Address, codeCid cid.Cid) *actor.Actor {
+func RequireNewFakeActor(t *testing.T, vms vm.Storage, addr address.Address, codeCid cid.Cid) *types.Actor {
 	return RequireNewFakeActorWithTokens(t, vms, addr, codeCid, types.NewAttoFILFromFIL(100))
 }
 
 // RequireNewFakeActorWithTokens instantiates and returns a new fake actor and requires
 // that its steps succeed.
-func RequireNewFakeActorWithTokens(t *testing.T, vms vm.Storage, addr address.Address, codeCid cid.Cid, amt types.AttoFIL) *actor.Actor {
+func RequireNewFakeActorWithTokens(t *testing.T, vms vm.Storage, addr address.Address, codeCid cid.Cid, amt types.AttoFIL) *types.Actor {
 
 	return nil
 }
 
 // RequireNewInitActor instantiates and returns a new init actor
-func RequireNewInitActor(t *testing.T, vms vm.Storage) *actor.Actor {
+func RequireNewInitActor(t *testing.T, vms vm.Storage) *types.Actor {
 
 	return nil
 }

@@ -5,24 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/specs-actors/actors/builtin"
-	"github.com/filecoin-project/specs-actors/actors/util/adt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/specs-actors/actors/abi"
+	"github.com/filecoin-project/go-state-types/abi"
 
-	. "github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/node"
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/node/test"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/proofs"
-	th "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/version"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
-	gengen "github.com/filecoin-project/go-filecoin/tools/gengen/util"
-	specsbig "github.com/filecoin-project/specs-actors/actors/abi/big"
+	specsbig "github.com/filecoin-project/go-state-types/big"
+	. "github.com/filecoin-project/venus/internal/app/go-filecoin/node"
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/node/test"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/proofs"
+	init_ "github.com/filecoin-project/venus/internal/pkg/specactors/builtin/init"
+	th "github.com/filecoin-project/venus/internal/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/version"
+	gengen "github.com/filecoin-project/venus/tools/gengen/util"
 )
 
 // TestMessagePropagation is a high level check that messages are propagated between message
@@ -77,12 +75,13 @@ func TestMessagePropagation(t *testing.T) {
 		_, _, err := sender.PorcelainAPI.MessageSend(
 			ctx,
 			senderAddress,
-			builtin.InitActorAddr,
+			init_.Address,
 			specsbig.NewInt(100),
-			types.NewGasPrice(1),
-			gas.Unit(5000),
+			types.NewGasFeeCap(1),
+			types.NewGasPremium(1),
+			types.Unit(5000),
 			fooMethod,
-			adt.Empty,
+			[]byte{},
 		)
 		require.NoError(t, err)
 

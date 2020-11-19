@@ -7,11 +7,11 @@ import (
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
+	"github.com/filecoin-project/venus/internal/pkg/constants"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
 )
 
-// IpldStore is a go-filecoin implementation of the go-hamt-ipld CborStore
+// IpldStore is a venus implementation of the go-hamt-ipld CborStore
 // interface.
 type IpldStore struct {
 	blocks Blocks

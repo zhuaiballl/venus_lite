@@ -7,27 +7,23 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/specs-actors/actors/abi"
-	"github.com/filecoin-project/specs-actors/actors/abi/big"
-	"github.com/filecoin-project/specs-actors/actors/builtin/power"
-	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/plumbing/cfg"
-	. "github.com/filecoin-project/go-filecoin/internal/app/go-filecoin/porcelain"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/block"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/constants"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/encoding"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/repo"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/state"
-	tf "github.com/filecoin-project/go-filecoin/internal/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/types"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm"
-	vmaddr "github.com/filecoin-project/go-filecoin/internal/pkg/vm/address"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/gas"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/wallet"
+	power2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/power"
+
+	"github.com/filecoin-project/venus/internal/app/go-filecoin/plumbing/cfg"
+	. "github.com/filecoin-project/venus/internal/app/go-filecoin/porcelain"
+	"github.com/filecoin-project/venus/internal/pkg/block"
+	"github.com/filecoin-project/venus/internal/pkg/encoding"
+	"github.com/filecoin-project/venus/internal/pkg/state"
+	tf "github.com/filecoin-project/venus/internal/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus/internal/pkg/types"
+	"github.com/filecoin-project/venus/internal/pkg/wallet"
 )
 
 type minerCreate struct {
@@ -39,19 +35,6 @@ type minerCreate struct {
 	msgFail bool
 }
 
-func newMinerCreate(t *testing.T, msgFail bool, address address.Address) *minerCreate {
-	testRepo := repo.NewInMemoryRepo()
-	backend, err := wallet.NewDSBackend(testRepo.WalletDatastore())
-	require.NoError(t, err)
-	return &minerCreate{
-		testing: t,
-		address: address,
-		config:  cfg.NewConfig(testRepo),
-		wallet:  wallet.New(backend),
-		msgFail: msgFail,
-	}
-}
-
 func (mpc *minerCreate) ConfigGet(dottedPath string) (interface{}, error) {
 	return mpc.config.Get(dottedPath)
 }
@@ -60,7 +43,7 @@ func (mpc *minerCreate) ConfigSet(dottedPath string, paramJSON string) error {
 	return mpc.config.Set(dottedPath, paramJSON)
 }
 
-func (mpc *minerCreate) MessageSend(ctx context.Context, from, to address.Address, value types.AttoFIL, gasPrice types.AttoFIL, gasLimit gas.Unit, method abi.MethodNum, params interface{}) (cid.Cid, chan error, error) {
+func (mpc *minerCreate) MessageSend(ctx context.Context, from, to address.Address, value types.AttoFIL, gasBaseFee, gasPremium types.AttoFIL, gasLimit types.Unit, method abi.MethodNum, params interface{}) (cid.Cid, chan error, error) {
 	if mpc.msgFail {
 		return cid.Cid{}, nil, errors.New("test Error")
 	}
@@ -69,14 +52,14 @@ func (mpc *minerCreate) MessageSend(ctx context.Context, from, to address.Addres
 	return mpc.msgCid, nil, nil
 }
 
-func (mpc *minerCreate) MessageWait(ctx context.Context, msgCid cid.Cid, lookback uint64, cb func(*block.Block, *types.SignedMessage, *vm.MessageReceipt) error) error {
+func (mpc *minerCreate) MessageWait(ctx context.Context, msgCid cid.Cid, lookback uint64, cb func(*block.Block, *types.SignedMessage, *types.MessageReceipt) error) error {
 	assert.Equal(mpc.testing, msgCid, msgCid)
 	midAddr, err := address.NewIDAddress(100)
 	if err != nil {
 		return err
 	}
 
-	value, err := encoding.Encode(&power.CreateMinerReturn{
+	value, err := encoding.Encode(&power2.CreateMinerReturn{
 		IDAddress:     midAddr,
 		RobustAddress: mpc.address,
 	})
@@ -84,7 +67,7 @@ func (mpc *minerCreate) MessageWait(ctx context.Context, msgCid cid.Cid, lookbac
 		return err
 	}
 
-	receipt := vm.MessageReceipt{
+	receipt := types.MessageReceipt{
 		ReturnValue: value,
 		ExitCode:    exitcode.Ok,
 	}
@@ -93,48 +76,6 @@ func (mpc *minerCreate) MessageWait(ctx context.Context, msgCid cid.Cid, lookbac
 
 func (mpc *minerCreate) WalletDefaultAddress() (address.Address, error) {
 	return wallet.NewAddress(mpc.wallet, address.SECP256K1)
-}
-
-func TestMinerCreate(t *testing.T) {
-	tf.UnitTest(t)
-
-	t.Run("success", func(t *testing.T) {
-		ctx := context.Background()
-		expectedAddress := vmaddr.NewForTestGetter()()
-		plumbing := newMinerCreate(t, false, expectedAddress)
-		collateral := types.NewAttoFILFromFIL(1)
-
-		addr, err := MinerCreate(
-			ctx,
-			plumbing,
-			address.Address{},
-			types.NewGasPrice(0),
-			gas.NewGas(100),
-			constants.DevSealProofType,
-			"",
-			collateral,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, expectedAddress, addr)
-	})
-
-	t.Run("failure to send", func(t *testing.T) {
-		ctx := context.Background()
-		plumbing := newMinerCreate(t, true, address.Address{})
-		collateral := types.NewAttoFILFromFIL(1)
-
-		_, err := MinerCreate(
-			ctx,
-			plumbing,
-			address.Address{},
-			types.NewGasPrice(0),
-			gas.NewGas(100),
-			constants.DevSealProofType,
-			"",
-			collateral,
-		)
-		assert.Error(t, err, "Test Error")
-	})
 }
 
 type mStatusPlumbing struct {
@@ -147,8 +88,8 @@ func (p *mStatusPlumbing) ChainHeadKey() block.TipSetKey {
 	return p.head
 }
 
-func (p *mStatusPlumbing) ChainTipSet(_ block.TipSetKey) (block.TipSet, error) {
-	return p.ts, nil
+func (p *mStatusPlumbing) ChainTipSet(_ block.TipSetKey) (*block.TipSet, error) {
+	return &p.ts, nil
 }
 
 func (p *mStatusPlumbing) MinerStateView(baseKey block.TipSetKey) (MinerStateView, error) {
@@ -177,7 +118,7 @@ func TestMinerGetStatus(t *testing.T) {
 	require.NoError(t, err)
 
 	plumbing := mStatusPlumbing{
-		ts, key, vmaddr.RequireIDAddress(t, 1), vmaddr.RequireIDAddress(t, 2), vmaddr.RequireIDAddress(t, 3),
+		*ts, key, types.RequireIDAddress(t, 1), types.RequireIDAddress(t, 2), types.RequireIDAddress(t, 3),
 	}
 	status, err := MinerGetStatus(context.Background(), &plumbing, plumbing.miner, key)
 	assert.NoError(t, err)
@@ -212,7 +153,7 @@ func (p *mSetWorkerPlumbing) MinerStateView(baseKey block.TipSetKey) (MinerState
 	}, nil
 }
 
-func (p *mSetWorkerPlumbing) MessageSend(ctx context.Context, from, to address.Address, value types.AttoFIL, gasPrice types.AttoFIL, gasLimit gas.Unit, method abi.MethodNum, params interface{}) (cid.Cid, chan error, error) {
+func (p *mSetWorkerPlumbing) MessageSend(ctx context.Context, from, to address.Address, value types.AttoFIL, gasBaseFee, gasPremium types.AttoFIL, gasLimit types.Unit, method abi.MethodNum, params interface{}) (cid.Cid, chan error, error) {
 
 	if p.msgFail {
 		return cid.Cid{}, nil, errors.New("MsgFail")
@@ -220,7 +161,7 @@ func (p *mSetWorkerPlumbing) MessageSend(ctx context.Context, from, to address.A
 	return types.EmptyMessagesCID, nil, nil
 }
 
-func (p *mSetWorkerPlumbing) MessageWait(ctx context.Context, msgCid cid.Cid, cb func(*block.Block, *types.SignedMessage, *vm.MessageReceipt) error) error {
+func (p *mSetWorkerPlumbing) MessageWait(ctx context.Context, msgCid cid.Cid, cb func(*block.Block, *types.SignedMessage, *types.MessageReceipt) error) error {
 	if p.msgWaitFail {
 		return errors.New("MsgWaitFail")
 	}
@@ -240,11 +181,12 @@ func (p *mSetWorkerPlumbing) ConfigGet(dottedKey string) (interface{}, error) {
 func TestMinerSetWorkerAddress(t *testing.T) {
 	tf.UnitTest(t)
 
-	minerOwner := vmaddr.RequireIDAddress(t, 100)
-	minerAddr := vmaddr.RequireIDAddress(t, 101)
-	workerAddr := vmaddr.RequireIDAddress(t, 102)
-	gprice := types.ZeroAttoFIL
-	glimit := gas.NewGas(0)
+	minerOwner := types.RequireIDAddress(t, 100)
+	minerAddr := types.RequireIDAddress(t, 101)
+	workerAddr := types.RequireIDAddress(t, 102)
+	baseFee := types.ZeroAttoFIL
+	gasPremium := types.ZeroAttoFIL
+	glimit := types.NewGas(0)
 
 	t.Run("Calling set worker address sets address", func(t *testing.T) {
 		plumbing := &mSetWorkerPlumbing{
@@ -253,7 +195,7 @@ func TestMinerSetWorkerAddress(t *testing.T) {
 			minerAddr:  minerAddr,
 		}
 
-		_, err := MinerSetWorkerAddress(context.Background(), plumbing, workerAddr, gprice, glimit)
+		_, err := MinerSetWorkerAddress(context.Background(), plumbing, workerAddr, baseFee, gasPremium, glimit)
 		assert.NoError(t, err)
 		assert.Equal(t, workerAddr, plumbing.workerAddr)
 	})
@@ -282,7 +224,7 @@ func TestMinerSetWorkerAddress(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := MinerSetWorkerAddress(context.Background(), test.plumbing, workerAddr, gprice, glimit)
+			_, err := MinerSetWorkerAddress(context.Background(), test.plumbing, workerAddr, baseFee, gasPremium, glimit)
 			assert.Error(t, err, test.error)
 			assert.Empty(t, test.plumbing.workerAddr)
 		})

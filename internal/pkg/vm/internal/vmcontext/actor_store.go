@@ -3,31 +3,31 @@ package vmcontext
 import (
 	"context"
 	"fmt"
+	"github.com/filecoin-project/go-state-types/exitcode"
+	specsruntime "github.com/filecoin-project/specs-actors/actors/runtime"
+	"github.com/ipfs/go-cid"
 	"reflect"
 
-	specsruntime "github.com/filecoin-project/specs-actors/actors/runtime"
-	"github.com/filecoin-project/specs-actors/actors/runtime/exitcode"
-	"github.com/ipfs/go-cid"
-
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/internal/gascost"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/internal/runtime"
-	"github.com/filecoin-project/go-filecoin/internal/pkg/vm/internal/storage"
+	"github.com/filecoin-project/go-state-types/cbor"
+	"github.com/filecoin-project/venus/internal/pkg/vm/gas"
+	"github.com/filecoin-project/venus/internal/pkg/vm/internal/runtime"
+	"github.com/filecoin-project/venus/internal/pkg/vm/storage"
 )
 
 type vmStorage interface {
-	Get(ctx context.Context, cid cid.Cid, obj interface{}) (int, error)
-	Put(ctx context.Context, obj interface{}) (cid.Cid, int, error)
+	GetWithLen(ctx context.Context, cid cid.Cid, obj interface{}) (int, error)
+	PutWithLen(ctx context.Context, obj interface{}) (cid.Cid, int, error)
 }
 
-// ActorStorage hides the storage methods from the actors and turns the errors into runtime panics.
+// ActorStorage hides the storage methods From the actors and turns the errors into runtime panics.
 type ActorStorage struct {
 	context   context.Context
 	inner     vmStorage
-	pricelist gascost.Pricelist
+	pricelist gas.Pricelist
 	gasTank   *GasTracker
 }
 
-func NewActorStorage(ctx context.Context, inner vmStorage, gasTank *GasTracker, pricelist gascost.Pricelist) *ActorStorage {
+func NewActorStorage(ctx context.Context, inner vmStorage, gasTank *GasTracker, pricelist gas.Pricelist) *ActorStorage {
 	return &ActorStorage{
 		context:   ctx,
 		inner:     inner,
@@ -49,10 +49,10 @@ var _ specsruntime.Store = (*ActorStorage)(nil)
 // actor, rather than system-level, error code.
 const serializationErr = exitcode.ErrSerialization
 
-func (s *ActorStorage) Put(obj specsruntime.CBORMarshaler) cid.Cid {
-	cid, ln, err := s.inner.Put(s.context, obj)
+func (s *ActorStorage) StorePut(obj cbor.Marshaler) cid.Cid {
+	cid, ln, err := s.inner.PutWithLen(s.context, obj)
 	if err != nil {
-		msg := fmt.Sprintf("failed to put object %s in store: %s", reflect.TypeOf(obj), err)
+		msg := fmt.Sprintf("failed To put object %s in store: %s", reflect.TypeOf(obj), err)
 		if _, ok := err.(storage.SerializationError); ok {
 			runtime.Abortf(serializationErr, msg)
 		} else {
@@ -63,19 +63,20 @@ func (s *ActorStorage) Put(obj specsruntime.CBORMarshaler) cid.Cid {
 	return cid
 }
 
-func (s *ActorStorage) Get(cid cid.Cid, obj specsruntime.CBORUnmarshaler) bool {
-	ln, err := s.inner.Get(s.context, cid, obj)
+func (s *ActorStorage) StoreGet(cid cid.Cid, obj cbor.Unmarshaler) bool {
+	//gas charge must check first
+	s.gasTank.Charge(s.pricelist.OnIpldGet(), "storage get %s bytes into %v", cid, obj)
+	_, err := s.inner.GetWithLen(s.context, cid, obj)
 	if err == storage.ErrNotFound {
 		return false
 	}
 	if err != nil {
-		msg := fmt.Sprintf("failed to get object %s %s from store: %s", reflect.TypeOf(obj), cid, err)
+		msg := fmt.Sprintf("failed To get object %s %s From store: %s", reflect.TypeOf(obj), cid, err)
 		if _, ok := err.(storage.SerializationError); ok {
 			runtime.Abortf(serializationErr, msg)
 		} else {
 			panic(msg)
 		}
 	}
-	s.gasTank.Charge(s.pricelist.OnIpldGet(ln), "storage get %s %d bytes into %v", cid, ln, obj)
 	return true
 }
