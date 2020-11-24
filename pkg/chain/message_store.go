@@ -367,15 +367,15 @@ func (ms *MessageStore) storeMessageReceipts(receipts []types.MessageReceipt) ([
 	for i, rcpt := range receipts {
 		wg.Add(1)
 
-		go func() {
+		go func(idx int, rt *types.MessageReceipt) {
 			defer wg.Done()
-			_, rcptBlock, er := ms.storeBlock(rcpt)
+			_, rcptBlock, er := ms.storeBlock(*rt)
 			if er == nil {
-				rawReceipts[i] = rcptBlock.RawData()
+				rawReceipts[idx] = rcptBlock.RawData()
 			}else{
 				err = er
 			}
-		}()
+		}(i, &rcpt)
 	}
 	wg.Wait()
 	if err != nil {
