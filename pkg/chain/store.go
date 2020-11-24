@@ -118,6 +118,7 @@ func NewStore(ds repo.Datastore,
 	cst cbor.IpldStore,
 	bsstore blockstore.Blockstore,
 	sr Reporter,
+	checkPoint block.TipSetKey,
 	genesisCid cid.Cid,
 ) *Store {
 	ipldSource := newSource(cst)
@@ -128,18 +129,22 @@ func NewStore(ds repo.Datastore,
 		bsstore:             bsstore,
 		headEvents:          pubsub.New(12),
 		tipIndex:            NewTipIndex(),
-		checkPoint:          block.UndefTipSet.Key(),
+		checkPoint:          checkPoint,
+		// checkPoint:          block.UndefTipSet.Key(),
 		genesis:             genesisCid,
 		reporter:            sr,
 		chainIndex:          NewChainIndex(tipsetProvider.GetTipSet),
 	}
 
-	val, err := store.ds.Get(CheckPoint)
-	if err != nil {
-		store.checkPoint = block.NewTipSetKey(genesisCid)
-	} else {
-		err = encoding.Decode(val, &store.checkPoint)
+	if checkPoint.Len() <= 0 {
+		val, err := store.ds.Get(CheckPoint)
+		if err != nil {
+			store.checkPoint = block.NewTipSetKey(genesisCid)
+		} else {
+			err = encoding.Decode(val, &store.checkPoint)
+		}
 	}
+
 	logStore.Infof("check point value: %v, error: %v", store.checkPoint, err)
 
 	return store

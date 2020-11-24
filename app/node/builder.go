@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"github.com/filecoin-project/venus/pkg/block"
 	"time"
 
 	"github.com/filecoin-project/go-state-types/abi"
@@ -39,6 +40,7 @@ type Builder struct {
 	repo        repo.Repo
 	journal     journal.Journal
 	isRelay     bool
+	checkPoint  block.TipSetKey
 	chainClock  clock.ChainEpochClock
 	genCid      cid.Cid
 	drand       beacon.Schedule
@@ -222,7 +224,7 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 
 	nd.ProofVerification = submodule.NewProofVerificationSubmodule(b.verifier)
 
-	nd.chain, err = submodule.NewChainSubmodule((*builder)(b), b.repo, &nd.Blockstore, &nd.ProofVerification, b.drand)
+	nd.chain, err = submodule.NewChainSubmodule((*builder)(b), b.repo, &nd.Blockstore, &nd.ProofVerification, b.checkPoint, b.drand)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Chain")
 	}
@@ -307,6 +309,14 @@ type builder Builder
 
 func (b builder) GenesisCid() cid.Cid {
 	return b.genCid
+}
+
+// IsRelay configures node to act as a libp2p relay.
+func CheckPoint(checkPoint block.TipSetKey) BuilderOpt {
+	return func(c *Builder) error {
+		c.checkPoint = checkPoint
+		return nil
+	}
 }
 
 func (b builder) BlockTime() time.Duration {

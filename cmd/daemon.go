@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/filecoin-project/venus/pkg/block"
 	"net/http"
 	_ "net/http/pprof" // nolint: golint
 	"os"
@@ -31,6 +32,7 @@ var daemonCmd = &cmds.Command{
 		cmds.StringOption(SwarmAddress, "multiaddress to listen on for filecoin network connections"),
 		cmds.StringOption(SwarmPublicRelayAddress, "public multiaddress for routing circuit relay traffic.  Necessary for relay nodes to provide this if they are not publically dialable"),
 		cmds.BoolOption(OfflineMode, "start the node without networking"),
+		cmds.StringOption("check-point", "where to start the chain"),
 		cmds.BoolOption(ELStdout),
 		cmds.BoolOption(IsRelay, "advertise and allow filecoin network traffic to be relayed through this node"),
 	},
@@ -76,6 +78,15 @@ func daemonRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 
 	if isRelay, ok := req.Options[IsRelay].(bool); ok && isRelay {
 		opts = append(opts, node.IsRelay())
+	}
+
+	if checkPoint, ok := req.Options["check-point"].(string); ok {
+		var tipsetKety block.TipSetKey
+		tipsetKety, err := block.NewTipSetKeyFromString(checkPoint)
+		if err != nil {
+			return err
+		}
+		opts = append(opts, node.CheckPoint(tipsetKety))
 	}
 
 	journal, err := journal.NewZapJournal(rep.JournalPath())
