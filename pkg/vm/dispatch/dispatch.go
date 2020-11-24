@@ -3,14 +3,14 @@ package dispatch
 import (
 	"bytes"
 	"fmt"
-	"github.com/filecoin-project/go-state-types/exitcode"
-	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	"reflect"
-
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
+	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
+	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/ipfs/go-cid"
+	"reflect"
+	"time"
 )
 
 // Actor is the interface all actors have to implement.
@@ -52,12 +52,14 @@ var _ Dispatcher = (*actorDispatcher)(nil)
 
 // Dispatch implements `Dispatcher`.
 func (d *actorDispatcher) Dispatch(methodNum abi.MethodNum, ctx interface{}, arg1 interface{}) ([]byte, *ExcuteError) {
+	tStart := time.Now()
 	// get method signature
 	m, err := d.signature(methodNum)
 	if err != nil {
 		return []byte{}, err
 	}
 
+	tMethod := time.Now()
 	// build args to pass to the method
 	args := []reflect.Value{
 		// the ctx will be automatically coerced
@@ -88,10 +90,11 @@ func (d *actorDispatcher) Dispatch(methodNum abi.MethodNum, ctx interface{}, arg
 	} else {
 		args = append(args, reflect.ValueOf(arg1))
 	}
+	tArgs := time.Now()
 
 	// invoke the method
 	out := m.method.Call(args)
-
+	tOut := time.Now()
 	// Note: we only support single objects being returned
 	/*if len(out) > 1 {  todo nocheck and lotus nocheck too
 		return nil, fmt.Errorf("actor method returned more than one object. method: %d, code: %s", methodNum, d.code)
@@ -101,6 +104,12 @@ func (d *actorDispatcher) Dispatch(methodNum abi.MethodNum, ctx interface{}, arg
 	// Note: we need to check for `IsNill()` here because Go doesnt work if you do `== nil` on the interface
 	if len(out) == 0 || (out[0].Kind() != reflect.Struct && out[0].IsNil()) {
 		return nil, nil
+	}
+
+	dur := tOut.Sub(tStart).Milliseconds()
+	if dur > 50 {
+		fmt.Printf("method took:%v,args took:%v,out took:%v\n",
+			tMethod.Sub(tStart).Milliseconds(), tArgs.Sub(tMethod).Milliseconds(), tOut.Sub(tArgs).Milliseconds())
 	}
 
 	switch ret := out[0].Interface().(type) {

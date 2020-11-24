@@ -11,12 +11,6 @@ import (
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/go-state-types/network"
 	specsruntime "github.com/filecoin-project/specs-actors/actors/runtime"
-	"github.com/ipfs/go-cid"
-	ipfscbor "github.com/ipfs/go-ipld-cbor"
-	xerrors "github.com/pkg/errors"
-	"runtime/debug"
-	"time"
-
 	"github.com/filecoin-project/venus/pkg/crypto"
 	"github.com/filecoin-project/venus/pkg/enccid"
 	"github.com/filecoin-project/venus/pkg/encoding"
@@ -29,6 +23,10 @@ import (
 	"github.com/filecoin-project/venus/pkg/vm/dispatch"
 	"github.com/filecoin-project/venus/pkg/vm/gas"
 	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/ipfs/go-cid"
+	ipfscbor "github.com/ipfs/go-ipld-cbor"
+	xerrors "github.com/pkg/errors"
+	"runtime/debug"
 )
 
 var gasOnActorExec = gas.NewGasCharge("OnActorExec", 0, 0)
@@ -242,20 +240,16 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 	actorImpl := ctx.vm.getActorImpl(toActor.Code.Cid, ctx.Runtime())
 
 	// 6. create target stateView handle
-	tStart := time.Now()
 	stateHandle := newActorStateHandle((*stateHandleContext)(ctx))
 	ctx.stateHandle = &stateHandle
 
 	// dispatch
 	adapter := newRuntimeAdapter(ctx) //runtimeAdapter{ctx: ctx}
 	var extErr *dispatch.ExcuteError
-	t61 := time.Now()
 	ret, extErr = actorImpl.Dispatch(ctx.originMsg.Method, adapter, ctx.originMsg.Params)
 	if extErr != nil {
 		runtime.Abortf(extErr.ExitCode(), extErr.Error())
 	}
-	t6 := time.Now()
-	fmt.Printf("dispatch took:%v,t6 took:%v\n", t61.Sub(tStart).Milliseconds(), t6.Sub(t61).Milliseconds())
 
 	// post-dispatch
 	// 1. check caller was validated

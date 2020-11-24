@@ -2,10 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
-	"sync"
-	"time"
-
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-amt-ipld/v2"
 	blocks "github.com/ipfs/go-block-format"
@@ -16,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
+	"sync"
 
 	// named msgarray here to make it clear that these are the types used by
 	// messages, regardless of specs-actors version.
@@ -264,14 +261,10 @@ func (ms *MessageStore) LoadReceipts(ctx context.Context, c cid.Cid) ([]types.Me
 // this collection to ipld storage.  The cid of the collection is returned.
 func (ms *MessageStore) StoreReceipts(ctx context.Context, receipts []types.MessageReceipt) (cid.Cid, error) {
 	// store secp messages
-	tStart := time.Now()
 	rawReceipts, err := ms.storeMessageReceipts(receipts)
 	if err != nil {
 		return cid.Undef, errors.Wrap(err, "could not store secp messages")
 	}
-
-	tRaw := time.Now()
-	fmt.Printf("store receipts raw: %v\n", tRaw.Sub(tStart).Milliseconds())
 
 	return ms.storeAMTRaw(ctx, rawReceipts)
 }
