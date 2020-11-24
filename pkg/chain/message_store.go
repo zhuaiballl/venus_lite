@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -358,14 +359,27 @@ func (ms *MessageStore) StoreTxMeta(ctx context.Context, meta types.TxMeta) (cid
 	return c, err
 }
 
+// Todo modify by force ???
 func (ms *MessageStore) storeMessageReceipts(receipts []types.MessageReceipt) ([][]byte, error) {
 	rawReceipts := make([][]byte, len(receipts))
+	var wg sync.WaitGroup
+	var err error
 	for i, rcpt := range receipts {
-		_, rcptBlock, err := ms.storeBlock(rcpt)
-		if err != nil {
-			return nil, err
-		}
-		rawReceipts[i] = rcptBlock.RawData()
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			_, rcptBlock, er := ms.storeBlock(rcpt)
+			if er == nil {
+				rawReceipts[i] = rcptBlock.RawData()
+			}else{
+				err = er
+			}
+		}()
+	}
+	wg.Wait()
+	if err != nil {
+		return nil, err
 	}
 	return rawReceipts, nil
 }

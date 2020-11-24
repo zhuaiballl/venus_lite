@@ -225,6 +225,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 		// Process BLS messages From the block
 		for _, m := range blk.BLSMessages {
+			tStart = time.Now()
 			// do not recompute already seen messages
 			mcid := msgCID(m)
 			if _, found := seenMsgs[mcid]; found {
@@ -236,6 +237,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			//	fmt.Println()
 			//}
 			ret := vm.applyMessage(m, m.ChainLength())
+			tApply := time.Now()
 			// accumulate result
 			minerPenaltyTotal = big.Add(minerPenaltyTotal, ret.OutPuts.MinerPenalty)
 			minerGasRewardTotal = big.Add(minerGasRewardTotal, ret.OutPuts.MinerTip)
@@ -247,6 +249,8 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			}
 			// flag msg as seen
 			seenMsgs[mcid] = struct{}{}
+			fmt.Printf("apply msg took:%v, accumulate result took:%v\n", tApply.Sub(tStart).Milliseconds(),
+				time.Now().Sub(tApply).Milliseconds())
 			//iii, _ := vm.flush()
 			//fmt.Printf("message: %s  root: %s\n", mcid, iii)
 			//dddd, _ := json.MarshalIndent(ret.OutPuts, "", "\t")
@@ -266,6 +270,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 		// Process SECP messages From the block
 		for _, sm := range blk.SECPMessages {
+			tStart = time.Now()
 			// do not recompute already seen messages
 			mcid, _ := sm.Cid()
 			if _, found := seenMsgs[mcid]; found {
@@ -280,7 +285,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			//	fmt.Println()
 			//}
 			ret := vm.applyMessage(&m, sm.ChainLength())
-
+			tApply := time.Now()
 			// accumulate result
 			minerPenaltyTotal = big.Add(minerPenaltyTotal, ret.OutPuts.MinerPenalty)
 			minerGasRewardTotal = big.Add(minerGasRewardTotal, ret.OutPuts.MinerTip)
@@ -293,6 +298,8 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 			// flag msg as seen
 			seenMsgs[mcid] = struct{}{}
+			fmt.Printf("apply msg took:%v, accumulate result took:%v\n", tApply.Sub(tStart).Milliseconds(),
+				time.Now().Sub(tApply).Milliseconds())
 			//iii, _ := vm.flush()
 			//fmt.Printf("message: %s  root: %s\n", mcid, iii)
 			//
@@ -652,11 +659,11 @@ func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret 
 	}
 	tEnd := time.Now()
 
-	if tEnd.Sub(tStart).Milliseconds() > int64(500) {
+	//if tEnd.Sub(tStart).Milliseconds() > int64(500) {
 		fmt.Printf("t2 took:%v,t6 took:%v,t7 took:%v,tSend2:%v,tSend3:%v,tEnd:%v\n",
 			t2.Sub(tStart).Milliseconds(), t6.Sub(t2).Milliseconds(),  t7.Sub(t6).Milliseconds(),
 			tSend2.Sub(t7).Milliseconds(), tSend3.Sub(tSend2).Milliseconds(), tEnd.Sub(tSend3).Milliseconds())
-	}
+	//}
 
 	return &Ret{
 		GasTracker: gasTank,
