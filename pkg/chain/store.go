@@ -143,10 +143,9 @@ func NewStore(ds repo.Datastore,
 		} else {
 			err = encoding.Decode(val, &store.checkPoint)
 		}
+		logStore.Infof("check point value: %v, error: %v", store.checkPoint, err)
 	}
-
-	logStore.Infof("check point value: %v, error: %v", store.checkPoint, err)
-
+	
 	return store
 }
 
