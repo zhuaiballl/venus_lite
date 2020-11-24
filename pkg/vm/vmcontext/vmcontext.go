@@ -12,6 +12,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
+	"time"
 
 	specsruntime "github.com/filecoin-project/specs-actors/actors/runtime"
 	"github.com/filecoin-project/venus/pkg/block"
@@ -167,8 +168,7 @@ func (vm *VM) normalizeAddress(addr address.Address) (address.Address, bool) {
 
 // ApplyTipSetMessages implements interpreter.VMInterpreter
 func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, parentEpoch, epoch abi.ChainEpoch, cb ExecCallBack) ([]types.MessageReceipt, error) {
-	//tStart := time.Now()
-	var receipts []types.MessageReceipt
+	tStart := time.Now()
 	pstate, _ := vm.state.Flush(vm.context)
 	for i := parentEpoch; i < epoch; i++ {
 		if i > parentEpoch {
@@ -188,8 +188,8 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 				}
 			}
 		}
-		// handle state forks
-		// XXX: The state tree
+
+		// handle state fork
 		forkedCid, err := vm.vmOption.Fork.HandleStateForks(vm.context, pstate, i, ts)
 		if err != nil {
 			return nil, xerrors.Errorf("hand fork error: %v", err)
@@ -203,14 +203,17 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 		}
 		vm.SetCurrentEpoch(i + 1)
 	}
-	//fmt.Printf("process tipset fork: %v\n", time.Now().Sub(tStart).Milliseconds())
+	tFork := time.Now()
+	fmt.Printf("tFork took: %v\n", tFork.Sub(tStart).Milliseconds())
+
 	// create message tracker
 	// Note: the same message could have been included by more than one miner
+	var receipts []types.MessageReceipt
 	seenMsgs := make(map[cid.Cid]struct{})
 
 	// process messages on each block
-	for _, blk := range blocks {
-		//tStart = time.Now()
+	for idx, blk := range blocks {
+		tStartBlk := time.Now()
 		if blk.Miner.Protocol() != address.ID {
 			panic("precond failure: block miner address must be an IDAddress")
 		}
@@ -222,6 +225,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 		// Process BLS messages From the block
 		for _, m := range blk.BLSMessages {
+			tStart = time.Now()
 			// do not recompute already seen messages
 			mcid := msgCID(m)
 			if _, found := seenMsgs[mcid]; found {
@@ -244,7 +248,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			}
 			// flag msg as seen
 			seenMsgs[mcid] = struct{}{}
-
+			fmt.Printf("apply msg [%v] took:%v\n", mcid.String(), time.Now().Sub(tStart).Milliseconds())
 			//iii, _ := vm.flush()
 			//fmt.Printf("message: %s  root: %s\n", mcid, iii)
 			//dddd, _ := json.MarshalIndent(ret.OutPuts, "", "\t")
@@ -259,12 +263,12 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			//}
 			//dddd, _ = json.MarshalIndent(xxxx,"","\t")
 			//fmt.Println(string(dddd))
-
 			//fmt.Println()
 		}
 
 		// Process SECP messages From the block
 		for _, sm := range blk.SECPMessages {
+			tStart = time.Now()
 			// do not recompute already seen messages
 			mcid, _ := sm.Cid()
 			if _, found := seenMsgs[mcid]; found {
@@ -292,7 +296,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 			// flag msg as seen
 			seenMsgs[mcid] = struct{}{}
-
+			fmt.Printf("apply msg [%v] took:%v\n", mcid.String(), time.Now().Sub(tStart).Milliseconds())
 			//iii, _ := vm.flush()
 			//fmt.Printf("message: %s  root: %s\n", mcid, iii)
 			//
@@ -311,6 +315,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			//fmt.Println()
 		}
 
+		tAppalyMsg := time.Now()
 		//root, _ := vm.state.Flush(context.TODO())
 		//fmt.Printf("before reward: %d  root: %s\n", index, root)
 
@@ -326,11 +331,12 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 				return nil, xerrors.Errorf("callback failed on reward message: %w", err)
 			}
 		}
+		tRewardMsg := time.Now()
+		fmt.Printf("block[%v] apply msg took:%v, reward msg took:%v\n",
+			tAppalyMsg.Sub(tStartBlk).Milliseconds(), tRewardMsg.Sub(tAppalyMsg).Milliseconds())
 
 		//root, _ = vm.state.Flush(context.TODO())
 		//fmt.Printf("reward: %d  root: %s\n", index, root)
-		//fmt.Println("process block ", index, " time ", time.Since(tStart).Milliseconds())
-
 	}
 
 	//root, _ := vm.state.Flush(context.TODO())
@@ -338,6 +344,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 	//fmt.Println("xxxx")
 
 	// cron tick
+	tStart = time.Now()
 	cronMessage := makeCronTickMessage()
 	ret, err := vm.applyImplicitMessage(cronMessage)
 	if err != nil {
@@ -348,8 +355,8 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			return nil, xerrors.Errorf("callback failed on cron message: %w", err)
 		}
 	}
+	tCron := time.Now()
 
-	//fmt.Printf("process tipset cron: %v\n", time.Now().Sub(tStart).Milliseconds())
 	//root, _ = vm.state.Flush(context.TODO())
 	//fmt.Printf("after cron root: %s\n", root)
 
@@ -357,6 +364,10 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 	if _, err := vm.flush(); err != nil {
 		return nil, err
 	}
+	tFlush := time.Now()
+	fmt.Printf("cron took:%v, flush took:%v\n",
+		tCron.Sub(tStart).Milliseconds(), tFlush.Sub(tCron).Milliseconds())
+
 
 	return receipts, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/util"
 	"io/ioutil"
 	"sync"
 	"time"
@@ -38,6 +37,7 @@ import (
 	"github.com/filecoin-project/venus/pkg/metrics/tracing"
 	"github.com/filecoin-project/venus/pkg/specactors/policy"
 	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus/pkg/util"
 )
 
 // Syncer updates its chain.Store according to the methods of its
@@ -391,6 +391,11 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 			}
 		}
 
+		messageCount := len(blkblsMessages) + len(blksecpMessages)
+		if messageCount > block.BlockMessageLimit {
+			return errors.Errorf("Number of messages in block %s is %d which exceeds block message limit", blk.Cid(), messageCount)
+		}
+
 		blsMessages = append(blsMessages, blkblsMessages)
 		secpMessages = append(secpMessages, blksecpMessages)
 	}
@@ -410,6 +415,7 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 			return err
 		}
 	}
+	tCheck := time.Now()
 
 	receiptCid, err := syncer.messageProvider.StoreReceipts(ctx, receipts)
 	if err != nil {
@@ -419,7 +425,7 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 	dddd, _ := json.MarshalIndent(receipts, "", "\t")
 	ioutil.WriteFile("receipt.json", dddd, 0777)
 
-	fmt.Printf("height:%d root: %s receiptcid: %s\n", next.EnsureHeight(), root, receiptCid)
+	// fmt.Printf("height:%d root: %s receiptcid: %s\n", next.EnsureHeight(), root, receiptCid)
 	logSyncer.Infow("Process Block ", "Height:", next.EnsureHeight(), " Root:", root, " receiptcid ", receiptCid)
 
 	err = syncer.chainStore.PutTipSetMetadata(ctx, &chain.TipSetMetadata{
@@ -431,9 +437,9 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 		return err
 	}
 	tStore := time.Now()
-	fmt.Printf("Vaildate took: %v, runState took: %v, runMsgs took: %v, store took: %v\n",
-		tValidate.Sub(start).Milliseconds(), tRunState.Sub(tValidate).Milliseconds(),
-		tRunMsgs.Sub(tRunState).Milliseconds(), tStore.Sub(tRunMsgs).Milliseconds())
+	fmt.Printf("Vaildate took: %v, runState took: %v, checkBlock took: %v, runMsgs took: %v, store took: %v\n",
+		tValidate.Sub(start).Milliseconds(), tRunState.Sub(tValidate).Milliseconds(), tCheck.Sub(tRunState).Milliseconds(),
+		tRunMsgs.Sub(tCheck).Milliseconds(), tStore.Sub(tRunMsgs).Milliseconds())
 
 	logSyncer.Infof("Successfully updated bsstore with %s", next.String())
 	return nil

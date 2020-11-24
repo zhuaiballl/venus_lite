@@ -966,17 +966,10 @@ func (c *Expected) beaconBaseEntry(ctx context.Context, blk *block.Block) (*bloc
 // Messages that fail to apply are dropped on the floor (and no receipt is emitted).
 func (c *Expected) runMessages(ctx context.Context, st state.Tree, vms *vm.Storage, ts *block.TipSet,
 	blsMessages [][]*types.UnsignedMessage, secpMessages [][]*types.SignedMessage) (state.Tree, []types.MessageReceipt, error) {
-	msgs := []vm.BlockMessagesInfo{}
-
 	// build message information per block
+	msgs := make([]vm.BlockMessagesInfo, ts.Len())
 	for i := 0; i < ts.Len(); i++ {
 		blk := ts.At(i)
-
-		messageCount := len(blsMessages[i]) + len(secpMessages[i])
-		if messageCount > block.BlockMessageLimit {
-			return nil, nil, errors.Errorf("Number of messages in block %s is %d which exceeds block message limit", blk.Cid(), messageCount)
-		}
-
 		msgInfo := vm.BlockMessagesInfo{
 			BLSMessages:  blsMessages[i],
 			SECPMessages: secpMessages[i],
@@ -984,7 +977,7 @@ func (c *Expected) runMessages(ctx context.Context, st state.Tree, vms *vm.Stora
 			WinCount:     blk.ElectionProof.WinCount,
 		}
 
-		msgs = append(msgs, msgInfo)
+		msgs[i] = msgInfo
 	}
 
 	// process tipset

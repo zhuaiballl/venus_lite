@@ -65,11 +65,6 @@ func (p *DefaultProcessor) ProcessTipSet(ctx context.Context, st state.Tree, vms
 	span.AddAttributes(trace.StringAttribute("tipset", ts.String()))
 	defer tracing.AddErrorEndSpan(ctx, span, &err)
 
-	epoch, err := ts.Height()
-	if err != nil {
-		return nil, err
-	}
-
 	var parentEpoch abi.ChainEpoch
 	if parent.Defined() {
 		parentEpoch, err = parent.Height()
@@ -78,9 +73,9 @@ func (p *DefaultProcessor) ProcessTipSet(ctx context.Context, st state.Tree, vms
 		}
 	}
 
-	v := vm.NewVM(st, vms, p.syscalls, vmOption)
 
-	return v.ApplyTipSetMessages(msgs, ts, parentEpoch, epoch, nil)
+	v := vm.NewVM(st, vms, p.syscalls, vmOption)
+	return v.ApplyTipSetMessages(msgs, ts, parentEpoch, vmOption.Epoch, nil)
 }
 
 // ProcessTipSet computes the state transition specified by the messages.
