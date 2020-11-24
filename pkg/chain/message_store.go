@@ -361,21 +361,22 @@ func (ms *MessageStore) StoreTxMeta(ctx context.Context, meta types.TxMeta) (cid
 
 // Todo modify by force ???
 func (ms *MessageStore) storeMessageReceipts(receipts []types.MessageReceipt) ([][]byte, error) {
-	rawReceipts := make([][]byte, len(receipts))
+	clear
+	:= make([][]byte, len(receipts))
 	var wg sync.WaitGroup
 	var err error
 	for i, rcpt := range receipts {
 		wg.Add(1)
 
-		go func(idx int, rt *types.MessageReceipt) {
+		go func(idx int, rt types.MessageReceipt) {
 			defer wg.Done()
-			_, rcptBlock, er := ms.storeBlock(*rt)
+			_, rcptBlock, er := ms.storeBlock(rt)
 			if er == nil {
 				rawReceipts[idx] = rcptBlock.RawData()
 			}else{
 				err = er
 			}
-		}(i, &rcpt)
+		}(i, rcpt)
 	}
 	wg.Wait()
 	if err != nil {
