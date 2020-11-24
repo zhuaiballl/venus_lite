@@ -361,8 +361,7 @@ func (ms *MessageStore) StoreTxMeta(ctx context.Context, meta types.TxMeta) (cid
 
 // Todo modify by force ???
 func (ms *MessageStore) storeMessageReceipts(receipts []types.MessageReceipt) ([][]byte, error) {
-	clear
-	:= make([][]byte, len(receipts))
+	rawReceipts := make([][]byte, len(receipts))
 	var wg sync.WaitGroup
 	var err error
 	for i, rcpt := range receipts {
