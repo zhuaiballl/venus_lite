@@ -2,7 +2,7 @@ package chain
 
 import (
 	"context"
-	"golang.org/x/tools/go/ssa/interp/testdata/src/fmt"
+	"fmt"
 	"time"
 
 	"github.com/filecoin-project/go-address"
