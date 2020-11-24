@@ -108,7 +108,7 @@ func (d *actorDispatcher) Dispatch(methodNum abi.MethodNum, ctx interface{}, arg
 
 	dur := tOut.Sub(tStart).Milliseconds()
 	fmt.Printf("dur:%v\n",dur)
-	if dur > 50 {
+	if dur > 10 {
 		fmt.Printf("method took:%v,args took:%v,out took:%v\n",
 			tMethod.Sub(tStart).Milliseconds(), tArgs.Sub(tMethod).Milliseconds(), tOut.Sub(tArgs).Milliseconds())
 	}

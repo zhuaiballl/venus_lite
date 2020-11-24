@@ -26,7 +26,6 @@ import (
 	"github.com/ipfs/go-cid"
 	ipfscbor "github.com/ipfs/go-ipld-cbor"
 	xerrors "github.com/pkg/errors"
-	"runtime/debug"
 )
 
 var gasOnActorExec = gas.NewGasCharge("OnActorExec", 0, 0)
@@ -159,44 +158,46 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 	if err != nil {
 		panic(err)
 	}
-	defer ctx.vm.clearSnapshot()
+	//defer func() {
+	//	go ctx.vm.clearSnapshot()
+	//}()
 
 	// Install handler for abort, which rolls back all stateView changes From this and any nested invocations.
 	// This is the only path by which a non-OK exit code may be returned.
-	defer func() {
-		if r := recover(); r != nil {
-
-			if err := ctx.vm.revert(); err != nil {
-				panic(err)
-			}
-			switch r.(type) {
-			case runtime.ExecutionPanic:
-				p := r.(runtime.ExecutionPanic)
-
-				vmlog.Warnw("Abort during actor execution.",
-					"errorMessage", p,
-					"exitCode", p.Code(),
-					"sender", ctx.originMsg.From,
-					"receiver", ctx.originMsg.To,
-					"methodNum", ctx.originMsg.Method,
-					"Value", ctx.originMsg.Value,
-					"gasLimit", ctx.gasTank.GasAvailable)
-				ret = []byte{} // The Empty here should never be used, but slightly safer than zero Value.
-				errcode = p.Code()
-			default:
-				if err, ok := r.(error); ok {
-					fmt.Println(err.Error())
-				} else {
-					fmt.Println(r)
-				}
-				errcode = 1
-				ret = []byte{}
-				// do not trap unknown panics
-				vmlog.Errorf("spec actors failure: %s", r)
-				debug.PrintStack()
-			}
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//
+	//		if err := ctx.vm.revert(); err != nil {
+	//			panic(err)
+	//		}
+	//		switch r.(type) {
+	//		case runtime.ExecutionPanic:
+	//			p := r.(runtime.ExecutionPanic)
+	//
+	//			vmlog.Warnw("Abort during actor execution.",
+	//				"errorMessage", p,
+	//				"exitCode", p.Code(),
+	//				"sender", ctx.originMsg.From,
+	//				"receiver", ctx.originMsg.To,
+	//				"methodNum", ctx.originMsg.Method,
+	//				"Value", ctx.originMsg.Value,
+	//				"gasLimit", ctx.gasTank.GasAvailable)
+	//			ret = []byte{} // The Empty here should never be used, but slightly safer than zero Value.
+	//			errcode = p.Code()
+	//		default:
+	//			if err, ok := r.(error); ok {
+	//				fmt.Println(err.Error())
+	//			} else {
+	//				fmt.Println(r)
+	//			}
+	//			errcode = 1
+	//			ret = []byte{}
+	//			// do not trap unknown panics
+	//			vmlog.Errorf("spec actors failure: %s", r)
+	//			debug.PrintStack()
+	//		}
+	//	}
+	//}()
 
 	// pre-dispatch
 	// 1. charge gas for message invocation
