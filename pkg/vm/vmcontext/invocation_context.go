@@ -200,7 +200,6 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 		}
 	}()
 
-	tStart := time.Now()
 	// pre-dispatch
 	// 1. charge gas for message invocation
 	// 2. load target actor
@@ -219,11 +218,9 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 	if ctx.vm.NtwkVersion() > network.Version3 {
 		ctx.msg.To = toIDAddr
 	}
-	t1 := time.Now()
 
 	// 2. charge gas for msg
 	ctx.gasTank.Charge(ctx.vm.pricelist.OnMethodInvocation(ctx.originMsg.Value, ctx.originMsg.Method), "Method invocation")
-	t2 := time.Now()
 
 	// 3. transfer funds carried by the msg
 	if !ctx.originMsg.Value.Nil() && !ctx.originMsg.Value.IsZero() {
@@ -236,7 +233,6 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 	if ctx.originMsg.Method == builtin.MethodSend {
 		return nil, exitcode.Ok
 	}
-	t4 := time.Now()
 
 	// 5. load target actor code
 	toActor, found, err := ctx.vm.state.GetActor(ctx.vm.context, ctx.originMsg.To)
@@ -244,20 +240,22 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 		panic(xerrors.Errorf("cannt find to actor %v", err))
 	}
 	actorImpl := ctx.vm.getActorImpl(toActor.Code.Cid, ctx.Runtime())
-	t5 := time.Now()
 
 	// 6. create target stateView handle
+	tStart := time.Now()
 	stateHandle := newActorStateHandle((*stateHandleContext)(ctx))
 	ctx.stateHandle = &stateHandle
 
 	// dispatch
 	adapter := newRuntimeAdapter(ctx) //runtimeAdapter{ctx: ctx}
 	var extErr *dispatch.ExcuteError
+	t61 := time.Now()
 	ret, extErr = actorImpl.Dispatch(ctx.originMsg.Method, adapter, ctx.originMsg.Params)
 	if extErr != nil {
 		runtime.Abortf(extErr.ExitCode(), extErr.Error())
 	}
 	t6 := time.Now()
+	fmt.Printf("dispatch took:%v,t6 took:%v\n", t61.Sub(tStart).Milliseconds(), t6.Sub(t61).Milliseconds())
 
 	// post-dispatch
 	// 1. check caller was validated
@@ -280,11 +278,6 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 
 	// Reset To pre-invocation stateView
 	ctx.stateHandle = nil
-	t7 := time.Now()
-
-	fmt.Printf("t1 took:%v, t2 took:%v, t4 took:%v, t5 took:%v, t6 took:%v, t7 took:%v\n",
-		t1.Sub(tStart).Milliseconds(), t2.Sub(t1).Milliseconds(), t4.Sub(t2).Milliseconds(),
-		t5.Sub(t4).Milliseconds(), t6.Sub(t5).Milliseconds(), t7.Sub(t6).Milliseconds())
 
 	// 3. success!
 	return ret, exitcode.Ok
