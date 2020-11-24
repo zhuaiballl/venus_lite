@@ -2,6 +2,8 @@ package chain
 
 import (
 	"context"
+	"golang.org/x/tools/go/ssa/interp/testdata/src/fmt"
+	"time"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-amt-ipld/v2"
@@ -261,10 +263,14 @@ func (ms *MessageStore) LoadReceipts(ctx context.Context, c cid.Cid) ([]types.Me
 // this collection to ipld storage.  The cid of the collection is returned.
 func (ms *MessageStore) StoreReceipts(ctx context.Context, receipts []types.MessageReceipt) (cid.Cid, error) {
 	// store secp messages
+	tStart := time.Now()
 	rawReceipts, err := ms.storeMessageReceipts(receipts)
 	if err != nil {
 		return cid.Undef, errors.Wrap(err, "could not store secp messages")
 	}
+
+	tRaw := time.Now()
+	fmt.Printf("store receipts raw: %v\n", tRaw.Sub(tStart).Milliseconds())
 
 	return ms.storeAMTRaw(ctx, rawReceipts)
 }

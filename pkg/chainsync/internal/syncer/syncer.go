@@ -421,7 +421,7 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 	if err != nil {
 		return errors.Wrapf(err, "could not bsstore message rerceipts for tip set %s", next.String())
 	}
-	tRunMsgs := time.Now()
+	tStoreReceipts := time.Now()
 	dddd, _ := json.MarshalIndent(receipts, "", "\t")
 	ioutil.WriteFile("receipt.json", dddd, 0777)
 
@@ -436,10 +436,10 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 	if err != nil {
 		return err
 	}
-	tStore := time.Now()
-	fmt.Printf("Vaildate took: %v, runState took: %v, checkBlock took: %v, runMsgs took: %v, store took: %v\n",
+
+	fmt.Printf("Vaildate took: %v, runState took: %v, checkBlock took: %v, storeReceipts took: %v\n",
 		tValidate.Sub(start).Milliseconds(), tRunState.Sub(tValidate).Milliseconds(), tCheck.Sub(tRunState).Milliseconds(),
-		tRunMsgs.Sub(tCheck).Milliseconds(), tStore.Sub(tRunMsgs).Milliseconds())
+		tStoreReceipts.Sub(tCheck).Milliseconds())
 
 	logSyncer.Infof("Successfully updated bsstore with %s", next.String())
 	return nil
