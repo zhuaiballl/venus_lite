@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -185,11 +186,16 @@ func (ctx *invocationContext) invoke() (ret []byte, errcode exitcode.ExitCode) {
 				ret = []byte{} // The Empty here should never be used, but slightly safer than zero Value.
 				errcode = p.Code()
 			default:
+				if err, ok := r.(error); ok {
+					fmt.Println(err.Error())
+				} else {
+					fmt.Println(r)
+				}
 				errcode = 1
 				ret = []byte{}
 				// do not trap unknown panics
 				vmlog.Errorf("spec actors failure: %s", r)
-				//debug.PrintStack()
+				debug.PrintStack()
 			}
 		}
 	}()

@@ -283,7 +283,7 @@ func (c *Expected) validateBlock(ctx context.Context,
 
 	validationStart := time.Now()
 	defer func() {
-		fmt.Println("block validation took", time.Since(validationStart), "height", blk.Height, "age", time.Since(time.Unix(int64(blk.Timestamp), 0)))
+		fmt.Println("block validation took", time.Since(validationStart), "height", blk.Height)
 		log.Infow("block validation", "took", time.Since(validationStart), "height", blk.Height, "age", time.Since(time.Unix(int64(blk.Timestamp), 0)))
 	}()
 

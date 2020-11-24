@@ -2,8 +2,10 @@ package syncer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/filecoin-project/venus/pkg/util"
+	"io/ioutil"
 	"sync"
 	"time"
 
@@ -283,6 +285,13 @@ func (syncer *Syncer) fetchAndValidateHeaders(ctx context.Context, ci *block.Cha
 	return headers, nil
 }
 
+func escape(height abi.ChainEpoch) func() {
+	start := time.Now()
+	return func() {
+		fmt.Printf("sync height: %v, total took: %v\n", height, time.Now().Sub(start).Milliseconds())
+	}
+}
+
 // syncOne syncs a single tipset with the chain bsstore. syncOne calculates the
 // parent state of the tipset and calls into consensus to run a state transition
 // in order to validate the tipset.  In the case the input tipset is valid,
@@ -293,6 +302,10 @@ func (syncer *Syncer) fetchAndValidateHeaders(ctx context.Context, ci *block.Cha
 // ensure head is not modified by another goroutine during run.
 func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) error {
 	logSyncer.Infof("Start updated bsstore with %s", next.String())
+
+	defer escape(next.EnsureHeight())()
+	start := time.Now()
+
 	priorHeadKey := syncer.chainStore.GetHead()
 
 	// if tipset is already priorHeadKey, we've been here before. do nothing.
@@ -384,11 +397,12 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 
 	// Run a state transition to validate the tipset and compute
 	// a new state to add to the bsstore.
-	toProcessTime := time.Now()
+	tValidate := time.Now()
 	root, receipts, err := syncer.fullValidator.RunStateTransition(ctx, next, secpMessages, blsMessages, parentStateRoot)
 	if err != nil {
 		return xerrors.Errorf("calc current tipset %s state failed %w", next.Key().String(), err)
 	}
+	tRunState := time.Now()
 
 	for i := 0; i < next.Len(); i++ {
 		err = syncer.faultDetector.CheckBlock(next.At(i), parent)
@@ -401,10 +415,12 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 	if err != nil {
 		return errors.Wrapf(err, "could not bsstore message rerceipts for tip set %s", next.String())
 	}
-	/*dddd, _ := json.MarshalIndent(receipts, "", "\t")
+	tRunMsgs := time.Now()
+	dddd, _ := json.MarshalIndent(receipts, "", "\t")
 	ioutil.WriteFile("receipt.json", dddd, 0777)
-	*/
-	logSyncer.Infow("Process Block ", "Height:", next.EnsureHeight(), " Root:", root, " receiptcid ", receiptCid, " time: ", time.Now().Sub(toProcessTime).Milliseconds())
+
+	fmt.Printf("height:%d root: %s receiptcid: %s\n", next.EnsureHeight(), root, receiptCid)
+	logSyncer.Infow("Process Block ", "Height:", next.EnsureHeight(), " Root:", root, " receiptcid ", receiptCid)
 
 	err = syncer.chainStore.PutTipSetMetadata(ctx, &chain.TipSetMetadata{
 		TipSet:          next,
@@ -414,6 +430,11 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 	if err != nil {
 		return err
 	}
+	tStore := time.Now()
+	fmt.Printf("Vaildate took: %v, runState took: %v, runMsgs took: %v, store took: %v\n",
+		tValidate.Sub(start).Milliseconds(), tRunState.Sub(tValidate).Milliseconds(),
+		tRunMsgs.Sub(tRunState).Milliseconds(), tStore.Sub(tRunMsgs).Milliseconds())
+
 	logSyncer.Infof("Successfully updated bsstore with %s", next.String())
 	return nil
 }
@@ -575,6 +596,9 @@ func (syncer *Syncer) handleNewTipSet(ctx context.Context, ci *block.ChainInfo) 
 		beInSyncing = false //reset to start new sync
 	}()
 
+	cidd, _ := cid.Decode("bafy2bzacedoofairdvirsyk6b7e47f5rsewnpjdinolwymik7p7npwlxrinsa")
+	ci.Head = block.NewTipSetKey(cidd)
+	ci.Height = 50005
 	// If the store already has this tipset then the syncer is finished.
 	if syncer.chainStore.HasTipSetAndState(ctx, ci.Head) {
 		return nil
