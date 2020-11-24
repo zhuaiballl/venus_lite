@@ -145,7 +145,7 @@ func NewStore(ds repo.Datastore,
 		}
 		logStore.Infof("check point value: %v, error: %v", store.checkPoint, err)
 	}
-	
+
 	return store
 }
 
