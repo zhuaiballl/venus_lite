@@ -332,7 +332,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			}
 		}
 		tRewardMsg := time.Now()
-		fmt.Printf("block[%v] apply msg took:%v, reward msg took:%v\n",
+		fmt.Printf("block[%v] apply msg took:%v, reward msg took:%v\n", idx,
 			tAppalyMsg.Sub(tStartBlk).Milliseconds(), tRewardMsg.Sub(tAppalyMsg).Milliseconds())
 
 		//root, _ = vm.state.Flush(context.TODO())
