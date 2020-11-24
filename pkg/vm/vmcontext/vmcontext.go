@@ -225,7 +225,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 		// Process BLS messages From the block
 		for _, m := range blk.BLSMessages {
-			tStart = time.Now()
+			//tStart = time.Now()
 			// do not recompute already seen messages
 			mcid := msgCID(m)
 			if _, found := seenMsgs[mcid]; found {
@@ -237,7 +237,6 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			//	fmt.Println()
 			//}
 			ret := vm.applyMessage(m, m.ChainLength())
-			tApply := time.Now()
 			// accumulate result
 			minerPenaltyTotal = big.Add(minerPenaltyTotal, ret.OutPuts.MinerPenalty)
 			minerGasRewardTotal = big.Add(minerGasRewardTotal, ret.OutPuts.MinerTip)
@@ -249,8 +248,7 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			}
 			// flag msg as seen
 			seenMsgs[mcid] = struct{}{}
-			fmt.Printf("apply msg took:%v, accumulate result took:%v\n", tApply.Sub(tStart).Milliseconds(),
-				time.Now().Sub(tApply).Milliseconds())
+			//fmt.Printf("apply msg took:%v\n", tApply.Sub(tStart).Milliseconds())
 			//iii, _ := vm.flush()
 			//fmt.Printf("message: %s  root: %s\n", mcid, iii)
 			//dddd, _ := json.MarshalIndent(ret.OutPuts, "", "\t")
@@ -270,7 +268,6 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 		// Process SECP messages From the block
 		for _, sm := range blk.SECPMessages {
-			tStart = time.Now()
 			// do not recompute already seen messages
 			mcid, _ := sm.Cid()
 			if _, found := seenMsgs[mcid]; found {
@@ -285,7 +282,6 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 			//	fmt.Println()
 			//}
 			ret := vm.applyMessage(&m, sm.ChainLength())
-			tApply := time.Now()
 			// accumulate result
 			minerPenaltyTotal = big.Add(minerPenaltyTotal, ret.OutPuts.MinerPenalty)
 			minerGasRewardTotal = big.Add(minerGasRewardTotal, ret.OutPuts.MinerTip)
@@ -298,8 +294,6 @@ func (vm *VM) ApplyTipSetMessages(blocks []BlockMessagesInfo, ts *block.TipSet, 
 
 			// flag msg as seen
 			seenMsgs[mcid] = struct{}{}
-			fmt.Printf("apply msg took:%v, accumulate result took:%v\n", tApply.Sub(tStart).Milliseconds(),
-				time.Now().Sub(tApply).Milliseconds())
 			//iii, _ := vm.flush()
 			//fmt.Printf("message: %s  root: %s\n", mcid, iii)
 			//
@@ -449,7 +443,6 @@ func (vm *VM) ApplyMessage(msg types.ChainMsg) *Ret {
 
 // applyMessage applies the message To the current stateView.
 func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret {
-	tStart := time.Now()
 	vm.SetCurrentEpoch(vm.vmOption.Epoch)
 	// This Method does not actually execute the message itself,
 	// but rather deals with the pre/post processing of a message.
@@ -509,7 +502,6 @@ func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret 
 			Receipt:    types.Failure(exitcode.SysErrSenderInvalid, types.Zero),
 		}
 	}
-	t2 := time.Now()
 
 	// 3. make sure this is the right message order for fromActor
 	if msg.CallSeqNum != fromActor.CallSeqNum {
@@ -550,8 +542,6 @@ func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret 
 		panic(err)
 	}
 
-	t6 := time.Now()
-
 	// 7. snapshot stateView
 	// Even if the message fails, the following accumulated changes will be applied:
 	// - CallSeqNumber increment
@@ -561,8 +551,6 @@ func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret 
 		panic(err)
 	}
 	defer vm.clearSnapshot()
-
-	t7 := time.Now()
 
 	// send
 	// 1. build internal message
@@ -594,15 +582,12 @@ func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret 
 	//Note replace from and to address here
 	ctx := newInvocationContext(vm, gasIpld, &topLevel, imsg, gasTank, vm.vmOption.Rnd)
 
-	tSend2 := time.Now()
-
 	// 3. invoke
 	ret, code := ctx.invoke()
 	// post-send
 	// 1. charge gas for putting the return Value on the chain
 	// 2. settle gas money around (unused_gas -> sender)
 	// 3. success!
-	tSend3 := time.Now()
 
 	// 1. charge for the space used by the return Value
 	// Note: the GasUsed in the message receipt does not
@@ -657,13 +642,6 @@ func (vm *VM) applyMessage(msg *types.UnsignedMessage, onChainMsgSize int) *Ret 
 	if ret == nil {
 		ret = []byte{} //todo cbor marshal cant diff nil and []byte  should be fix in encoding
 	}
-	tEnd := time.Now()
-
-	//if tEnd.Sub(tStart).Milliseconds() > int64(500) {
-		fmt.Printf("t2 took:%v,t6 took:%v,t7 took:%v,tSend2:%v,tSend3:%v,tEnd:%v\n",
-			t2.Sub(tStart).Milliseconds(), t6.Sub(t2).Milliseconds(),  t7.Sub(t6).Milliseconds(),
-			tSend2.Sub(t7).Milliseconds(), tSend3.Sub(tSend2).Milliseconds(), tEnd.Sub(tSend3).Milliseconds())
-	//}
 
 	return &Ret{
 		GasTracker: gasTank,
