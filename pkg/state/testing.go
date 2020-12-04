@@ -3,6 +3,7 @@ package state
 import (
 	"context"
 	"github.com/filecoin-project/go-bitfield"
+	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -64,7 +65,7 @@ func (v *FakeStateView) InitNetworkName(_ context.Context) (string, error) {
 }
 
 // MinerSectorConfiguration reports a miner's sector size.
-func (v *FakeStateView) MinerSectorConfiguration(ctx context.Context, maddr address.Address) (*MinerSectorConfiguration, error) {
+func (v *FakeStateView) MinerSectorConfiguration(ctx context.Context, maddr address.Address, nv network.Version) (*MinerSectorConfiguration, error) {
 	m, ok := v.Miners[maddr]
 	if !ok {
 		return nil, errors.Errorf("no miner %s", maddr)
@@ -96,7 +97,7 @@ func (v *FakeStateView) MinerGetSector(_ context.Context, maddr address.Address,
 }
 
 // MinerControlAddresses reports a miner's control addresses.
-func (v *FakeStateView) MinerControlAddresses(_ context.Context, maddr address.Address) (owner, worker address.Address, err error) {
+func (v *FakeStateView) MinerControlAddresses(_ context.Context, maddr address.Address, nv network.Version) (owner, worker address.Address, err error) {
 	m, ok := v.Miners[maddr]
 	if !ok {
 		return address.Undef, address.Undef, errors.Errorf("no miner %s", maddr)

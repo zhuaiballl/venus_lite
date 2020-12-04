@@ -5,6 +5,7 @@ import (
 	addr "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/venus/pkg/specactors/builtin"
@@ -17,8 +18,8 @@ import (
 // This type isn't doing much that the state view doesn't already do, consider removing it.
 type PowerStateView interface {
 	AccountStateView
-	MinerSectorConfiguration(ctx context.Context, maddr addr.Address) (*MinerSectorConfiguration, error)
-	MinerControlAddresses(ctx context.Context, maddr addr.Address) (owner, worker addr.Address, err error)
+	MinerSectorConfiguration(ctx context.Context, maddr addr.Address, nv network.Version) (*MinerSectorConfiguration, error)
+	MinerControlAddresses(ctx context.Context, maddr addr.Address, nv network.Version) (owner, worker addr.Address, err error)
 	MinerGetSector(ctx context.Context, maddr addr.Address, sectorNum abi.SectorNumber) (*miner.SectorOnChainInfo, bool, error)
 	PowerNetworkTotal(ctx context.Context) (*NetworkPower, error)
 	MinerClaimedPower(ctx context.Context, miner addr.Address) (raw, qa abi.StoragePower, err error)
@@ -72,8 +73,8 @@ func (v PowerTableView) MinerClaimedPower(ctx context.Context, mAddr addr.Addres
 }
 
 // WorkerAddr returns the worker address for a miner actor.
-func (v PowerTableView) WorkerAddr(ctx context.Context, mAddr addr.Address) (addr.Address, error) {
-	_, worker, err := v.state.MinerControlAddresses(ctx, mAddr)
+func (v PowerTableView) WorkerAddr(ctx context.Context, mAddr addr.Address, nv network.Version) (addr.Address, error) {
+	_, worker, err := v.state.MinerControlAddresses(ctx, mAddr, nv)
 	return worker, err
 }
 

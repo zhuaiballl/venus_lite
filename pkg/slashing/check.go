@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/filecoin-project/go-address"
 	runtime2 "github.com/filecoin-project/specs-actors/v2/actors/runtime"
@@ -16,7 +17,7 @@ import (
 
 type FaultStateView interface {
 	state.AccountStateView
-	MinerControlAddresses(ctx context.Context, maddr address.Address) (owner, worker address.Address, err error)
+	MinerControlAddresses(ctx context.Context, maddr address.Address, nv network.Version) (owner, worker address.Address, err error)
 }
 
 // Chain state required for checking consensus fault reports.
@@ -122,7 +123,7 @@ func (s *ConsensusFaultChecker) VerifyConsensusFault(ctx context.Context, h1, h2
 
 // Checks whether a block header is correctly signed in the context of the parent state to which it refers.
 func verifyBlockSignature(ctx context.Context, view FaultStateView, blk block.Block) error {
-	_, worker, err := view.MinerControlAddresses(ctx, blk.Miner)
+	_, worker, err := view.MinerControlAddresses(ctx, blk.Miner, network.Version0)
 	if err != nil {
 		panic(errors.Wrapf(err, "failed to inspect miner addresses"))
 	}

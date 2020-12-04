@@ -47,7 +47,7 @@ func (vm *syscallsStateView) AccountSignerAddress(ctx context.Context, accountAd
 	return accountState.PubkeyAddress()
 }
 
-func (vm *syscallsStateView) MinerControlAddresses(ctx context.Context, maddr address.Address) (owner, worker address.Address, err error) {
+func (vm *syscallsStateView) MinerControlAddresses(ctx context.Context, maddr address.Address, nv network.Version) (owner, worker address.Address, err error) {
 	accountActor, found, err := vm.state.GetActor(vm.context, maddr)
 	if err != nil {
 		return address.Undef, address.Undef, errors.Wrapf(err, "miner resolution failed To find actor %s", maddr)

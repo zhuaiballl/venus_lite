@@ -3,6 +3,7 @@ package porcelain
 import (
 	"context"
 	"fmt"
+	"github.com/filecoin-project/go-state-types/network"
 
 	address "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -33,13 +34,13 @@ type mcAPI interface {
 }
 
 type MinerStateView interface {
-	MinerControlAddresses(ctx context.Context, maddr address.Address) (owner, worker address.Address, err error)
-	MinerPeerID(ctx context.Context, maddr address.Address) (peer.ID, error)
-	MinerSectorConfiguration(ctx context.Context, maddr address.Address) (*state.MinerSectorConfiguration, error)
+	MinerControlAddresses(ctx context.Context, maddr address.Address, nv network.Version) (owner, worker address.Address, err error)
+	MinerPeerID(ctx context.Context, maddr address.Address, nv network.Version) (peer.ID, error)
+	MinerSectorConfiguration(ctx context.Context, maddr address.Address, nv network.Version) (*state.MinerSectorConfiguration, error)
 	MinerSectorCount(ctx context.Context, maddr address.Address) (uint64, error)
 	PowerNetworkTotal(ctx context.Context) (*state.NetworkPower, error)
 	MinerClaimedPower(ctx context.Context, miner address.Address) (raw, qa abi.StoragePower, err error)
-	MinerInfo(ctx context.Context, maddr address.Address) (*miner.MinerInfo, error)
+	MinerInfo(ctx context.Context, maddr address.Address, nv network.Version) (*miner.MinerInfo, error)
 }
 
 // MinerCreate creates a new miner actor for the given account and returns its address.
@@ -207,7 +208,7 @@ func MinerGetStatus(ctx context.Context, plumbing minerStatusPlumbing, minerAddr
 	if err != nil {
 		return MinerStatus{}, err
 	}
-	minerInfo, err := view.MinerInfo(ctx, minerAddr)
+	minerInfo, err := view.MinerInfo(ctx, minerAddr, network.Version0)
 	if err != nil {
 		return MinerStatus{}, err
 	}
@@ -271,7 +272,7 @@ func MinerSetWorkerAddress(
 		return cid.Undef, errors.Wrap(err, "could not get miner owner address")
 	}
 
-	owner, _, err := state.MinerControlAddresses(ctx, minerAddr)
+	owner, _, err := state.MinerControlAddresses(ctx, minerAddr, network.Version0)
 	if err != nil {
 		return cid.Undef, errors.Wrap(err, "could not get miner owner address")
 	}

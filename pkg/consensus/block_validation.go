@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/venus/pkg/constants"
 	"github.com/filecoin-project/venus/pkg/specactors/builtin"
 	"github.com/filecoin-project/venus/pkg/state"
@@ -35,7 +34,7 @@ type chainState interface {
 	GetActorAt(context.Context, block.TipSetKey, address.Address) (*types.Actor, error)
 	GetTipSet(block.TipSetKey) (*block.TipSet, error)
 	GetTipSetStateRoot(context.Context, block.TipSetKey) (cid.Cid, error)
-	StateView(block.TipSetKey, abi.ChainEpoch) (*state.View, error)
+	StateView(block.TipSetKey) (*state.View, error)
 	GetBlock(context.Context, cid.Cid) (*block.Block, error)
 }
 

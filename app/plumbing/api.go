@@ -6,10 +6,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-bitfield"
-	"github.com/filecoin-project/go-state-types/abi"
-	acrypto "github.com/filecoin-project/go-state-types/crypto"
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	logging "github.com/ipfs/go-log/v2"
@@ -17,6 +13,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 	xerrors "github.com/pkg/errors"
+
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-bitfield"
+	"github.com/filecoin-project/go-state-types/abi"
+	acrypto "github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/go-state-types/network"
 
 	"github.com/filecoin-project/venus/app/plumbing/cfg"
 	"github.com/filecoin-project/venus/app/plumbing/cst"
@@ -196,6 +198,10 @@ func (api *API) ChainGetRandomnessFromBeacon(ctx context.Context, tsk block.TipS
 	return api.chain.ChainGetRandomnessFromBeacon(ctx, tsk, personalization, randEpoch, entropy)
 }
 
+func (api *API) ChainGetRandomnessFromTickets(ctx context.Context, tsk block.TipSetKey, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error) {
+	return api.chain.ChainGetRandomnessFromBeacon(ctx, tsk, personalization, randEpoch, entropy)
+}
+
 // SyncerStatus returns the current status of the active or last active chain sync operation.
 func (api *API) SyncerStatus() status.Status {
 	return api.syncer.Status()
@@ -226,6 +232,15 @@ func (api *API) OutboxQueueClear(ctx context.Context, sender address.Address) {
 	api.outbox.Queue().Clear(ctx, sender)
 }
 
+func (api *API) GasEstimateMessageGas(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec, tsKey block.TipSetKey) (*types.UnsignedMessage, error) {
+	return api.outbox.GasEstimateMessageGas(ctx, msg, spec, tsKey)
+}
+
+func (api *API) MpoolPushMessage(context.Context, types.UnsignedMessage, types.MessageSendSpec) (types.SignedMessage, error) {
+
+	return types.SignedMessage{}, nil
+}
+
 // MessagePoolPending lists messages un-mined in the pool
 func (api *API) MessagePoolPending() []*types.SignedMessage {
 	return api.msgPool.Pending()
@@ -249,13 +264,7 @@ func (api *API) MessagePreview(ctx context.Context, from, to address.Address, me
 
 // StateView loads the state view for a tipset, i.e. the state *after* the application of the tipset's messages.
 func (api *API) StateView(baseKey block.TipSetKey) (*appstate.View, error) {
-	ts, err := api.chain.GetTipSet(baseKey)
-	if err != nil {
-		return nil, err
-	}
-
-	height, _ := ts.Height()
-	return api.chain.StateView(baseKey, height)
+	return api.chain.StateView(baseKey)
 }
 
 // MessageSend sends a message. It uses the default from address if none is given and signs the
@@ -420,17 +429,17 @@ func (api *API) MinerGetBaseInfo(ctx context.Context, tsk block.TipSetKey, round
 		return nil, xerrors.Errorf("failed to get power: %v", err)
 	}
 
-	lbHeight, err := lbts.Height()
+	viewer, err := api.chain.StateView(lbts.Key())
 	if err != nil {
 		return nil, err
 	}
 
-	viewer, err := api.chain.StateView(lbts.Key(), lbHeight)
+	nv, err :=  api.StateNetworkVersion(ctx, tsk)
 	if err != nil {
 		return nil, err
 	}
 
-	info, err := viewer.MinerInfo(ctx, maddr)
+	info, err := viewer.MinerInfo(ctx, maddr, nv)
 	if err != nil {
 		return nil, err
 	}
@@ -480,16 +489,17 @@ func (api *API) GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Veri
 	var partsProving []bitfield.BitField
 	var info *miner.MinerInfo
 
-	//height, err := ts.Height()
-	//if err != nil {
-	//	return nil, err
-	//}
 	viewer, err := api.StateView(ts.Key())
 	if err != nil {
 		return nil, err
 	}
 
-	info, err = viewer.MinerInfo(ctx, maddr)
+	nv, err :=  api.StateNetworkVersion(ctx, ts.Key())
+	if err != nil {
+		return nil, err
+	}
+
+	info, err = viewer.MinerInfo(ctx, maddr, nv)
 	if err != nil {
 		return nil, err
 	}
@@ -562,12 +572,7 @@ func (api *API) GetSectorsForWinningPoSt(ctx context.Context, pv ffiwrapper.Veri
 }
 
 func (api *API) GetPowerRaw(ctx context.Context, ts *block.TipSet, maddr address.Address) (power.Claim, power.Claim, error) {
-	height, err := ts.Height()
-	if err != nil {
-		return power.Claim{}, power.Claim{}, err
-	}
-
-	viewer, err := api.chain.StateView(ts.Key(), height)
+	viewer, err := api.chain.StateView(ts.Key())
 	if err != nil {
 		return power.Claim{}, power.Claim{}, err
 	}
@@ -592,12 +597,7 @@ func (api *API) GetPowerRaw(ctx context.Context, ts *block.TipSet, maddr address
 }
 
 func (api *API) MinerHasMinPower(ctx context.Context, addr address.Address, ts *block.TipSet) (bool, error) {
-	height, err := ts.Height()
-	if err != nil {
-		return false, err
-	}
-
-	viewer, err := api.chain.StateView(ts.Key(), height)
+	viewer, err := api.chain.StateView(ts.Key())
 	if err != nil {
 		return false, err
 	}
@@ -606,14 +606,45 @@ func (api *API) MinerHasMinPower(ctx context.Context, addr address.Address, ts *
 }
 
 func (api *API) ResolveToKeyAddr(ctx context.Context, addr address.Address, ts *block.TipSet) (address.Address, error) {
-	height, err := ts.Height()
-	if err != nil {
-		return address.Undef, err
-	}
-
-	viewer, err := api.chain.StateView(ts.Key(), height)
+	viewer, err := api.chain.StateView(ts.Key())
 	if err != nil {
 		return address.Undef, err
 	}
 	return viewer.ResolveToKeyAddr(ctx, addr)
+}
+
+func (api *API) StateMinerSectors(ctx context.Context, maddr address.Address, sid *bitfield.BitField, key block.TipSetKey) ([]*miner.SectorOnChainInfo, error) {
+	viewer, err := api.StateView(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return viewer.StateMinerSectors(ctx, maddr, sid)
+}
+
+func (api *API) StateNetworkVersion(ctx context.Context, tsk block.TipSetKey) (network.Version, error) {
+	ts, err := api.ChainTipSet(tsk)
+	if err != nil {
+		return network.VersionMax, xerrors.Errorf("failed to load tipset for mining base: %v", err)
+	}
+
+	return api.fork.GetNtwkVersion(ctx, ts.EnsureHeight()), nil
+}
+
+func (api *API) StateMinerInfo(ctx context.Context, actor address.Address, tsk block.TipSetKey) (miner.MinerInfo, error) {
+	nv, err :=  api.StateNetworkVersion(ctx, tsk)
+	if err != nil {
+		return miner.MinerInfo{}, err
+	}
+
+	viewer, err := api.StateView(tsk)
+	if err != nil {
+		return miner.MinerInfo{}, err
+	}
+
+	info, err := viewer.MinerInfo(ctx, actor, nv)
+	if err != nil {
+		return miner.MinerInfo{}, err
+	}
+	return *info, nil
 }

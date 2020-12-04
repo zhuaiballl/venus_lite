@@ -19,6 +19,10 @@ func ChainHead(plumbing chainHeadPlumbing) (*block.TipSet, error) {
 	return plumbing.ChainTipSet(plumbing.ChainHeadKey())
 }
 
+func ChainGetTipSet(plumbing chainHeadPlumbing, key block.TipSetKey) (*block.TipSet, error) {
+	return plumbing.ChainTipSet(key)
+}
+
 type fullBlockPlumbing interface {
 	ChainGetBlock(context.Context, cid.Cid) (*block.Block, error)
 	ChainGetMessages(context.Context, cid.Cid) ([]*types.UnsignedMessage, []*types.SignedMessage, error)

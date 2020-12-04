@@ -330,7 +330,7 @@ func (c *Expected) validateBlock(ctx context.Context,
 	}
 
 	// get worker address
-	workerAddr, err := keyPowerTable.WorkerAddr(ctx, blk.Miner)
+	workerAddr, err := keyPowerTable.WorkerAddr(ctx, blk.Miner, c.fork.GetNtwkVersion(ctx, blk.Height))
 	if err != nil {
 		return errors.Wrap(err, "failed to read worker address of block miner")
 	}

@@ -171,7 +171,7 @@ func (g *GenesisGenerator) Init(cfg *GenesisCfg) error {
 		newSupportedTypes[mCfg.SealProofType] = struct{}{}
 	}
 	// Switch reference rather than mutate in place to avoid concurrent map mutation (in tests).
-	miner.SupportedProofTypes = newSupportedTypes
+	miner.PreCommitSealProofTypesV0 = newSupportedTypes
 
 	g.cfg = cfg
 	return nil

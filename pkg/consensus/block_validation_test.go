@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/venus/pkg/block"
 	"github.com/filecoin-project/venus/pkg/clock"
@@ -337,7 +336,7 @@ func (fcs *fakeChainState) GetTipSetStateRoot(context.Context, block.TipSetKey) 
 	return cid.Undef, nil
 }
 
-func (fcs *fakeChainState) StateView(block.TipSetKey, abi.ChainEpoch) (*state.View, error) {
+func (fcs *fakeChainState) StateView(block.TipSetKey) (*state.View, error) {
 	return nil, nil
 }
 

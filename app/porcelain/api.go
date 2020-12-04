@@ -46,6 +46,10 @@ func (a *API) ChainHead() (*block.TipSet, error) {
 	return ChainHead(a)
 }
 
+func (a *API) ChainGetTipSet(key block.TipSetKey) (*block.TipSet, error) {
+	return ChainGetTipSet(a, key)
+}
+
 // ChainGetFullBlock returns the full block given the header cid
 func (a *API) ChainGetFullBlock(ctx context.Context, id cid.Cid) (*block.FullBlock, error) {
 	return GetFullBlock(ctx, a, id)

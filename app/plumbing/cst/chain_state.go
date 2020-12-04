@@ -369,7 +369,7 @@ func (chn *ChainStateReadWriter) ChainStateTree(ctx context.Context, c cid.Cid) 
 	return dag.NewDAG(dserv).RecursiveGet(ctx, c)
 }
 
-func (chn *ChainStateReadWriter) StateView(key block.TipSetKey, height abi.ChainEpoch) (*state.View, error) {
+func (chn *ChainStateReadWriter) StateView(key block.TipSetKey) (*state.View, error) {
 	root, err := chn.readWriter.GetTipSetStateRoot(key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get state root for %s", key.String())
@@ -378,10 +378,10 @@ func (chn *ChainStateReadWriter) StateView(key block.TipSetKey, height abi.Chain
 	return state.NewView(chn, root), nil
 }
 
-func (chn *ChainStateReadWriter) AccountStateView(key block.TipSetKey, height abi.ChainEpoch) (state.AccountStateView, error) {
-	return chn.StateView(key, height)
+func (chn *ChainStateReadWriter) AccountStateView(key block.TipSetKey) (state.AccountStateView, error) {
+	return chn.StateView(key)
 }
 
-func (chn *ChainStateReadWriter) FaultStateView(key block.TipSetKey, height abi.ChainEpoch) (slashing.FaultStateView, error) {
-	return chn.StateView(key, height)
+func (chn *ChainStateReadWriter) FaultStateView(key block.TipSetKey) (slashing.FaultStateView, error) {
+	return chn.StateView(key)
 }

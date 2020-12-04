@@ -28,7 +28,6 @@ import (
 	"github.com/filecoin-project/venus/pkg/encoding"
 )
 
-const FilecoinPrecision = uint64(1_000_000_000_000_000_000)
 
 type MessageSendSpec struct {
 	MaxFee abi.TokenAmount
@@ -36,7 +35,7 @@ type MessageSendSpec struct {
 
 var DefaultMessageSendSpec = MessageSendSpec{
 	// MaxFee of 0.1FIL
-	MaxFee: abi.NewTokenAmount(int64(FilecoinPrecision) / 10),
+	MaxFee: abi.NewTokenAmount(int64(constants.FilecoinPrecision) / 10),
 }
 
 func (ms *MessageSendSpec) Get() MessageSendSpec {
@@ -59,7 +58,7 @@ var EmptyReceiptsCID cid.Cid
 var EmptyTxMetaCID cid.Cid
 
 func FromFil(i uint64) AttoFIL {
-	return specsbig.Mul(specsbig.NewInt(int64(i)), specsbig.NewInt(int64(FilecoinPrecision)))
+	return specsbig.Mul(specsbig.NewInt(int64(i)), specsbig.NewInt(int64(constants.FilecoinPrecision)))
 }
 
 func init() {

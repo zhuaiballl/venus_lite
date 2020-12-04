@@ -186,6 +186,7 @@ var rootSubcmdsDaemon = map[string]*cmds.Command{
 	"protocol": protocolCmd,
 	"show":     showCmd,
 	"stats":    statsCmd,
+	"state":    stateCmd,
 	"swarm":    swarmCmd,
 	"wallet":   walletCmd,
 	"version":  versionCmd,
