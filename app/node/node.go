@@ -12,6 +12,7 @@ import (
 	configModule "github.com/filecoin-project/venus/app/submodule/config"
 	"github.com/filecoin-project/venus/app/submodule/discovery"
 	"github.com/filecoin-project/venus/app/submodule/messaging"
+	"github.com/filecoin-project/venus/app/submodule/mpool"
 	network2 "github.com/filecoin-project/venus/app/submodule/network"
 	"github.com/filecoin-project/venus/app/submodule/proofverification"
 	"github.com/filecoin-project/venus/app/submodule/storagenetworking"
@@ -80,6 +81,7 @@ type Node struct {
 	//
 	Wallet            *wallet.WalletSubmodule
 	Messaging         *messaging.MessagingSubmodule
+	Mpool             *mpool.MessagePoolSubmodule
 	StorageNetworking *storagenetworking.StorageNetworkingSubmodule
 	ProofVerification *proofverification.ProofVerificationSubmodule
 
@@ -170,6 +172,9 @@ func (node *Node) cancelSubscriptions() {
 func (node *Node) Stop(ctx context.Context) {
 	node.cancelSubscriptions()
 	node.chain.ChainReader.Stop()
+
+	// close mpool
+	node.Mpool.Close()
 
 	if err := node.Host().Close(); err != nil {
 		fmt.Printf("error closing host: %s\n", err)
@@ -372,7 +377,7 @@ func (node *Node) runJsonrpcAPI(ctx context.Context) (*http.Server, error) { //n
 }
 
 func (node *Node) createServerEnv(ctx context.Context) *Env {
-	return &Env{
+	env := Env{
 		ctx:                  ctx,
 		InspectorAPI:         NewInspectorAPI(node.Repo),
 		BlockServiceAPI:      node.Blockservice.API(),
@@ -387,4 +392,7 @@ func (node *Node) createServerEnv(ctx context.Context) *Env {
 		SyncerAPI:            node.Syncer().API(),
 		WalletAPI:            node.Wallet.API(),
 	}
+	env.MessagePoolAPI = node.Mpool.API(env.WalletAPI, env.ChainAPI)
+
+	return &env
 }

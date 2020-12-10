@@ -145,7 +145,13 @@ func (chainAPI *ChainAPI) GetFullBlock(ctx context.Context, id cid.Cid) (*block.
 
 // ResolveToKeyAddr resolve user address to t0 address
 func (chainAPI *ChainAPI) ResolveToKeyAddr(ctx context.Context, addr address.Address, ts *block.TipSet) (address.Address, error) {
-	viewer, err := chainAPI.chain.StateView(ts.Key())
+	tsKey := block.TipSetKey{}
+	if ts == nil {
+		tsKey = chainAPI.chain.ChainReader.GetHead()
+	} else {
+		tsKey = ts.Key()
+	}
+	viewer, err := chainAPI.chain.StateView(tsKey)
 	if err != nil {
 		return address.Undef, err
 	}

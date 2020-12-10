@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"strconv"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -14,14 +14,15 @@ import (
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/block"
-	"github.com/filecoin-project/venus/pkg/vm"
-
+	"github.com/filecoin-project/venus/app/node"
 	"github.com/filecoin-project/venus/app/submodule/chain/cst"
 	"github.com/filecoin-project/venus/app/submodule/messaging/msg"
+	"github.com/filecoin-project/venus/pkg/block"
+	"github.com/filecoin-project/venus/pkg/constants"
 	"github.com/filecoin-project/venus/pkg/message"
 	"github.com/filecoin-project/venus/pkg/specactors/builtin"
 	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus/pkg/vm"
 )
 
 var msgCmd = &cmds.Command{
@@ -57,13 +58,23 @@ var msgSendCmd = &cmds.Command{
 		feecapOption,
 		premiumOption,
 		limitOption,
-		previewOption,
-		// TODO: (per dignifiedquire) add an option to set the nonce and method explicitly
+		cmds.Uint64Option("nonce", "specify the nonce to use").WithDefault(0),
+		cmds.StringOption("params-json", "specify invocation parameters in json"),
+		cmds.StringOption("params-hex", "specify invocation parameters in hex"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-		target, err := address.NewFromString(req.Arguments[0])
+		toAddr, err := address.NewFromString(req.Arguments[0])
 		if err != nil {
 			return err
+		}
+
+		methodID := builtin.MethodSend
+		if len(req.Arguments) > 1 {
+			tm, err := strconv.ParseUint(req.Arguments[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			methodID = abi.MethodNum(tm)
 		}
 
 		rawVal := req.Options["value"]
@@ -80,47 +91,67 @@ var msgSendCmd = &cmds.Command{
 			return err
 		}
 
-		feecap, premium, gasLimit, preview, err := parseGasOptions(req)
+		feecap, premium, gasLimit, err := parseGasOptions(req)
 		if err != nil {
 			return err
 		}
 
-		methodID := builtin.MethodSend
-		methodInput, ok := req.Options["method"].(uint64)
-		if ok {
-			methodID = abi.MethodNum(methodInput)
+		env.(*node.Env).NetworkAPI.NetworkGetPeerAddresses()
+
+		var params []byte
+		//rawPJ := req.Options["params-json"]
+		//if rawVal != nil {
+		//	decparams, err := decodeTypedParams(req.Context, env.(*node.Env), toAddr, methodID, rawPJ.(string))
+		//	if err != nil {
+		//		return fmt.Errorf("failed to decode json params: %w", err)
+		//	}
+		//	params = decparams
+		//}
+
+		rawPH := req.Options["params-hex"]
+		if rawPH != nil {
+			if params != nil {
+				return fmt.Errorf("can only specify one of 'params-json' and 'params-hex'")
+			}
+			decparams, err := hex.DecodeString(rawPH.(string))
+			if err != nil {
+				return fmt.Errorf("failed to decode hex params: %w", err)
+			}
+			params = decparams
 		}
 
-		if preview {
-			usedGas, err := env.(*node.Env).MessagingAPI.MessagePreview(
-				req.Context,
-				fromAddr,
-				target,
-				methodID,
-			)
+		msg := &types.UnsignedMessage{
+			From:       fromAddr,
+			To:         toAddr,
+			Value:      val,
+			GasPremium: feecap,
+			GasFeeCap:  premium,
+			GasLimit:   gasLimit,
+			Method:     methodID,
+			Params:     params,
+		}
+
+		rawNonce := req.Options["nonce"]
+		c := cid.Undef
+		if rawNonce != nil {
+			sm, err := env.(*node.Env).WalletAPI.WalletSignMessage(req.Context, fromAddr, msg)
 			if err != nil {
 				return err
 			}
-			return re.Emit(&MessageSendResult{
-				Cid:     cid.Cid{},
-				GasUsed: usedGas,
-				Preview: true,
-			})
-		}
 
-		c, err := env.(*node.Env).MessagingAPI.MessageSend(
-			req.Context,
-			fromAddr,
-			target,
-			val,
-			feecap,
-			premium,
-			gasLimit,
-			methodID,
-			[]byte{},
-		)
-		if err != nil {
-			return err
+			_, err = env.(*node.Env).MessagePoolAPI.MpoolPush(req.Context, sm)
+			if err != nil {
+				return err
+			}
+			c, _ = sm.Cid()
+			fmt.Println(sm.Cid())
+		} else {
+			sm, err := env.(*node.Env).MessagePoolAPI.MpoolPushMessage(req.Context, msg, nil)
+			if err != nil {
+				return err
+			}
+			c, _ = sm.Cid()
+			fmt.Println(c)
 		}
 
 		return re.Emit(&MessageSendResult{
@@ -131,6 +162,30 @@ var msgSendCmd = &cmds.Command{
 	},
 	Type: &MessageSendResult{},
 }
+
+//func decodeTypedParams(ctx context.Context, fapi *node.Env, to address.Address, method abi.MethodNum, paramstr string) ([]byte, error) {
+//	act, err := fapi.ChainAPI.GetActor(ctx, to)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	methodMeta, found := stmgr.MethodsMap[act.Code][method]
+//	if !found {
+//		return nil, fmt.Errorf("method %d not found on actor %s", method, act.Code)
+//	}
+//
+//	p := reflect.New(methodMeta.Params.Elem()).Interface().(cbg.CBORMarshaler)
+//
+//	if err := json.Unmarshal([]byte(paramstr), p); err != nil {
+//		return nil, fmt.Errorf("unmarshaling input into params type: %w", err)
+//	}
+//
+//	buf := new(bytes.Buffer)
+//	if err := p.MarshalCBOR(buf); err != nil {
+//		return nil, err
+//	}
+//	return buf.Bytes(), nil
+//}
 
 var signedMsgSendCmd = &cmds.Command{
 	Helptext: cmds.HelpText{
