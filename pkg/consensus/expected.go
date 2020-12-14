@@ -195,6 +195,15 @@ func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage) 
 		return nil, err
 	}
 
+	// When we're not at the genesis block, make sure we don't have an expensive migration.
+	h, err := ts.Height()
+	if err != nil {
+		return nil, err
+	}
+	if h > 0 && (c.fork.HasExpensiveFork(ctx, h) || c.fork.HasExpensiveFork(ctx, h-1)) {
+		return nil, fork.ErrExpensiveFork
+	}
+
 	vms := vm.NewStorage(c.bstore)
 	priorState, err := state.LoadState(ctx, vms, stateRoot)
 	if err != nil {

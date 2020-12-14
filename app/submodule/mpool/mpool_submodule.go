@@ -1,6 +1,7 @@
 package mpool
 
 import (
+	"github.com/filecoin-project/venus/app/submodule/syncer"
 	logging "github.com/ipfs/go-log"
 	"golang.org/x/xerrors"
 
@@ -32,14 +33,14 @@ func OpenFilesystemJournal(lr repo.Repo) (journal.Journal, error) {
 	return jrnl, err
 }
 
-func NewMpoolSubmodule(cfg messagepoolConfig, network *network.NetworkSubmodule, chain *chain.ChainSubmodule) (*MessagePoolSubmodule, error) {
+func NewMpoolSubmodule(cfg messagepoolConfig, network *network.NetworkSubmodule, chain *chain.ChainSubmodule, syncer *syncer.SyncerSubmodule) (*MessagePoolSubmodule, error) {
 	mpp := messagepool.NewProvider(chain.ChainReader, chain.MessageStore, cfg.Repo().Config().NetworkParams, network.Pubsub)
 
 	j, err := OpenFilesystemJournal(cfg.Repo())
 	if err != nil {
 		return nil, err
 	}
-	mp, err := messagepool.New(mpp, cfg.Repo().MetaDatastore(), network.NetworkName, j)
+	mp, err := messagepool.New(mpp, cfg.Repo().MetaDatastore(), network.NetworkName, syncer.Consensus, chain.State, j)
 	if err != nil {
 		return nil, xerrors.Errorf("constructing mpool: %s", err)
 	}

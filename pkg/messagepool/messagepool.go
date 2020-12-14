@@ -35,6 +35,7 @@ import (
 	"github.com/filecoin-project/venus/pkg/net/msgsub"
 	"github.com/filecoin-project/venus/pkg/repo"
 	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus/pkg/vm"
 	"github.com/filecoin-project/venus/pkg/vm/gas"
 
 	"github.com/raulk/clock"
@@ -125,6 +126,15 @@ func init() {
 	}
 }
 
+type gasPredictor interface {
+	CallWithGas(ctx context.Context, msg *types.UnsignedMessage) (*vm.Ret, error)
+}
+
+type actorProvider interface {
+	// GetActorAt returns the actor state defined by the chain up to some tipset
+	GetActorAt(ctx context.Context, tipset block.TipSetKey, addr address.Address) (*types.Actor, error)
+}
+
 type MessagePool struct {
 	lk sync.Mutex
 
@@ -175,6 +185,10 @@ type MessagePool struct {
 	journal  journal.Journal
 
 	gasPriceSchedule *gas.PricesSchedule
+
+	gp        gasPredictor
+	ap        actorProvider
+	GetMaxFee DefaultMaxFeeFunc
 }
 
 type msgSet struct {
@@ -349,7 +363,7 @@ func (ms *msgSet) getRequiredFunds(nonce uint64) tbig.Int {
 	return tbig.Int{Int: requiredFunds}
 }
 
-func New(api Provider, ds repo.Datastore, netName string, j journal.Journal) (*MessagePool, error) {
+func New(api Provider, ds repo.Datastore, netName string, gp gasPredictor, ap actorProvider, j journal.Journal) (*MessagePool, error) {
 	cache, _ := lru.New2Q(constants.BlsSignatureCacheSize)
 	verifcache, _ := lru.New2Q(constants.VerifSigCacheSize)
 
@@ -379,6 +393,8 @@ func New(api Provider, ds repo.Datastore, netName string, j journal.Journal) (*M
 		localMsgs:     namespace.Wrap(ds, datastore.NewKey(localMsgsDs)),
 		api:           api,
 		netName:       netName,
+		gp:            gp,
+		ap:            ap,
 		cfg:           cfg,
 		evtTypes: [...]journal.EventType{
 			evtTypeMpoolAdd:    j.RegisterEventType("mpool", "add"),

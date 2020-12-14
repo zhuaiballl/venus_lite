@@ -24,6 +24,8 @@ var (
 )
 
 type Provider interface {
+	ChainHead() (*block.TipSet, error)
+	ChainTipSet(block.TipSetKey) (*block.TipSet, error)
 	SubscribeHeadChanges(func(rev, app []*block.TipSet) error) *block.TipSet
 	PutMessage(m types.ChainMsg) (cid.Cid, error)
 	PubSubPublish(string, []byte) error
@@ -62,6 +64,15 @@ func (mpp *mpoolProvider) SubscribeHeadChanges(cb func(rev, app []*block.TipSet)
 
 	ts, _ := mpp.sm.GetTipSet(mpp.sm.GetHead())
 	return ts
+}
+
+func (mpp *mpoolProvider) ChainHead() (*block.TipSet, error) {
+	headKey := mpp.sm.GetHead()
+	return mpp.sm.GetTipSet(headKey)
+}
+
+func (mpp *mpoolProvider) ChainTipSet(key block.TipSetKey) (*block.TipSet, error) {
+	return mpp.sm.GetTipSet(key)
 }
 
 func (mpp *mpoolProvider) PutMessage(m types.ChainMsg) (cid.Cid, error) {

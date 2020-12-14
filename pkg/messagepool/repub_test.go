@@ -24,7 +24,7 @@ func TestRepubMessages(t *testing.T) {
 	tma := newTestMpoolAPI()
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

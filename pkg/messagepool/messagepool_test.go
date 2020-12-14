@@ -3,7 +3,6 @@ package messagepool
 import (
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/repo"
 	"sort"
 	"testing"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/filecoin-project/venus/pkg/crypto"
 	"github.com/filecoin-project/venus/pkg/enccid"
 	"github.com/filecoin-project/venus/pkg/messagepool/gasguess"
+	"github.com/filecoin-project/venus/pkg/repo"
 	"github.com/filecoin-project/venus/pkg/types"
 	"github.com/filecoin-project/venus/pkg/wallet"
 )
@@ -190,6 +190,14 @@ func (tma *testMpoolAPI) setBlockMessages(h *block.Block, msgs ...*types.SignedM
 	tma.bmsgs[h.Cid()] = msgs
 }
 
+func (tma *testMpoolAPI) ChainHead() (*block.TipSet, error) {
+	return &block.TipSet{}, nil
+}
+
+func (tma *testMpoolAPI) ChainTipSet(key block.TipSetKey) (*block.TipSet, error) {
+	return &block.TipSet{}, nil
+}
+
 func (tma *testMpoolAPI) SubscribeHeadChanges(cb func(rev, app []*block.TipSet) error) *block.TipSet {
 	tma.cb = cb
 	return tma.tipsets[0]
@@ -323,7 +331,7 @@ func TestMessagePool(t *testing.T) {
 
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -366,7 +374,7 @@ func TestMessagePoolMessagesInEachBlock(t *testing.T) {
 
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -417,7 +425,7 @@ func TestRevertMessages(t *testing.T) {
 
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,7 +490,7 @@ func TestPruningSimple(t *testing.T) {
 
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -526,7 +534,7 @@ func TestLoadLocal(t *testing.T) {
 	tma := newTestMpoolAPI()
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -573,7 +581,7 @@ func TestLoadLocal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mp, err = New(tma, ds, "mptest", nil)
+	mp, err = New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -602,7 +610,7 @@ func TestClearAll(t *testing.T) {
 	tma := newTestMpoolAPI()
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -660,7 +668,7 @@ func TestClearNonLocal(t *testing.T) {
 	tma := newTestMpoolAPI()
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -725,7 +733,7 @@ func TestUpdates(t *testing.T) {
 	tma := newTestMpoolAPI()
 	ds := datastore.NewMapDatastore()
 
-	mp, err := New(tma, ds, "mptest", nil)
+	mp, err := New(tma, ds, "mptest", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

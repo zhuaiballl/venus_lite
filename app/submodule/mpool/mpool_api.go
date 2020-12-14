@@ -10,6 +10,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
+	tbig "github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/venus/app/submodule/chain"
 	"github.com/filecoin-project/venus/app/submodule/wallet"
 	"github.com/filecoin-project/venus/pkg/block"
@@ -20,7 +21,6 @@ import (
 type MessagePoolAPI struct {
 	walletAPI *wallet.WalletAPI
 	chainAPI  *chain.ChainAPI
-	//GasAPI
 
 	pushLocks *messagepool.MpoolLocker
 	lk        sync.Mutex
@@ -145,10 +145,10 @@ func (a *MessagePoolAPI) MpoolPushMessage(ctx context.Context, msg *types.Unsign
 		return nil, xerrors.Errorf("MpoolPushMessage expects message nonce to be 0, was %d", msg.Nonce)
 	}
 
-	//msg, err = a.GasAPI.GasEstimateMessageGas(ctx, msg, spec, types.EmptyTSK)
-	//if err != nil {
-	//	return nil, xerrors.Errorf("GasEstimateMessageGas error: %w", err)
-	//}
+	msg, err = a.GasEstimateMessageGas(ctx, msg, spec, block.TipSetKey{})
+	if err != nil {
+		return nil, xerrors.Errorf("GasEstimateMessageGas error: %w", err)
+	}
 
 	if msg.GasPremium.GreaterThan(msg.GasFeeCap) {
 		inJSON, err := json.Marshal(inMsg)
@@ -281,4 +281,16 @@ func (a *MessagePoolAPI) SendMsg(ctx context.Context, from, to address.Address, 
 	}
 
 	return smsg.Cid()
+}
+
+func (a *MessagePoolAPI) GasEstimateMessageGas(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec, tsk block.TipSetKey) (*types.UnsignedMessage, error) {
+	return a.mp.MPool.GasEstimateMessageGas(ctx, msg, spec, tsk)
+}
+
+func (a *MessagePoolAPI) GasEstimateFeeCap(ctx context.Context, msg *types.UnsignedMessage, maxqueueblks int64, tsk block.TipSetKey) (tbig.Int, error) {
+	return a.mp.MPool.GasEstimateFeeCap(ctx, msg, maxqueueblks, tsk)
+}
+
+func (a *MessagePoolAPI) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk block.TipSetKey) (tbig.Int, error) {
+	return a.mp.MPool.GasEstimateGasPremium(ctx, nblocksincl, sender, gaslimit, tsk)
 }

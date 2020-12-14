@@ -258,7 +258,7 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 		return nil, errors.Wrap(err, "failed to build node.Messaging")
 	}
 
-	nd.Mpool, err = mpool.NewMpoolSubmodule((*builder)(b), nd.network, nd.chain)
+	nd.Mpool, err = mpool.NewMpoolSubmodule((*builder)(b), nd.network, nd.chain, nd.syncer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Mpool")
 	}
