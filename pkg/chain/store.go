@@ -132,9 +132,8 @@ type Store struct {
 
 	chainIndex *ChainIndex
 
-	notifees []ReorgNotifee
-
-	reorgCh chan reorg
+	reorgCh        chan reorg
+	reorgNotifeeCh chan ReorgNotifee
 }
 
 // NewStore constructs a new default store.
@@ -156,7 +155,7 @@ func NewStore(ds repo.Datastore,
 		genesis:             genesisCid,
 		reporter:            sr,
 		chainIndex:          NewChainIndex(tipsetProvider.GetTipSet),
-		notifees:            []ReorgNotifee{},
+		reorgNotifeeCh:      make(chan ReorgNotifee),
 	}
 
 	val, err := store.ds.Get(CheckPoint)
@@ -585,6 +584,9 @@ func (store *Store) reorgWorker(ctx context.Context) chan reorg {
 		defer log.Warn("reorgWorker quit")
 		for {
 			select {
+			case n := <-store.reorgNotifeeCh:
+				notifees = append(notifees, n)
+
 			case r := <-out:
 				var toremove map[int]struct{}
 				for i, hcf := range notifees {
@@ -664,7 +666,7 @@ func (store *Store) SubHeadChanges(ctx context.Context) chan []*HeadChange {
 }
 
 func (store *Store) SubscribeHeadChanges(f ReorgNotifee) {
-	store.notifees = append(store.notifees, f) // 没有使用???
+	store.reorgNotifeeCh <- f
 }
 
 // ReadOnlyStateStore provides a read-only IPLD store for access to chain state.
