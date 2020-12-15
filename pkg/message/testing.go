@@ -146,6 +146,6 @@ func NewGasPredictor(gas string) *MockGasPredictor {
 	}
 }
 
-func (gas *MockGasPredictor) CallWithGas(ctx context.Context, msg *types.UnsignedMessage) (*vm.Ret, error) {
+func (gas *MockGasPredictor) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *block.TipSet) (*vm.Ret, error) {
 	return &vm.Ret{}, nil
 }

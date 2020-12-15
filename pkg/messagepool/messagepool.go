@@ -127,7 +127,7 @@ func init() {
 }
 
 type gasPredictor interface {
-	CallWithGas(ctx context.Context, msg *types.UnsignedMessage) (*vm.Ret, error)
+	CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *block.TipSet) (*vm.Ret, error)
 }
 
 type actorProvider interface {

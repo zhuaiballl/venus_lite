@@ -167,7 +167,7 @@ func (ob *Outbox) GasEstimateGasLimit(ctx context.Context, msgIn *types.Unsigned
 		return -1, xerrors.Errorf("sender %s is missing/empty", msg.From)
 	}
 
-	ret, err := ob.gp.CallWithGas(ctx, &msg)
+	ret, err := ob.gp.CallWithGas(ctx, &msg, []types.ChainMsg{}, nil)
 	if err != nil {
 		return -1, xerrors.Errorf("call with gas err: %s", err)
 	}

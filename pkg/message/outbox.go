@@ -64,7 +64,7 @@ type publisher interface {
 }
 
 type gasPredictor interface {
-	CallWithGas(ctx context.Context, msg *types.UnsignedMessage) (*vm.Ret, error)
+	CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *block.TipSet) (*vm.Ret, error)
 }
 
 var msgSendErrCt = metrics.NewInt64Counter("message_sender_error", "Number of errors encountered while sending a message")

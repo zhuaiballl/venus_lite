@@ -155,7 +155,7 @@ func (mp *MessagePool) GasEstimateGasPremium(
 }
 
 func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.UnsignedMessage, tsk block.TipSetKey) (int64, error) {
-	currTs, err := mp.api.ChainHead()
+	currTs, err := mp.api.ChainTipSet(tsk)
 	if err != nil {
 		return -1, xerrors.Errorf("getting tipset: %w", err)
 	}
@@ -170,24 +170,16 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 		return -1, xerrors.Errorf("getting key address: %w", err)
 	}
 
-	// todo 使vm状态错误???
 	pending, ts := mp.PendingFor(fromA)
 	priorMsgs := make([]types.ChainMsg, 0, len(pending))
 	for _, m := range pending {
 		priorMsgs = append(priorMsgs, m)
 	}
 
-	for i, m := range priorMsgs {
-		_, err := mp.gp.CallWithGas(ctx, m.VMMessage())
-		if err != nil {
-			return -1, xerrors.Errorf("applying prior message (%d): %w", i, err)
-		}
-	}
-
 	// Try calling until we find a height with no migration.
 	var res *vm.Ret
 	for {
-		res, err = mp.gp.CallWithGas(ctx, &msg)
+		res, err = mp.gp.CallWithGas(ctx, &msg, priorMsgs, ts)
 		if err != fork.ErrExpensiveFork {
 			break
 		}
