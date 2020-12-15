@@ -11,7 +11,6 @@ import (
 	chain2 "github.com/filecoin-project/venus/app/submodule/chain"
 	configModule "github.com/filecoin-project/venus/app/submodule/config"
 	"github.com/filecoin-project/venus/app/submodule/discovery"
-	"github.com/filecoin-project/venus/app/submodule/messaging"
 	"github.com/filecoin-project/venus/app/submodule/mpool"
 	network2 "github.com/filecoin-project/venus/app/submodule/network"
 	"github.com/filecoin-project/venus/app/submodule/proofverification"
@@ -80,7 +79,6 @@ type Node struct {
 	// Supporting services
 	//
 	Wallet            *wallet.WalletSubmodule
-	Messaging         *messaging.MessagingSubmodule
 	Mpool             *mpool.MessagePoolSubmodule
 	StorageNetworking *storagenetworking.StorageNetworkingSubmodule
 	ProofVerification *proofverification.ProofVerificationSubmodule
@@ -111,8 +109,6 @@ func (node *Node) Start(ctx context.Context) error {
 		return err
 	}
 
-	go node.Messaging.Start(ctx) //nolint
-
 	var syncCtx context.Context
 	syncCtx, node.syncer.CancelChainSync = context.WithCancel(context.Background())
 
@@ -129,10 +125,7 @@ func (node *Node) Start(ctx context.Context) error {
 		}
 
 		// Subscribe to the message pubsub topic to learn about messages to mine into blocks.
-		node.Messaging.MessageSub, err = node.pubsubscribe(syncCtx, node.Messaging.MessageTopic, node.processMessage)
-		if err != nil {
-			return err
-		}
+
 
 		if err := node.syncer.Start(syncCtx, node); err != nil {
 			return err
@@ -162,10 +155,8 @@ func (node *Node) cancelSubscriptions() {
 		node.syncer.BlockSub = nil
 	}
 
-	if node.Messaging.MessageSub != nil {
-		node.Messaging.MessageSub.Cancel()
-		node.Messaging.MessageSub = nil
-	}
+	// stop message sub ???
+
 }
 
 // Stop initiates the shutdown of the node.
@@ -385,7 +376,6 @@ func (node *Node) createServerEnv(ctx context.Context) *Env {
 		ChainAPI:             node.Chain().API(),
 		ConfigAPI:            node.ConfigModule.API(),
 		DiscoveryAPI:         node.Discovery().API(),
-		MessagingAPI:         node.Messaging.API(),
 		NetworkAPI:           node.Network().API(),
 		ProofVerificationAPI: node.ProofVerification.API(),
 		StorageNetworkingAPI: node.StorageNetworking.API(),
