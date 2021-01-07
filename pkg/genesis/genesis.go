@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/constants"
 	"io/ioutil"
 	"os"
 
@@ -25,8 +23,12 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/filecoin-project/venus/pkg/block"
+	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus/pkg/constants"
 	"github.com/filecoin-project/venus/pkg/gen"
 	genesis2 "github.com/filecoin-project/venus/pkg/gen/genesis"
+	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
 	"github.com/filecoin-project/venus/pkg/vm"
 	"github.com/filecoin-project/venus/pkg/vm/state"
 )
@@ -52,8 +54,8 @@ type VM interface {
 	Flush() (state.Root, error)
 }
 
-func MakeGenesis(outFile, genesisTemplate string, para *config.ForkUpgradeConfig) InitFunc {
-	return func(cst cbor.IpldStore, bs blockstore.Blockstore) (*block.Block, error) {
+func MakeGenesis(ctx context.Context, rep repo.Repo, outFile, genesisTemplate string, para *config.ForkUpgradeConfig) InitFunc {
+	return func(_ cbor.IpldStore, bs blockstore.Blockstore) (*block.Block, error) {
 		glog.Warn("Generating new random genesis block, note that this SHOULD NOT happen unless you are setting up new network")
 		genesisTemplate, err := homedir.Expand(genesisTemplate)
 		if err != nil {
@@ -74,7 +76,13 @@ func MakeGenesis(outFile, genesisTemplate string, para *config.ForkUpgradeConfig
 			template.Timestamp = uint64(constants.Clock.Now().Unix())
 		}
 
-		b, err := genesis2.MakeGenesisBlock(context.TODO(), cst, bs, template, para)
+		// TODO potentially replace this cached blockstore by a CBOR cache.
+		cbs, err := blockstoreutil.CachedBlockstore(ctx, bs, blockstoreutil.DefaultCacheOpts())
+		if err != nil {
+			return nil, err
+		}
+
+		b, err := genesis2.MakeGenesisBlock(context.TODO(), rep, cbs, template, para)
 		if err != nil {
 			return nil, xerrors.Errorf("make genesis block: %w", err)
 		}
@@ -86,8 +94,8 @@ func MakeGenesis(outFile, genesisTemplate string, para *config.ForkUpgradeConfig
 			return nil, err
 		}
 
-		offl := offline.Exchange(bs)
-		blkserv := blockservice.New(bs, offl)
+		offl := offline.Exchange(cbs)
+		blkserv := blockservice.New(cbs, offl)
 		dserv := merkledag.NewDAGService(blkserv)
 
 		if err := car.WriteCarWithWalker(context.TODO(), dserv, []cid.Cid{b.Genesis.Cid()}, f, gen.CarWalkFunc); err != nil {

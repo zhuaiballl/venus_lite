@@ -57,15 +57,6 @@ type VM struct {
 	State state.Tree
 }
 
-type UnsafeVM struct {
-	VM VMInterpreter
-}
-
-func (vm *UnsafeVM) MakeRuntime(ctx context.Context, msg *types.Message) *SyscallsStateView {
-	return vm.VM.makeRuntime(ctx, msg, nil)
-}
-
-
 func (vm *VM) ApplyImplicitMessage(msg types.ChainMsg) (*Ret, error) {
 	unsignedMsg := msg.VMMessage()
 
@@ -378,17 +369,17 @@ func (vm *VM) applyImplicitMessage(imsg VmMessage) (*Ret, error) {
 	if !found {
 		return nil, fmt.Errorf("implicit message `From` field actor not found, addr: %s", imsg.From)
 	}
-	originatorIsAccount := builtin.IsAccountActor(fromActor.Code)
+	//originatorIsAccount := builtin.IsAccountActor(fromActor.Code)
 
 	// 2. increment seq number (only for account actors).
 	// The account actor distinction only makes a difference for genesis stateView construction via messages, where
 	// some messages are sent From non-account actors (e.g. fund transfers From the reward actor).
-	if originatorIsAccount {
-		fromActor.IncrementSeqNum()
-		if err := vm.State.SetActor(vm.context, imsg.From, fromActor); err != nil {
-			return nil, err
-		}
-	}
+	//if originatorIsAccount {
+	//	fromActor.IncrementSeqNum()
+	//	if err := vm.State.SetActor(vm.context, imsg.From, fromActor); err != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	// 3. build context
 	topLevel := topLevelContext{

@@ -69,6 +69,7 @@ func (s *Syscalls) VerifySeal(_ context.Context, info proof.SealVerifyInfo) erro
 	}
 	return nil
 }
+
 var BatchSealVerifyParallelism = 2 * goruntime.NumCPU()
 
 func (s *Syscalls) BatchVerifySeals(ctx context.Context, vis map[address.Address][]proof.SealVerifyInfo) (map[address.Address][]bool, error) {

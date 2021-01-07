@@ -121,21 +121,21 @@ func (b *Block) ToNode() node.Node {
 	if err != nil {
 		panic(err)
 	}
-	node, err := cbor.DecodeBlock(blk)
+	n, err := cbor.DecodeBlock(blk)
 	if err != nil {
 		panic(err)
 	}
-	return node
+	return n
 }
 
 func (b *Block) String() string {
 	errStr := "(error encoding Block)"
-	cid := b.Cid()
+	c := b.Cid()
 	js, err := json.MarshalIndent(b, "", "  ")
 	if err != nil {
 		return errStr
 	}
-	return fmt.Sprintf("Block cid=[%v]: %s", cid, string(js))
+	return fmt.Sprintf("Block cid=[%v]: %s", c, string(js))
 }
 
 // DecodeBlock decodes raw cbor bytes into a Block.
@@ -180,17 +180,17 @@ func (b *Block) SignatureData() []byte {
 	return tmp.ToNode().RawData()
 }
 
-func (blk *Block) Serialize() ([]byte, error) {
+func (b *Block) Serialize() ([]byte, error) {
 	buf := new(bytes.Buffer)
-	if err := blk.MarshalCBOR(buf); err != nil {
+	if err := b.MarshalCBOR(buf); err != nil {
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
 }
 
-func (blk *Block) ToStorageBlock() (blocks.Block, error) {
-	data, err := blk.Serialize()
+func (b *Block) ToStorageBlock() (blocks.Block, error) {
+	data, err := b.Serialize()
 	if err != nil {
 		return nil, err
 	}

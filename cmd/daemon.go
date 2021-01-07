@@ -99,15 +99,6 @@ func initRun(req *cmds.Request) error {
 	}()
 
 	var genesisFunc genesis.InitFunc
-	// normal node
-	genesisFileOption := req.Options[GenesisFile]
-	if genesisFileOption != nil {
-		genesisFunc, err = loadGenesis(req.Context, rep, genesisFileOption.(string))
-		if err != nil {
-			return err
-		}
-	}
-
 	cfg := rep.Config()
 	network, _ := req.Options[Network].(string)
 	if err := setConfigFromOptions(cfg, network); err != nil {
@@ -122,7 +113,14 @@ func initRun(req *cmds.Request) error {
 			return xerrors.Errorf("must also pass file with genesis template to `--%s`", preTemplateFlag)
 		}
 
-		genesisFunc = genesis.MakeGenesis(mkGen, preTp.(string), cfg.NetworkParams.ForkUpgradeParam)
+		node.SetNetParams(cfg.NetworkParams)
+		genesisFunc = genesis.MakeGenesis(req.Context, rep, mkGen, preTp.(string), cfg.NetworkParams.ForkUpgradeParam)
+	} else {
+		genesisFileSource, _ := req.Options[GenesisFile].(string)
+		genesisFunc, err = loadGenesis(req.Context, rep, genesisFileSource)
+		if err != nil {
+			return err
+		}
 	}
 
 	peerKeyFile, _ := req.Options[PeerKeyFile].(string)

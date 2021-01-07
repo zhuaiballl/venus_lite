@@ -30,7 +30,7 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 	store := adt.WrapStore(context.TODO(), cbor.NewCborStore(bs))
 	amap := adt.MakeEmptyMap(store)
 
-	keyToId := map[address.Address]address.Address{}
+	keyToID := map[address.Address]address.Address{}
 	counter := int64(AccountStart)
 
 	for _, a := range initialActors {
@@ -41,7 +41,7 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 			}
 			for _, e := range ainfo.Signers {
 
-				if _, ok := keyToId[e]; ok {
+				if _, ok := keyToID[e]; ok {
 					continue
 				}
 
@@ -53,7 +53,7 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 				}
 				counter = counter + 1
 				var err error
-				keyToId[e], err = address.NewIDAddress(uint64(value))
+				keyToID[e], err = address.NewIDAddress(uint64(value))
 				if err != nil {
 					return 0, nil, nil, err
 				}
@@ -81,7 +81,7 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 		counter = counter + 1
 
 		var err error
-		keyToId[ainfo.Owner], err = address.NewIDAddress(uint64(value))
+		keyToID[ainfo.Owner], err = address.NewIDAddress(uint64(value))
 		if err != nil {
 			return 0, nil, nil, err
 		}
@@ -102,7 +102,7 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 			return 0, nil, nil, xerrors.Errorf("unmarshaling account meta: %w", err)
 		}
 		for _, e := range ainfo.Signers {
-			if _, ok := keyToId[e]; ok {
+			if _, ok := keyToID[e]; ok {
 				continue
 			}
 			fmt.Printf("init set %s t0%d\n", e, counter)
@@ -113,7 +113,7 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 			}
 			counter = counter + 1
 			var err error
-			keyToId[e], err = address.NewIDAddress(uint64(value))
+			keyToID[e], err = address.NewIDAddress(uint64(value))
 			if err != nil {
 				return 0, nil, nil, err
 			}
@@ -137,5 +137,5 @@ func SetupInitActor(bs bstore.Blockstore, netname string, initialActors []Actor,
 		Head: statecid,
 	}
 
-	return counter, act, keyToId, nil
+	return counter, act, keyToID, nil
 }

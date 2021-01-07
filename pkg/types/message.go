@@ -330,17 +330,17 @@ func (m TxMeta) String() string {
 	return fmt.Sprintf("secp: %s, bls: %s", m.SecpRoot.String(), m.BLSRoot.String())
 }
 
-func (mm *TxMeta) Cid() cid.Cid {
-	b, err := mm.ToStorageBlock()
+func (m *TxMeta) Cid() cid.Cid {
+	b, err := m.ToStorageBlock()
 	if err != nil {
 		panic(err) // also maybe sketchy
 	}
 	return b.Cid()
 }
 
-func (mm *TxMeta) ToStorageBlock() (block.Block, error) {
+func (m *TxMeta) ToStorageBlock() (block.Block, error) {
 	var buf bytes.Buffer
-	if err := mm.MarshalCBOR(&buf); err != nil {
+	if err := m.MarshalCBOR(&buf); err != nil {
 		return nil, xerrors.Errorf("failed to marshal MsgMeta: %w", err)
 	}
 

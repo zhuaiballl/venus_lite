@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/filecoin-project/venus/pkg/vm/vmcontext"
 	"math/rand"
 
 	market0 "github.com/filecoin-project/specs-actors/actors/builtin/market"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
@@ -37,6 +37,7 @@ import (
 	"github.com/filecoin-project/venus/pkg/slashing"
 	"github.com/filecoin-project/venus/pkg/util/ffiwrapper"
 	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus/pkg/vm/gas"
 	"github.com/filecoin-project/venus/pkg/vm/state"
 	"github.com/filecoin-project/venus/pkg/vmsupport"
 )
@@ -50,7 +51,21 @@ func MinerAddress(genesisIndex uint64) address.Address {
 	return maddr
 }
 
-func SetupStorageMiners(ctx context.Context, bs blockstore.Blockstore, cs *chain.Store , sroot cid.Cid, miners []Miner, para *config.ForkUpgradeConfig) (cid.Cid, error) {
+type fakedSigSyscalls struct {
+	vmcontext.SyscallsImpl
+}
+
+func (fss *fakedSigSyscalls) VerifySignature(ctx context.Context, view vmcontext.SyscallsStateView, signature crypto.Signature, signer address.Address, plaintext []byte) error {
+	return nil
+}
+
+func mkFakedSigSyscalls(sys vmcontext.SyscallsImpl) vmcontext.SyscallsImpl {
+	return &fakedSigSyscalls{
+		sys,
+	}
+}
+
+func SetupStorageMiners(ctx context.Context, cs *chain.Store, sroot cid.Cid, miners []Miner, para *config.ForkUpgradeConfig) (cid.Cid, error) {
 	csc := func(context.Context, abi.ChainEpoch, state.Tree) (abi.TokenAmount, error) {
 		return big.Zero(), nil
 	}
@@ -77,16 +92,17 @@ func SetupStorageMiners(ctx context.Context, bs blockstore.Blockstore, cs *chain
 
 	faultChecker := slashing.NewFaultChecker(cs, fork.NewMockFork())
 	syscalls := vmsupport.NewSyscalls(faultChecker, ffiwrapper.ProofVerifier)
-
+	gasPirceSchedule := gas.NewPricesSchedule(para)
 	vmopt := vm.VmOption{
 		CircSupplyCalculator: csc,
-		NtwkVersionGetter: genesisNetworkVersion,
-		Rnd:               &fakeRand{},
-		BaseFee:           big.NewInt(0),
-		Epoch:             0,
-		PRoot:             sroot,
-		Bsstore:           bs,
-		SysCallsImpl:      syscalls,
+		NtwkVersionGetter:    genesisNetworkVersion,
+		Rnd:                  &fakeRand{},
+		BaseFee:              big.NewInt(0),
+		Epoch:                0,
+		PRoot:                sroot,
+		Bsstore:              cs.Blockstore(),
+		SysCallsImpl:         mkFakedSigSyscalls(syscalls),
+		GasPriceSchedule:     gasPirceSchedule,
 	}
 
 	vmi, err := vm.NewVM(vmopt)

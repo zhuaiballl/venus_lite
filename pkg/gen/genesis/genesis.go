@@ -5,10 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/go-state-types/network"
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/slashing"
-	"github.com/filecoin-project/venus/pkg/vmsupport"
 
 	"github.com/ipfs/go-cid"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
@@ -17,10 +13,10 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/go-state-types/network"
 	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	account0 "github.com/filecoin-project/specs-actors/actors/builtin/account"
 	multisig0 "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
@@ -32,12 +28,17 @@ import (
 	"github.com/filecoin-project/venus/pkg/config"
 	"github.com/filecoin-project/venus/pkg/constants"
 	"github.com/filecoin-project/venus/pkg/crypto/sigs"
+	"github.com/filecoin-project/venus/pkg/fork"
+	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus/pkg/slashing"
 	"github.com/filecoin-project/venus/pkg/specactors/builtin"
 	"github.com/filecoin-project/venus/pkg/types"
 	bstore "github.com/filecoin-project/venus/pkg/util/blockstoreutil"
 	"github.com/filecoin-project/venus/pkg/util/ffiwrapper"
 	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus/pkg/vm/gas"
 	"github.com/filecoin-project/venus/pkg/vm/state"
+	"github.com/filecoin-project/venus/pkg/vmsupport"
 )
 
 const AccountStart = 100
@@ -46,7 +47,7 @@ const MaxAccounts = MinerStart - AccountStart
 
 var log = logging.Logger("gen/genesis")
 
-type GenesisBootstrap struct {
+type GenesisBootstrap struct { //nolint
 	Genesis *block.Block
 }
 
@@ -263,7 +264,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template Te
 		return nil, nil, xerrors.Errorf("creating random verifier address: %w", err)
 	}
 
-	verifierId, err := address.NewIDAddress(81)
+	verifierID, err := address.NewIDAddress(81)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -273,7 +274,7 @@ func MakeInitialStateTree(ctx context.Context, bs bstore.Blockstore, template Te
 		return nil, nil, err
 	}
 
-	err = state.SetActor(ctx, verifierId, &types.Actor{
+	err = state.SetActor(ctx, verifierID, &types.Actor{
 		Code:    builtin0.AccountActorCodeID,
 		Balance: big.NewInt(0),
 		Head:    verifierState,
@@ -402,7 +403,7 @@ func createMultisigAccount(ctx context.Context, bs bstore.Blockstore, cst cbor.I
 	return nil
 }
 
-func VerifyPreSealedData(ctx context.Context, bs blockstore.Blockstore, cs *chain.Store, stateroot cid.Cid, template Template, keyIDs map[address.Address]address.Address, para *config.ForkUpgradeConfig) (cid.Cid, error) {
+func VerifyPreSealedData(ctx context.Context, cs *chain.Store, stateroot cid.Cid, template Template, keyIDs map[address.Address]address.Address, para *config.ForkUpgradeConfig) (cid.Cid, error) {
 	verifNeeds := make(map[address.Address]abi.PaddedPieceSize)
 	var sum abi.PaddedPieceSize
 
@@ -429,6 +430,7 @@ func VerifyPreSealedData(ctx context.Context, bs blockstore.Blockstore, cs *chai
 		return constants.ActorUpgradeNetworkVersion - 1 // genesis requires actors v0.
 	}
 
+	gasPriceSchedule := gas.NewPricesSchedule(para)
 	vmopt := vm.VmOption{
 		CircSupplyCalculator: nil,
 		NtwkVersionGetter:    genesisNetworkVersion,
@@ -436,8 +438,9 @@ func VerifyPreSealedData(ctx context.Context, bs blockstore.Blockstore, cs *chai
 		BaseFee:              big.NewInt(0),
 		Epoch:                0,
 		PRoot:                stateroot,
-		Bsstore:              bs,
-		SysCallsImpl:         syscalls,
+		Bsstore:              cs.Blockstore(),
+		SysCallsImpl:         mkFakedSigSyscalls(syscalls),
+		GasPriceSchedule:     gasPriceSchedule,
 	}
 
 	vm, err := vm.NewVM(vmopt)
@@ -495,7 +498,7 @@ func VerifyPreSealedData(ctx context.Context, bs blockstore.Blockstore, cs *chai
 	return st, nil
 }
 
-func MakeGenesisBlock(ctx context.Context, cst cbor.IpldStore, bs blockstore.Blockstore, template Template, para *config.ForkUpgradeConfig) (*GenesisBootstrap, error) {
+func MakeGenesisBlock(ctx context.Context, rep repo.Repo, bs blockstore.Blockstore, template Template, para *config.ForkUpgradeConfig) (*GenesisBootstrap, error) {
 	st, keyIDs, err := MakeInitialStateTree(ctx, bs, template)
 	if err != nil {
 		return nil, xerrors.Errorf("make initial state tree failed: %w", err)
@@ -508,15 +511,15 @@ func MakeGenesisBlock(ctx context.Context, cst cbor.IpldStore, bs blockstore.Blo
 
 	// temp chainstore
 	chainStatusReporter := chain.NewStatusReporter()
-	cs := chain.NewStore(nil, cst, bs, chainStatusReporter, para, stateroot)
+	cs := chain.NewStore(rep.ChainDatastore(), cbor.NewCborStore(bs), bs, chainStatusReporter, para, cid.Undef)
 
 	// Verify PreSealed Data
-	stateroot, err = VerifyPreSealedData(ctx, bs, cs, stateroot, template, keyIDs, para)
+	stateroot, err = VerifyPreSealedData(ctx, cs, stateroot, template, keyIDs, para)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to verify presealed data: %w", err)
 	}
 
-	stateroot, err = SetupStorageMiners(ctx, bs, cs, stateroot, template.Miners, para)
+	stateroot, err = SetupStorageMiners(ctx, cs, stateroot, template.Miners, para)
 	if err != nil {
 		return nil, xerrors.Errorf("setup miners failed: %w", err)
 	}
