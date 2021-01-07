@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/xerrors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -33,11 +34,18 @@ import (
 
 var log = logging.Logger("daemon")
 
+const (
+	makeGenFlag     = "make-genesis"
+	preTemplateFlag = "genesis-template"
+)
+
 var daemonCmd = &cmds.Command{
 	Helptext: cmds.HelpText{
 		Tagline: "Initialize a venus repo, Start a long-running daemon process",
 	},
 	Options: []cmds.Option{
+		cmds.StringOption(makeGenFlag, "make genesis"),
+		cmds.StringOption(preTemplateFlag, "template for make genesis"),
 		cmds.StringOption(SwarmAddress, "multiaddress to listen on for filecoin network connections"),
 		cmds.StringOption(SwarmPublicRelayAddress, "public multiaddress for routing circuit relay traffic.  Necessary for relay nodes to provide this if they are not publically dialable"),
 		cmds.BoolOption(OfflineMode, "start the node without networking"),
@@ -70,7 +78,7 @@ var daemonCmd = &cmds.Command{
 				return err
 			}
 
-			if err = initRun(req, re); err != nil {
+			if err = initRun(req); err != nil {
 				return err
 			}
 		}
@@ -79,7 +87,7 @@ var daemonCmd = &cmds.Command{
 	},
 }
 
-func initRun(req *cmds.Request, re cmds.ResponseEmitter) error {
+func initRun(req *cmds.Request) error {
 	rep, err := getRepo(req)
 	if err != nil {
 		return err
@@ -90,17 +98,14 @@ func initRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		_ = rep.Close()
 	}()
 
-	genesisFileSource, _ := req.Options[GenesisFile].(string)
-	gif, err := loadGenesis(req.Context, rep, genesisFileSource)
-	if err != nil {
-		return err
-	}
-
-	peerKeyFile, _ := req.Options[PeerKeyFile].(string)
-	walletKeyFile, _ := req.Options[WalletKeyFile].(string)
-	initOpts, err := getNodeInitOpts(peerKeyFile, walletKeyFile)
-	if err != nil {
-		return err
+	var genesisFunc genesis.InitFunc
+	// normal node
+	genesisFileOption := req.Options[GenesisFile]
+	if genesisFileOption != nil {
+		genesisFunc, err = loadGenesis(req.Context, rep, genesisFileOption.(string))
+		if err != nil {
+			return err
+		}
 	}
 
 	cfg := rep.Config()
@@ -110,12 +115,29 @@ func initRun(req *cmds.Request, re cmds.ResponseEmitter) error {
 		return err
 	}
 
+	// genesis node
+	if mkGen, ok := req.Options[makeGenFlag].(string); ok {
+		preTp := req.Options[preTemplateFlag]
+		if preTp == nil {
+			return xerrors.Errorf("must also pass file with genesis template to `--%s`", preTemplateFlag)
+		}
+
+		genesisFunc = genesis.MakeGenesis(mkGen, preTp.(string), cfg.NetworkParams.ForkUpgradeParam)
+	}
+
+	peerKeyFile, _ := req.Options[PeerKeyFile].(string)
+	walletKeyFile, _ := req.Options[WalletKeyFile].(string)
+	initOpts, err := getNodeInitOpts(peerKeyFile, walletKeyFile)
+	if err != nil {
+		return err
+	}
+
 	if err := rep.ReplaceConfig(cfg); err != nil {
 		log.Errorf("Error replacing config %s", err)
 		return err
 	}
 
-	if err := node.Init(req.Context, rep, gif, initOpts...); err != nil {
+	if err := node.Init(req.Context, rep, genesisFunc, initOpts...); err != nil {
 		log.Errorf("Error initializing node %s", err)
 		return err
 	}

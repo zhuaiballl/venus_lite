@@ -1,7 +1,7 @@
 package block
 
 import (
-	bytes2 "bytes"
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -86,7 +86,7 @@ const IndexParentsField = 5
 func (b *Block) Cid() cid.Cid {
 	if b.cachedCid == cid.Undef {
 		if b.cachedBytes == nil {
-			buf := new(bytes2.Buffer)
+			buf := new(bytes.Buffer)
 			err := b.MarshalCBOR(buf)
 			if err != nil {
 				panic(err)
@@ -106,7 +106,7 @@ func (b *Block) Cid() cid.Cid {
 
 // ToNode converts the Block to an IPLD node.
 func (b *Block) ToNode() node.Node {
-	buf := new(bytes2.Buffer)
+	buf := new(bytes.Buffer)
 	err := b.MarshalCBOR(buf)
 	if err != nil {
 		panic(err)
@@ -141,7 +141,7 @@ func (b *Block) String() string {
 // DecodeBlock decodes raw cbor bytes into a Block.
 func DecodeBlock(b []byte) (*Block, error) {
 	var out Block
-	if err := out.UnmarshalCBOR(bytes2.NewReader(b)); err != nil {
+	if err := out.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
 		return nil, err
 	}
 
@@ -178,6 +178,29 @@ func (b *Block) SignatureData() []byte {
 	}
 
 	return tmp.ToNode().RawData()
+}
+
+func (blk *Block) Serialize() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := blk.MarshalCBOR(buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (blk *Block) ToStorageBlock() (blocks.Block, error) {
+	data, err := blk.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := abi.CidBuilder.Sum(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return blocks.NewBlockWithCid(data, c)
 }
 
 func (b *Block) LastTicket() *Ticket {
