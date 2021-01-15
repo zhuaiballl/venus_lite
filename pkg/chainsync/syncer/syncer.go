@@ -342,6 +342,7 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent, next *block.TipSet) e
 	if err != nil {
 		return err
 	}
+	logSyncer.Error("success to PutTipSetMetadata")
 	return nil
 }
 
@@ -803,14 +804,17 @@ func (syncer *Syncer) processTipSetSegment(ctx context.Context, target *syncType
 			// there is no assumption that the running node's data is valid at all,
 			// so we don't really lose anything with this simplification.
 			syncer.badTipSets.AddChain(segTipset[i:])
+			logSyncer.Error("syncOne error")
 			return nil, errors.Wrapf(err, "failed to sync tipset %s, number %d of %d in chain", ts.Key(), i, len(segTipset))
 		}
 
 		if !ts.Key().Equals(syncer.checkPoint) {
+			logSyncer.Error("start stageIfHeaviest")
 			err = syncer.stageIfHeaviest(ctx, ts)
 			if err != nil {
 				return nil, err
 			}
+			logSyncer.Error("end stageIfHeaviest")
 		}
 		parent = ts
 		target.Current = ts
