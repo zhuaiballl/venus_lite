@@ -794,7 +794,7 @@ func (syncer *Syncer) getFullBlock(ctx context.Context, tipset *block.TipSet) (*
 
 func (syncer *Syncer) processTipSetSegment(ctx context.Context, target *syncTypes.Target, parent *block.TipSet, segTipset []*block.TipSet) (*block.TipSet, error) {
 	for i, ts := range segTipset {
-		fmt.Println("start to process ", ts.Key())
+		log.Error("start to process ", ts.Key())
 		err := syncer.syncOne(ctx, parent, ts)
 		if err != nil {
 			// While `syncOne` can indeed fail for reasons other than consensus,
@@ -814,7 +814,7 @@ func (syncer *Syncer) processTipSetSegment(ctx context.Context, target *syncType
 		}
 		parent = ts
 		target.Current = ts
-		fmt.Println("success to process ", ts.Key())
+		log.Error("success to process ", ts.Key())
 	}
 	return parent, nil
 }
