@@ -146,6 +146,8 @@ func (d *Dispatcher) Start(syncingCtx context.Context) {
 		defer ticker.Stop()
 		for {
 			select {
+			case <-syncingCtx.Done():
+				return
 			case <-ticker.C:
 				syncTarget, popped := d.workTracker.Select()
 				if popped {
