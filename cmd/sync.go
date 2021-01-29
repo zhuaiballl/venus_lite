@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/venus/app/submodule/syncer"
 	syncTypes "github.com/filecoin-project/venus/pkg/chainsync/types"
@@ -150,7 +151,7 @@ var waitCmd = &cmds.Command{
 		Tagline: "wait for chain sync completed",
 	},
 	Options: []cmds.Option{
-		cmds.BoolOption("watch"),
+		cmds.BoolOption("watch").WithDefault(false),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
 		api := env.(*node.Env).SyncerAPI
@@ -174,8 +175,6 @@ var waitCmd = &cmds.Command{
 
 		firstApp = state.VMApplied
 
-		buf := new(bytes.Buffer)
-		writer := NewSilentWriter(buf)
 		for {
 			state, err := api.SyncState(req.Context)
 			if err != nil {
@@ -228,11 +227,11 @@ var waitCmd = &cmds.Command{
 			}
 
 			for i := 0; i < lastLines; i++ {
-				writer.Print("\r\x1b[2K\x1b[A")
+				printOneString(re, "\r\x1b[2K\x1b[A")
 			}
 
-			writer.Printf("Worker: %d; Base: %d; Target: %d (diff: %d)\n", workerID, baseHeight, theight, heightDiff)
-			writer.Printf("State: %s; Current Epoch: %d; Todo: %d\n", ss.Stage, ss.Height, theight-ss.Height)
+			printOneString(re, fmt.Sprintf("Worker: %d; Base: %d; Target: %d (diff: %d)\n", workerID, baseHeight, theight, heightDiff))
+			printOneString(re, fmt.Sprintf("State: %s; Current Epoch: %d; Todo: %d\n", ss.Stage, ss.Height, theight-ss.Height))
 			lastLines = 2
 
 			if i%samples == 0 {
@@ -240,20 +239,20 @@ var waitCmd = &cmds.Command{
 				app = state.VMApplied - firstApp
 			}
 			if i > 0 {
-				writer.Printf("Validated %d messages (%d per second)\n", state.VMApplied-firstApp, (app-lastApp)*uint64(time.Second/tick)/uint64(samples))
+				printOneString(re, fmt.Sprintf("Validated %d messages (%d per second)\n", state.VMApplied-firstApp, (app-lastApp)*uint64(time.Second/tick)/uint64(samples)))
 				lastLines++
 			}
 
 			_ = target // todo: maybe print? (creates a bunch of line wrapping issues with most tipsets)
 
 			if !watch && time.Now().Unix()-int64(head.MinTimestamp()) < int64(blockDelay) {
-				writer.Println("\nDone!")
+				printOneString(re, fmt.Sprintf("\nDone!"))
 				return nil
 			}
 
 			select {
 			case <-req.Context.Done():
-				writer.Println("\nExit by user")
+				printOneString(re, fmt.Sprintf("\nExit by user"))
 				return nil
 			case <-ticker.C:
 			}
@@ -261,9 +260,6 @@ var waitCmd = &cmds.Command{
 			i++
 		}
 
-		if err := re.Emit(buf); err != nil {
-			return err
-		}
 		return nil
 	},
 }
