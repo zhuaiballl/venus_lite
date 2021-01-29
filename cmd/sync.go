@@ -3,9 +3,13 @@ package cmd
 
 import (
 	"bytes"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/venus/app/submodule/syncer"
 	syncTypes "github.com/filecoin-project/venus/pkg/chainsync/types"
+	"github.com/ipfs/go-cid"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"strconv"
+	"time"
 
 	"github.com/filecoin-project/venus/app/node"
 )
@@ -17,6 +21,7 @@ var syncCmd = &cmds.Command{
 	Subcommands: map[string]*cmds.Command{
 		"status":         storeStatusCmd,
 		"history":        historyCmd,
+		"wait":           waitCmd,
 		"set-concurrent": setConcurrent,
 	},
 }
@@ -134,6 +139,129 @@ var historyCmd = &cmds.Command{
 		}
 
 		if err := re.Emit(w); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
+var waitCmd = &cmds.Command{
+	Helptext: cmds.HelpText{
+		Tagline: "wait for chain sync completed",
+	},
+	Options: []cmds.Option{
+		cmds.BoolOption("watch"),
+	},
+	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
+		api := env.(*node.Env).SyncerAPI
+		chainApi := env.(*node.Env).ChainAPI
+		watch := req.Options["watch"].(bool)
+		blockDelay := env.(*node.Env).InspectorAPI.Config().NetworkParams.BlockDelay
+		tick := time.Second / 4
+
+		lastLines := 0
+		ticker := time.NewTicker(tick)
+		defer ticker.Stop()
+
+		samples := 8
+		i := 0
+		var firstApp, app, lastApp uint64
+
+		state, err := api.SyncState(req.Context)
+		if err != nil {
+			return err
+		}
+
+		firstApp = state.VMApplied
+
+		buf := new(bytes.Buffer)
+		writer := NewSilentWriter(buf)
+		for {
+			state, err := api.SyncState(req.Context)
+			if err != nil {
+				return err
+			}
+
+			if len(state.ActiveSyncs) == 0 {
+				time.Sleep(time.Second)
+				continue
+			}
+
+			head, err := chainApi.ChainHead(req.Context)
+			if err != nil {
+				return err
+			}
+
+			working := -1
+			for i, ss := range state.ActiveSyncs {
+				switch ss.Stage {
+				case syncer.StageSyncComplete:
+				default:
+					working = i
+				case syncer.StageIdle:
+					// not complete, not actively working
+				}
+			}
+
+			if working == -1 {
+				working = len(state.ActiveSyncs) - 1
+			}
+
+			ss := state.ActiveSyncs[working]
+			workerID := ss.WorkerID
+
+			var baseHeight abi.ChainEpoch
+			var target []cid.Cid
+			var theight abi.ChainEpoch
+			var heightDiff int64
+
+			if ss.Base != nil {
+				baseHeight = ss.Base.EnsureHeight()
+				heightDiff = int64(ss.Base.EnsureHeight())
+			}
+			if ss.Target != nil {
+				target = ss.Target.Key().Cids()
+				theight = ss.Target.EnsureHeight()
+				heightDiff = int64(ss.Target.EnsureHeight()) - heightDiff
+			} else {
+				heightDiff = 0
+			}
+
+			for i := 0; i < lastLines; i++ {
+				writer.Print("\r\x1b[2K\x1b[A")
+			}
+
+			writer.Printf("Worker: %d; Base: %d; Target: %d (diff: %d)\n", workerID, baseHeight, theight, heightDiff)
+			writer.Printf("State: %s; Current Epoch: %d; Todo: %d\n", ss.Stage, ss.Height, theight-ss.Height)
+			lastLines = 2
+
+			if i%samples == 0 {
+				lastApp = app
+				app = state.VMApplied - firstApp
+			}
+			if i > 0 {
+				writer.Printf("Validated %d messages (%d per second)\n", state.VMApplied-firstApp, (app-lastApp)*uint64(time.Second/tick)/uint64(samples))
+				lastLines++
+			}
+
+			_ = target // todo: maybe print? (creates a bunch of line wrapping issues with most tipsets)
+
+			if !watch && time.Now().Unix()-int64(head.MinTimestamp()) < int64(blockDelay) {
+				writer.Println("\nDone!")
+				return nil
+			}
+
+			select {
+			case <-req.Context.Done():
+				writer.Println("\nExit by user")
+				return nil
+			case <-ticker.C:
+			}
+
+			i++
+		}
+
+		if err := re.Emit(buf); err != nil {
 			return err
 		}
 		return nil
