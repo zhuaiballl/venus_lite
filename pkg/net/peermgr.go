@@ -192,6 +192,7 @@ func (pmgr *PeerMgr) doExpand(ctx context.Context) {
 		return
 	}
 
+	log.Info("do expand peers")
 	// if we already have some peers and need more, the dht is really good at connecting to most peers. Use that for now until something better comes along.
 	if err := pmgr.dht.Bootstrap(ctx); err != nil {
 		log.Warnf("dht bootstrapping failed: %s", err)
