@@ -18,10 +18,12 @@ type AccountAPI struct {
 	chain *ChainSubmodule
 }
 
+//NewAccountAPI create a new account api
 func NewAccountAPI(chain *ChainSubmodule) AccountAPI {
 	return AccountAPI{chain: chain}
 }
 
+// StateAccountKey returns the public key address of the given ID address
 func (accountAPI *AccountAPI) StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error) {
 	ts, err := accountAPI.chain.ChainReader.GetTipSet(tsk)
 	if err != nil {

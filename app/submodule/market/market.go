@@ -14,6 +14,7 @@ import (
 type IMarket interface {
 	StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]chain.MarketBalance, error)
 }
+
 type marketAPI struct {
 	chain chain.IChain
 	stmgr statemanger.IStateManager
@@ -23,6 +24,7 @@ func newMarketAPI(c chain.IChain, stmgr statemanger.IStateManager) IMarket {
 	return &marketAPI{c, stmgr}
 }
 
+// StateMarketParticipants returns the Escrow and Locked balances of every participant in the Storage Market
 func (m *marketAPI) StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]chain.MarketBalance, error) {
 	out := map[string]chain.MarketBalance{}
 	ts, err := m.chain.ChainGetTipSet(tsk)

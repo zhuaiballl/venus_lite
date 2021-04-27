@@ -13,7 +13,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/venus/pkg/messagepool"
 	"github.com/filecoin-project/venus/pkg/types"
@@ -21,7 +20,7 @@ import (
 )
 
 type IMessagePool interface {
-	DeleteByAdress(ctx context.Context, addr address.Address) error
+	MpoolDeleteByAdress(ctx context.Context, addr address.Address) error
 	MpoolPublish(ctx context.Context, addr address.Address) error
 	MpoolPush(ctx context.Context, smsg *types.SignedMessage) (cid.Cid, error)
 	MpoolGetConfig(context.Context) (*messagepool.MpoolConfig, error)
@@ -37,7 +36,6 @@ type IMessagePool interface {
 	MpoolBatchPushMessage(ctx context.Context, msgs []*types.UnsignedMessage, spec *types.MessageSendSpec) ([]*types.SignedMessage, error)
 	MpoolGetNonce(ctx context.Context, addr address.Address) (uint64, error)
 	MpoolSub(ctx context.Context) (<-chan messagepool.MpoolUpdate, error)
-	SendMsg(ctx context.Context, from, to address.Address, method abi.MethodNum, value, maxFee abi.TokenAmount, params []byte) (cid.Cid, error)
 	GasEstimateMessageGas(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec, tsk types.TipSetKey) (*types.UnsignedMessage, error)
 	GasEstimateFeeCap(ctx context.Context, msg *types.UnsignedMessage, maxqueueblks int64, tsk types.TipSetKey) (big.Int, error)
 	GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk types.TipSetKey) (big.Int, error)
@@ -47,6 +45,7 @@ type IMessagePool interface {
 
 var _ IMessagePool = &MessagePoolAPI{}
 
+//MessagePoolAPI messsage pool api implement
 type MessagePoolAPI struct {
 	pushLocks *messagepool.MpoolLocker
 	lk        sync.Mutex
@@ -54,27 +53,32 @@ type MessagePoolAPI struct {
 	mp *MessagePoolSubmodule
 }
 
-func (a *MessagePoolAPI) DeleteByAdress(ctx context.Context, addr address.Address) error {
+//MpoolDeleteByAdress delete msg in mpool of addr
+func (a *MessagePoolAPI) MpoolDeleteByAdress(ctx context.Context, addr address.Address) error {
 	return a.mp.MPool.DeleteByAdress(addr)
 }
 
+//MpoolPublish publish message of address
 func (a *MessagePoolAPI) MpoolPublish(ctx context.Context, addr address.Address) error {
 	return a.mp.MPool.PublishMsgForWallet(addr)
-
 }
 
+// MpoolPush pushes a signed message to mempool.
 func (a *MessagePoolAPI) MpoolPush(ctx context.Context, smsg *types.SignedMessage) (cid.Cid, error) {
 	return a.mp.MPool.Push(smsg)
 }
 
+// MpoolGetConfig returns (a copy of) the current mpool config
 func (a *MessagePoolAPI) MpoolGetConfig(context.Context) (*messagepool.MpoolConfig, error) {
 	return a.mp.MPool.GetConfig(), nil
 }
 
+// MpoolSetConfig sets the mpool config to (a copy of) the supplied config
 func (a *MessagePoolAPI) MpoolSetConfig(ctx context.Context, cfg *messagepool.MpoolConfig) error {
 	return a.mp.MPool.SetConfig(cfg)
 }
 
+// MpoolSelect returns a list of pending messages for inclusion in the next block
 func (a *MessagePoolAPI) MpoolSelect(ctx context.Context, tsk types.TipSetKey, ticketQuality float64) ([]*types.SignedMessage, error) {
 	ts, err := a.mp.chain.API().ChainGetTipSet(tsk)
 	if err != nil {
@@ -84,6 +88,7 @@ func (a *MessagePoolAPI) MpoolSelect(ctx context.Context, tsk types.TipSetKey, t
 	return a.mp.MPool.SelectMessages(ts, ticketQuality)
 }
 
+//MpoolSelects 分批次的选择消息，用于同时多个块同时需要选择消息的情况
 func (a *MessagePoolAPI) MpoolSelects(ctx context.Context, tsk types.TipSetKey, ticketQualitys []float64) ([][]*types.SignedMessage, error) {
 	ts, err := a.mp.chain.API().ChainGetTipSet(tsk)
 	if err != nil {
@@ -93,6 +98,7 @@ func (a *MessagePoolAPI) MpoolSelects(ctx context.Context, tsk types.TipSetKey, 
 	return a.mp.MPool.MultipleSelectMessages(ts, ticketQualitys)
 }
 
+// MpoolPending returns pending mempool messages.
 func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk types.TipSetKey) ([]*types.SignedMessage, error) {
 	var ts *types.TipSet
 	var err error
@@ -168,20 +174,28 @@ func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk types.TipSetKey) 
 	}
 }
 
+// MpoolClear clears pending messages from the mpool
 func (a *MessagePoolAPI) MpoolClear(ctx context.Context, local bool) error {
 	a.mp.MPool.Clear(local)
 	return nil
 }
 
+// MpoolPushUntrusted pushes a signed message to mempool from untrusted sources.
 func (a *MessagePoolAPI) MpoolPushUntrusted(ctx context.Context, smsg *types.SignedMessage) (cid.Cid, error) {
 	return a.mp.MPool.PushUntrusted(smsg)
 }
 
+// MpoolPushMessage atomically assigns a nonce, signs, and pushes a message
+// to mempool.
+// maxFee is only used when GasFeeCap/GasPremium fields aren't specified
+//
+// When maxFee is set to 0, MpoolPushMessage will guess appropriate fee
+// based on current chain conditions
 func (a *MessagePoolAPI) MpoolPushMessage(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec) (*types.SignedMessage, error) {
 	cp := *msg
 	msg = &cp
 	inMsg := *msg
-	fromA, err := a.mp.chain.API().ResolveToKeyAddr(ctx, msg.From, nil)
+	fromA, err := a.mp.chain.API().StateAccountKey(ctx, msg.From, types.EmptyTSK)
 	if err != nil {
 		return nil, xerrors.Errorf("getting key address: %w", err)
 	}
@@ -273,6 +287,7 @@ func (a *MessagePoolAPI) MpoolPushMessage(ctx context.Context, msg *types.Unsign
 	})
 }
 
+// MpoolBatchPushMessage batch pushes a unsigned message to mempool.
 func (a *MessagePoolAPI) MpoolBatchPush(ctx context.Context, smsgs []*types.SignedMessage) ([]cid.Cid, error) {
 	var messageCids []cid.Cid
 	for _, smsg := range smsgs {
@@ -285,6 +300,7 @@ func (a *MessagePoolAPI) MpoolBatchPush(ctx context.Context, smsgs []*types.Sign
 	return messageCids, nil
 }
 
+// MpoolBatchPushUntrusted batch pushes a signed message to mempool from untrusted sources.
 func (a *MessagePoolAPI) MpoolBatchPushUntrusted(ctx context.Context, smsgs []*types.SignedMessage) ([]cid.Cid, error) {
 	var messageCids []cid.Cid
 	for _, smsg := range smsgs {
@@ -297,6 +313,7 @@ func (a *MessagePoolAPI) MpoolBatchPushUntrusted(ctx context.Context, smsgs []*t
 	return messageCids, nil
 }
 
+// MpoolBatchPushMessage batch pushes a unsigned message to mempool.
 func (a *MessagePoolAPI) MpoolBatchPushMessage(ctx context.Context, msgs []*types.UnsignedMessage, spec *types.MessageSendSpec) ([]*types.SignedMessage, error) {
 	var smsgs []*types.SignedMessage
 	for _, msg := range msgs {
@@ -309,6 +326,8 @@ func (a *MessagePoolAPI) MpoolBatchPushMessage(ctx context.Context, msgs []*type
 	return smsgs, nil
 }
 
+// MpoolGetNonce gets next nonce for the specified sender.
+// Note that this method may not be atomic. Use MpoolPushMessage instead.
 func (a *MessagePoolAPI) MpoolGetNonce(ctx context.Context, addr address.Address) (uint64, error) {
 	return a.mp.MPool.GetNonce(addr)
 }
@@ -317,35 +336,23 @@ func (a *MessagePoolAPI) MpoolSub(ctx context.Context) (<-chan messagepool.Mpool
 	return a.mp.MPool.Updates(ctx)
 }
 
-func (a *MessagePoolAPI) SendMsg(ctx context.Context, from, to address.Address, method abi.MethodNum, value, maxFee abi.TokenAmount, params []byte) (cid.Cid, error) {
-	msg := types.UnsignedMessage{
-		To:     to,
-		From:   from,
-		Value:  value,
-		Method: method,
-		Params: params,
-	}
-
-	smsg, err := a.MpoolPushMessage(ctx, &msg, &types.MessageSendSpec{MaxFee: maxFee})
-	if err != nil {
-		return cid.Undef, err
-	}
-
-	return smsg.Cid(), nil
-}
-
+// GasEstimateMessageGas estimates gas values for unset message gas fields
 func (a *MessagePoolAPI) GasEstimateMessageGas(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec, tsk types.TipSetKey) (*types.UnsignedMessage, error) {
 	return a.mp.MPool.GasEstimateMessageGas(ctx, msg, spec, tsk)
 }
 
+// GasEstimateFeeCap estimates gas fee cap
 func (a *MessagePoolAPI) GasEstimateFeeCap(ctx context.Context, msg *types.UnsignedMessage, maxqueueblks int64, tsk types.TipSetKey) (big.Int, error) {
 	return a.mp.MPool.GasEstimateFeeCap(ctx, msg, maxqueueblks, tsk)
 }
 
+// GasEstimateGasPremium estimates what gas price should be used for a
+// message to have high likelihood of inclusion in `nblocksincl` epochs.
 func (a *MessagePoolAPI) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk types.TipSetKey) (big.Int, error) {
 	return a.mp.MPool.GasEstimateGasPremium(ctx, nblocksincl, sender, gaslimit, tsk)
 }
 
+// WalletSign signs the given bytes using the given address.
 func (a *MessagePoolAPI) WalletSign(ctx context.Context, k address.Address, msg []byte) (*crypto.Signature, error) {
 	head := a.mp.chain.ChainReader.GetHead()
 	view, err := a.mp.chain.ChainReader.StateView(head)
@@ -368,6 +375,7 @@ func (a *MessagePoolAPI) WalletSign(ctx context.Context, k address.Address, msg 
 	return a.mp.walletAPI.WalletSign(ctx, keyAddr, msg, meta)
 }
 
+// WalletHas indicates whether the given address is in the wallet.
 func (a *MessagePoolAPI) WalletHas(ctx context.Context, addr address.Address) (bool, error) {
 	return a.mp.walletAPI.WalletHas(ctx, addr)
 }

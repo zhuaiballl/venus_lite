@@ -7,6 +7,7 @@ import (
 	"io"
 )
 
+//BlockServiceAPI 用于提供数据直接访问的接口
 type BlockServiceAPI struct { //nolint
 	blockService *BlockServiceSubmodule
 }

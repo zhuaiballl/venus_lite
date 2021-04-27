@@ -41,7 +41,7 @@ all other block properties will be included as well.`,
 			return err
 		}
 
-		block, err := env.(*node.Env).ChainAPI.GetFullBlock(req.Context, cid)
+		block, err := env.(*node.Env).ChainAPI.ChainGetFullBlock(req.Context, cid)
 		if err != nil {
 			return err
 		}

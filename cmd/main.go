@@ -266,7 +266,7 @@ func getAPIAddress(req *cmds.Request) (string, error) {
 	var rawAddr string
 	var err error
 	// second highest precedence is env vars.
-	if envapi := os.Getenv("FIL_API"); envapi != "" {
+	if envapi := os.Getenv("VENUS_API"); envapi != "" {
 		rawAddr = envapi
 	}
 

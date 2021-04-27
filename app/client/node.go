@@ -2,37 +2,16 @@ package client
 
 import (
 	"context"
-	"io/ioutil"
-	"net/http"
-	"path"
-
 	"github.com/filecoin-project/go-jsonrpc"
-	"github.com/filecoin-project/venus/app/paths"
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
+	"net/http"
 )
 
-func getVenusClientInfo() (string, http.Header, error) {
-	repoPath, err := paths.GetRepoPath("")
-	if err != nil {
-		return "", nil, err
-	}
-
-	tokePath := path.Join(repoPath, "token")
-	rpcPath := path.Join(repoPath, "api")
-
-	tokenBytes, err := ioutil.ReadFile(tokePath)
-	if err != nil {
-		return "", nil, err
-	}
-	rpcBytes, err := ioutil.ReadFile(rpcPath)
-	if err != nil {
-		return "", nil, err
-	}
-
+func getVenusClientInfo(api, token string) (string, http.Header, error) {
 	headers := http.Header{}
-	headers.Add("Authorization", "Bearer "+string(tokenBytes))
-	apima, err := multiaddr.NewMultiaddr(string(rpcBytes))
+	headers.Add("Authorization", "Bearer "+token)
+	apima, err := multiaddr.NewMultiaddr(api)
 	if err != nil {
 		return "", nil, err
 	}
@@ -46,8 +25,10 @@ func getVenusClientInfo() (string, http.Header, error) {
 	return addr, headers, nil
 }
 
-func NewFullNode(ctx context.Context) (FullNode, jsonrpc.ClientCloser, error) {
-	addr, headers, err := getVenusClientInfo()
+//NewFullNode 用于构造一个全节点访问客户端，api可以从~/.venus/api文件中获取，在本地jwt模式下从～/.venus/token读取，
+//在中心授权的模式下，则从venus-auth服务中获取。
+func NewFullNode(ctx context.Context, api, token string) (FullNode, jsonrpc.ClientCloser, error) {
+	addr, headers, err := getVenusClientInfo(api, token)
 	if err != nil {
 		return FullNode{}, nil, err
 	}
@@ -55,19 +36,6 @@ func NewFullNode(ctx context.Context) (FullNode, jsonrpc.ClientCloser, error) {
 	closer, err := jsonrpc.NewClient(ctx, addr, "Filecoin", &node, headers)
 	if err != nil {
 		return FullNode{}, nil, err
-	}
-	return node, closer, nil
-}
-
-func NewMiningAPINode(ctx context.Context) (MiningAPI, jsonrpc.ClientCloser, error) {
-	addr, headers, err := getVenusClientInfo()
-	if err != nil {
-		return MiningAPI{}, nil, err
-	}
-	node := MiningAPI{}
-	closer, err := jsonrpc.NewClient(ctx, addr, "Filecoin", &node, headers)
-	if err != nil {
-		return MiningAPI{}, nil, err
 	}
 	return node, closer, nil
 }

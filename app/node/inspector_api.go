@@ -46,9 +46,9 @@ type RuntimeInfo struct {
 
 // EnvironmentInfo contains information about the environment filecoin is running in.
 type EnvironmentInfo struct {
-	FilAPI  string `json:"FIL_API"`
-	FilPath string `json:"FIL_PATH"`
-	GoPath  string `json:"GOPATH"`
+	VENUSAPI  string `json:"VENUS_API"`
+	VENUSPath string `json:"VENUS_PATH"`
+	GoPath    string `json:"GOPATH"`
 }
 
 // DiskInfo contains information about disk usage and type.
@@ -81,9 +81,9 @@ func (g *Inspector) Runtime() *RuntimeInfo {
 // Environment returns information about the environment filecoin is running in.
 func (g *Inspector) Environment() *EnvironmentInfo {
 	return &EnvironmentInfo{
-		FilAPI:  os.Getenv("FIL_API"),
-		FilPath: os.Getenv("FIL_PATH"),
-		GoPath:  os.Getenv("GOPATH"),
+		VENUSAPI:  os.Getenv("VENUS_API"),
+		VENUSPath: os.Getenv("VENUS_PATH"),
+		GoPath:    os.Getenv("GOPATH"),
 	}
 }
 
