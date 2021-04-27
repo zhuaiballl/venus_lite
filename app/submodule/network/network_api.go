@@ -66,6 +66,7 @@ type Version struct {
 	APIVersion constants.Version
 }
 
+//Version return build version and api version
 func (networkAPI *NetworkAPI) Version(context.Context) (Version, error) {
 	return Version{
 		Version:    constants.UserVersion(),
@@ -73,6 +74,7 @@ func (networkAPI *NetworkAPI) Version(context.Context) (Version, error) {
 	}, nil
 }
 
+//NetAddrsListen return local p2p address info
 func (networkAPI *NetworkAPI) NetAddrsListen(context.Context) (peer.AddrInfo, error) {
 	return peer.AddrInfo{
 		ID:    networkAPI.network.Host.ID(),
