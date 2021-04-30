@@ -21,11 +21,10 @@ import (
 
 // ChainSubmodule enhances the `Node` with chain capabilities.
 type ChainSubmodule struct { //nolint
-	ChainReader    *chain.Store
-	MessageStore   *chain.MessageStore
-	Sampler        *chain.Sampler
-	Processor      *consensus.DefaultProcessor
-	StatusReporter *chain.StatusReporter
+	ChainReader  *chain.Store
+	MessageStore *chain.MessageStore
+	Sampler      *chain.Sampler
+	Processor    *consensus.DefaultProcessor
 
 	Fork fork.IFork
 
@@ -58,8 +57,7 @@ func NewChainSubmodule(ctx context.Context,
 	verifier ffiwrapper.Verifier,
 ) (*ChainSubmodule, error) {
 	// initialize chain store
-	chainStatusReporter := chain.NewStatusReporter()
-	chainStore := chain.NewStore(repo.ChainDatastore(), blockstore.CborStore, blockstore.Blockstore, chainStatusReporter, repo.Config().NetworkParams.ForkUpgradeParam, config.GenesisCid())
+	chainStore := chain.NewStore(repo.ChainDatastore(), blockstore.CborStore, blockstore.Blockstore, repo.Config().NetworkParams.ForkUpgradeParam, config.GenesisCid())
 	//drand
 	genBlk, err := chainStore.GetGenesisBlock(context.TODO())
 	if err != nil {
@@ -84,15 +82,14 @@ func NewChainSubmodule(ctx context.Context,
 	waiter := chain.NewWaiter(chainStore, messageStore, blockstore.Blockstore, blockstore.CborStore)
 
 	store := &ChainSubmodule{
-		ChainReader:    chainStore,
-		MessageStore:   messageStore,
-		Processor:      processor,
-		StatusReporter: chainStatusReporter,
-		Fork:           fork,
-		Drand:          drand,
-		config:         config,
-		Waiter:         waiter,
-		CheckPoint:     chainStore.GetCheckPoint(),
+		ChainReader:  chainStore,
+		MessageStore: messageStore,
+		Processor:    processor,
+		Fork:         fork,
+		Drand:        drand,
+		config:       config,
+		Waiter:       waiter,
+		CheckPoint:   chainStore.GetCheckPoint(),
 	}
 	err = store.ChainReader.Load(context.TODO())
 	if err != nil {

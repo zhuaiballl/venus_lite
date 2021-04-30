@@ -93,7 +93,7 @@ var CheckPoint = datastore.NewKey("/chain/checkPoint")
 
 type TsState struct {
 	StateRoot cid.Cid
-	Reciepts  cid.Cid
+	Receipts  cid.Cid
 }
 
 func ActorStore(ctx context.Context, bs blockstore.Blockstore) adt.Store {
@@ -112,7 +112,7 @@ type Store struct {
 	// ds is the datastore for the chain's private metadata which consists
 	// of the tipset key to state root cid mapping, and the heaviest tipset
 	// key.
-	ds *CacheDs
+	ds repo.Datastore
 
 	// genesis is the CID of the genesis block.
 	genesis cid.Cid
@@ -136,9 +136,6 @@ type Store struct {
 	// Tracks tipsets by height/parentset for use by expected consensus.
 	tipIndex *TipStateCache
 
-	// Reporter is used by the store to update the current status of the chain.
-	reporter Reporter
-
 	circulatingSupplyCalculator *CirculatingSupplyCalculator
 
 	chainIndex *ChainIndex
@@ -153,21 +150,18 @@ type Store struct {
 func NewStore(ds repo.Datastore,
 	cst cbor.IpldStore,
 	bsstore blockstore.Blockstore,
-	sr Reporter,
 	forkConfig *config.ForkUpgradeConfig,
 	genesisCid cid.Cid,
 ) *Store {
-	cacheDs := NewCacheDs(ds, true)
 	tsCache, _ := lru.NewARC(10000)
 	store := &Store{
 		stateAndBlockSource: cst,
-		ds:                  cacheDs,
+		ds:                  ds,
 		bsstore:             bsstore,
 		headEvents:          pubsub.New(64),
 
 		checkPoint:     types.UndefTipSet.Key(),
 		genesis:        genesisCid,
-		reporter:       sr,
 		reorgNotifeeCh: make(chan ReorgNotifee),
 		tsCache:        tsCache,
 	}
@@ -279,6 +273,7 @@ func (store *Store) loadHead() (types.TipSetKey, error) {
 	return tsk, nil
 }
 
+//LoadTipsetMetadata load tipset status (state root and reciepts)
 func (store *Store) LoadTipsetMetadata(ts *types.TipSet) (*TipSetMetadata, error) {
 	h := ts.Height()
 	key := datastore.NewKey(makeKey(ts.String(), h))
@@ -295,7 +290,7 @@ func (store *Store) LoadTipsetMetadata(ts *types.TipSet) (*TipSetMetadata, error
 	return &TipSetMetadata{
 		TipSet:          ts,
 		TipSetStateRoot: metadata.StateRoot,
-		TipSetReceipts:  metadata.Reciepts,
+		TipSetReceipts:  metadata.Receipts,
 	}, nil
 }
 
@@ -372,6 +367,9 @@ func (store *Store) GetTipSet(key types.TipSetKey) (*types.TipSet, error) {
 	return ts, nil
 }
 
+// GetTipSetByHeight looks back for a tipset at the specified epoch.
+// If there are no blocks at the specified epoch, a tipset at an earlier epoch
+// will be returned.
 func (store *Store) GetTipSetByHeight(ctx context.Context, ts *types.TipSet, h abi.ChainEpoch, prev bool) (*types.TipSet, error) {
 	if ts == nil {
 		ts = store.head
@@ -438,6 +436,8 @@ func (store *Store) HasTipSetAndState(ctx context.Context, ts *types.TipSet) boo
 	return store.tipIndex.Has(ts)
 }
 
+//GetLatestBeaconEntry get latest beacon from the height. there're no beacon values in the block, try to
+//get beacon in the parents tipset. the max find depth is 20.
 func (store *Store) GetLatestBeaconEntry(ts *types.TipSet) (*types.BeaconEntry, error) {
 	cur := ts
 	for i := 0; i < 20; i++ {
@@ -555,9 +555,6 @@ func (store *Store) SetHead(ctx context.Context, newTs *types.TipSet) error {
 		return nil
 	}
 
-	h := newTs.Height()
-	store.reporter.UpdateStatus(validateHead(newTs.Key()), validateHeight(h))
-
 	//todo wrap by go function
 	Reverse(added)
 	Reverse(dropped)
@@ -640,6 +637,9 @@ func (store *Store) reorgWorker(ctx context.Context) chan reorg {
 	return out
 }
 
+// SubHeadChanges returns channel with chain head updates.
+// First message is guaranteed to be of len == 1, and type == 'current'.
+// Then event in the message may be HCApply and HCRevert.
 func (store *Store) SubHeadChanges(ctx context.Context) chan []*HeadChange {
 	out := make(chan []*HeadChange, 16)
 	store.mu.RLock()
@@ -679,6 +679,7 @@ func (store *Store) SubHeadChanges(ctx context.Context) chan []*HeadChange {
 	return out
 }
 
+//SubscribeHeadChanges subscribe head change event
 func (store *Store) SubscribeHeadChanges(f ReorgNotifee) {
 	store.reorgNotifeeCh <- f
 }
@@ -713,7 +714,7 @@ func (store *Store) writeTipSetMetadata(tsm *TipSetMetadata) error {
 
 	metadata := TsState{
 		StateRoot: tsm.TipSetStateRoot,
-		Reciepts:  tsm.TipSetReceipts,
+		Receipts:  tsm.TipSetReceipts,
 	}
 	buf := new(bytes.Buffer)
 	err := metadata.MarshalCBOR(buf)
@@ -750,11 +751,13 @@ func (store *Store) GenesisCid() cid.Cid {
 	return store.genesis
 }
 
+// GenesisRootCid returns the genesis root cid of the chain tracked by the default store.
 func (store *Store) GenesisRootCid() cid.Cid {
 	genesis, _ := store.GetBlock(context.TODO(), store.GenesisCid())
 	return genesis.ParentStateRoot
 }
 
+//Import import a car file into local db
 func (store *Store) Import(r io.Reader) (*types.TipSet, error) {
 	header, err := car.LoadCar(store.bsstore, r)
 	if err != nil {
@@ -768,15 +771,15 @@ func (store *Store) Import(r io.Reader) (*types.TipSet, error) {
 
 	parent := root.Parents()
 
+	//Notice here is different with lotus, because the head tipset in lotus is not computed,
+	//but in venus the head tipset is computed, so here we will fallback a pre tipset
+	//and the chain store must has a metadata for each tipset, below code is to build the tipset metadata
 	log.Info("import height: ", root.Height(), " root: ", root.At(0).ParentStateRoot, " parents: ", root.At(0).Parents)
 	parentTipset, err := store.GetTipSet(parent)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load root tipset from chainfile: %w", err)
 	}
 	err = store.PutTipSetMetadata(context.Background(), &TipSetMetadata{
-		// TODO: Special logic
-		// The difference between Lotus and Venus is that Venus has to rewind one block height of data
-		// so the TipSetStateRoot is the current StateRoot,not the ParentStateRoot
 		TipSetStateRoot: root.At(0).ParentStateRoot,
 		TipSet:          parentTipset,
 		TipSetReceipts:  root.At(0).ParentMessageReceipts,
@@ -784,6 +787,7 @@ func (store *Store) Import(r io.Reader) (*types.TipSet, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	loopBack := 900
 	curTipset := parentTipset
 	for i := 0; i < loopBack; i++ {

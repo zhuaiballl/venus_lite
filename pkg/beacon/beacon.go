@@ -32,6 +32,7 @@ type RandomBeacon interface {
 	MaxBeaconRoundForEpoch(abi.ChainEpoch) uint64
 }
 
+//ValidateBlockValues Verify that the beacon in the block header is correct
 func ValidateBlockValues(bSchedule Schedule, h *types.BlockHeader, parentEpoch abi.ChainEpoch, prevEntry *types.BeaconEntry) error {
 	{
 		parentBeacon := bSchedule.BeaconForEpoch(parentEpoch)

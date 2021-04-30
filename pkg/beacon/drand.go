@@ -21,19 +21,6 @@ import (
 	"github.com/filecoin-project/venus/pkg/types"
 )
 
-type drandPeer struct {
-	addr string
-	tls  bool
-}
-
-func (dp *drandPeer) Address() string {
-	return dp.addr
-}
-
-func (dp *drandPeer) IsTLS() bool {
-	return dp.tls
-}
-
 // DrandBeacon connects Lotus with a drand network in order to provide
 // randomness to the system in a way that's aligned with Filecoin rounds/epochs.
 //
@@ -61,6 +48,7 @@ type DrandHTTPClient interface {
 	SetUserAgent(string)
 }
 
+//NewDrandBeacon create new beacon client from config, genesis block time and block delay
 func NewDrandBeacon(genTimeStamp, interval uint64, config cfg.DrandConf) (*DrandBeacon, error) {
 	drandChain, err := dchain.InfoFromJSON(bytes.NewReader([]byte(config.ChainInfoJSON)))
 	if err != nil {
@@ -113,6 +101,7 @@ func NewDrandBeacon(genTimeStamp, interval uint64, config cfg.DrandConf) (*Drand
 	return db, nil
 }
 
+//Entry get a beacon value of specify block height,
 func (db *DrandBeacon) Entry(ctx context.Context, round uint64) <-chan Response {
 	out := make(chan Response, 1)
 	if round != 0 {

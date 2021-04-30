@@ -128,12 +128,12 @@ func DrawRandomness(rbase []byte, pers acrypto.DomainSeparationTag, round abi.Ch
 }
 
 ///// A chain sampler with a specific head tipset key. /////
-
 type RandomnessSamplerAtTipSet struct {
 	sampler *Sampler
 	head    types.TipSetKey
 }
 
+//Sample get randomness from ticket at head tipset
 func (s *RandomnessSamplerAtTipSet) Sample(ctx context.Context, epoch abi.ChainEpoch) (RandomSeed, error) {
 	ticket, err := s.sampler.SampleTicket(ctx, s.head, epoch)
 	if err != nil {
@@ -142,6 +142,7 @@ func (s *RandomnessSamplerAtTipSet) Sample(ctx context.Context, epoch abi.ChainE
 	return MakeRandomSeed(ticket.VRFProof)
 }
 
+//GetRandomnessFromBeacon compute randomness with beacon value at head tipset
 func (s *RandomnessSamplerAtTipSet) GetRandomnessFromBeacon(ctx context.Context, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error) {
 	return s.sampler.SampleRandomnessFromBeacon(ctx, s.head, personalization, randEpoch, entropy)
 }

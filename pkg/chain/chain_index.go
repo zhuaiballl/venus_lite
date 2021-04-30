@@ -19,6 +19,7 @@ type ChainIndex struct { //nolint
 	skipLength abi.ChainEpoch
 }
 
+//NewChainIndex tipset高度索引，用于加快按高度获取tipset的速度
 func NewChainIndex(lts loadTipSetFunc) *ChainIndex {
 	sc, _ := lru.NewARC(DefaultChainIndexCacheSize)
 	return &ChainIndex{
@@ -35,6 +36,7 @@ type lbEntry struct {
 	target       types.TipSetKey
 }
 
+//GetTipSetByHeight 按照高度获取tipset，在skiplength之内的直接通过读取数据库获取，高度差距超过skiplength则通过缓存获取，缓存获取失败则读取数据库获取并更新缓存
 func (ci *ChainIndex) GetTipSetByHeight(_ context.Context, from *types.TipSet, to abi.ChainEpoch) (*types.TipSet, error) {
 	if from.Height()-to <= ci.skipLength {
 		return ci.walkBack(from, to)
@@ -68,6 +70,7 @@ func (ci *ChainIndex) GetTipSetByHeight(_ context.Context, from *types.TipSet, t
 	}
 }
 
+//GetTipsetByHeightWithoutCache 直接通过读取数据库来获取特定高度的tipset
 func (ci *ChainIndex) GetTipsetByHeightWithoutCache(from *types.TipSet, to abi.ChainEpoch) (*types.TipSet, error) {
 	return ci.walkBack(from, to)
 }

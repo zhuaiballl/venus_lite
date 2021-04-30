@@ -29,6 +29,7 @@ type genesisReader interface {
 	GetGenesisBlock(ctx context.Context) (*types.BlockHeader, error)
 }
 
+//CirculatingSupply 流通量相关信息，包括挖矿，公募私募释放量，燃烧，抵押，流通量，
 type CirculatingSupply struct {
 	FilVested      abi.TokenAmount
 	FilMined       abi.TokenAmount
@@ -37,6 +38,7 @@ type CirculatingSupply struct {
 	FilCirculating abi.TokenAmount
 }
 
+//CirculatingSupplyCalculator 函数用于计算特定区块高度上资金的流通状况
 type CirculatingSupplyCalculator struct {
 	bstore        blockstoreutil.Blockstore
 	genesisReader genesisReader
@@ -53,10 +55,12 @@ type CirculatingSupplyCalculator struct {
 	upgradeConfig *config.ForkUpgradeConfig
 }
 
+//NewCirculatingSupplyCalculator create new  circulating supply calculator
 func NewCirculatingSupplyCalculator(bstore blockstoreutil.Blockstore, genesisReader genesisReader, upgradeConfig *config.ForkUpgradeConfig) *CirculatingSupplyCalculator {
 	return &CirculatingSupplyCalculator{bstore: bstore, genesisReader: genesisReader, upgradeConfig: upgradeConfig}
 }
 
+//GetCirculatingSupplyDetailed 查询合约并计算除特定高度的流通状况
 func (caculator *CirculatingSupplyCalculator) GetCirculatingSupplyDetailed(ctx context.Context, height abi.ChainEpoch, st tree.Tree) (CirculatingSupply, error) {
 	caculator.genesisMsigLk.Lock()
 	defer caculator.genesisMsigLk.Unlock()
@@ -367,6 +371,7 @@ func (caculator *CirculatingSupplyCalculator) GetFilReserveDisbursed(ctx context
 	return big.Sub(big.NewFromGo(constants.InitialFilReserved), ract.Balance), nil
 }
 
+//GetFilMined 查询奖励获取已经挖出来的FIl数量
 func GetFilMined(ctx context.Context, st tree.Tree) (abi.TokenAmount, error) {
 	ractor, found, err := st.GetActor(ctx, reward.Address)
 	if !found || err != nil {
@@ -381,6 +386,7 @@ func GetFilMined(ctx context.Context, st tree.Tree) (abi.TokenAmount, error) {
 	return rst.TotalStoragePowerReward()
 }
 
+//GetFilBurnt 查询burnt合约获取燃烧掉的FIL的数量
 func GetFilBurnt(ctx context.Context, st tree.Tree) (abi.TokenAmount, error) {
 	burnt, found, err := st.GetActor(ctx, builtin.BurntFundsActorAddr)
 	if !found || err != nil {
@@ -390,6 +396,7 @@ func GetFilBurnt(ctx context.Context, st tree.Tree) (abi.TokenAmount, error) {
 	return burnt.Balance, nil
 }
 
+//GetFilLocked 查询市场合约和算力合约获取锁定的FIL数量
 func (caculator *CirculatingSupplyCalculator) GetFilLocked(ctx context.Context, st tree.Tree) (abi.TokenAmount, error) {
 
 	filMarketLocked, err := getFilMarketLocked(ctx, st)

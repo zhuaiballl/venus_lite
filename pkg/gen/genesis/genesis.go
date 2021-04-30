@@ -509,8 +509,7 @@ func MakeGenesisBlock(ctx context.Context, rep repo.Repo, bs blockstore.Blocksto
 	}
 
 	// temp chainstore
-	chainStatusReporter := chain.NewStatusReporter()
-	cs := chain.NewStore(rep.ChainDatastore(), cbor.NewCborStore(bs), bs, chainStatusReporter, para, cid.Undef)
+	cs := chain.NewStore(rep.ChainDatastore(), cbor.NewCborStore(bs), bs, para, cid.Undef)
 
 	// Verify PreSealed Data
 	stateroot, err = VerifyPreSealedData(ctx, cs, stateroot, template, keyIDs, para)
