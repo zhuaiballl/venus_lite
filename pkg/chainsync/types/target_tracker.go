@@ -27,7 +27,9 @@ type Target struct {
 	types.ChainInfo
 }
 
-func (target *Target) IsNeibor(t *Target) bool {
+//IsNeighbor the target t is neighbor or not
+//the same height, the same weight, the same parent is neighbor target. the can merge
+func (target *Target) IsNeighbor(t *Target) bool {
 	if target.Head.Height() != t.Head.Height() {
 		return false
 	}
@@ -44,10 +46,13 @@ func (target *Target) IsNeibor(t *Target) bool {
 	return true
 }
 
+//HasChild is another is a child target of current.
+//if the t' blocks in a subset of current target ,the t is a child of current target
 func (target *Target) HasChild(t *Target) bool {
 	return target.Head.Key().ContainsAll(t.Head.Key())
 }
 
+//Key return identity of target . key=weight+height+parent
 func (target *Target) Key() string {
 	weightIn := target.Head.ParentWeight()
 	return weightIn.String() +
@@ -88,6 +93,11 @@ func NewTargetTracker(size int) *TargetTracker {
 }
 
 // Add adds a sync target to the target queue.
+// 首先检查重量收否消息已经记录到的最少重量，如果重量少于当前重量则自动退出
+// 然后检查当前target和已经记录到的target是否能够合并，如果可以合并则生成一个新的包含更多区块的target
+// 尝试替换一个子target并且是idle状态的target，如果不存在，尝试替换一个重量最低且为idle的target。
+// 如果上述两种情况都不存在，在检查任务是否超出保存的最大数量，如果超过这个数量，则放弃当前target，如果还有空位则追加到最后
+// 每次完成这个过程后，要重新排序所有的target, 先按重量从小到达排序，在组内按照区块数量从小到大排序，尽量多的包含区块。
 func (tq *TargetTracker) Add(t *Target) bool {
 	tq.lk.Lock()
 	defer tq.lk.Unlock()
@@ -184,6 +194,7 @@ func sortTarget(target TargetBuckets) {
 	}
 }
 
+//扩充算法，遍历本地已经存在的target，如果其中存在相邻的target并且其中包含自己没有的区块，则合并其中的区块。
 func (tq *TargetTracker) widen(t *Target) (*Target, bool) {
 	if len(tq.targetSet) == 0 {
 		return t, true
@@ -200,7 +211,7 @@ func (tq *TargetTracker) widen(t *Target) (*Target, bool) {
 	//collect neibor block in queue include history
 	sameWeightBlks := make(map[cid.Cid]*types.BlockHeader)
 	for _, val := range tq.targetSet {
-		if val.IsNeibor(t) {
+		if val.IsNeighbor(t) {
 			for _, blk := range val.Head.Blocks() {
 				bid := blk.Cid()
 				if !t.Head.Key().Has(bid) {
@@ -251,6 +262,8 @@ func (tq *TargetTracker) Select() (*Target, bool) {
 	return toSyncTarget, true
 }
 
+//Remove remote a target after sync completed
+//First remove target from live queue, add the target to history.
 func (tq *TargetTracker) Remove(t *Target) {
 	tq.lk.Lock()
 	defer tq.lk.Unlock()
@@ -269,6 +282,7 @@ func (tq *TargetTracker) Remove(t *Target) {
 	tq.history.PushBack(t)
 }
 
+//History return sync history
 func (tq *TargetTracker) History() []*Target {
 	tq.lk.Lock()
 	defer tq.lk.Unlock()

@@ -29,6 +29,7 @@ func NewLocalSlashFilter(dstore ds.Batching) ISlashFilter {
 	}
 }
 
+//MinedBlock check whether the block mined is slash
 func (f *LocalSlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.ChainEpoch) error {
 	epochKey := ds.NewKey(fmt.Sprintf("/%s/%d", bh.Miner, bh.Height))
 	{

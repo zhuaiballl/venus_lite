@@ -148,6 +148,7 @@ func (d *Dispatcher) processIncoming(ctx context.Context) {
 	}
 }
 
+//SetConcurrent set the max goroutine to syncing target
 func (d *Dispatcher) SetConcurrent(number int64) {
 	d.lk.Lock()
 	defer d.lk.Unlock()
@@ -165,6 +166,7 @@ func (d *Dispatcher) SetConcurrent(number int64) {
 	}
 }
 
+//Concurrent get current max syncing goroutine
 func (d *Dispatcher) Concurrent() int64 {
 	d.lk.Lock()
 	defer d.lk.Unlock()
@@ -177,7 +179,7 @@ func (d *Dispatcher) syncWorker(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			for { //avoid to sleep 25 millisecond
+			for { //avoid to sleep a ticker
 				syncTarget, popped := d.workTracker.Select()
 				if popped {
 					// Do work

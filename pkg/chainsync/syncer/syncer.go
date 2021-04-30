@@ -612,6 +612,8 @@ func (syncer *Syncer) Head() *types.TipSet {
 	return syncer.chainStore.GetHead()
 }
 
+//SetHead try to sethead after complete tipset syncing,
+// if the current target weight is heavier than chain store. change a new head
 func (syncer *Syncer) SetHead(ctx context.Context, ts *types.TipSet) error {
 	syncer.headLock.Lock()
 	defer syncer.headLock.Unlock()
