@@ -3,6 +3,7 @@ package mpool
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/ipfs-force-community/venus-wallet/core"
@@ -343,6 +344,7 @@ func (a *MessagePoolAPI) GasEstimateFeeCap(ctx context.Context, msg *types.Unsig
 }
 
 func (a *MessagePoolAPI) GasEstimateGasLimit(ctx context.Context, msgIn *types.UnsignedMessage, tsk types.TipSetKey) (int64, error) {
+	fmt.Println("receive gaslimt")
 	return a.mp.MPool.GasEstimateGasLimit(ctx, msgIn, tsk)
 }
 

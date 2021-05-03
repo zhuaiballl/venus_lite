@@ -2,6 +2,7 @@ package messagepool
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -164,6 +165,7 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 	msg.GasLimit = constants.BlockGasLimit
 	msg.GasFeeCap = tbig.NewInt(int64(constants.MinimumBaseFee) + 1)
 	msg.GasPremium = tbig.NewInt(1)
+	fmt.Println("receive gaslimt tipset ")
 
 	fromA, err := mp.api.StateAccountKey(ctx, msgIn.From, currTs)
 	if err != nil {
@@ -175,10 +177,11 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 	for _, m := range pending {
 		priorMsgs = append(priorMsgs, m)
 	}
-
+	fmt.Println("receive gaslimt pending ")
 	// Try calling until we find a height with no migration.
 	var res *vm.Ret
 	for {
+		fmt.Println("receive gaslimt callgas  ing")
 		res, err = mp.gp.CallWithGas(ctx, &msg, priorMsgs, ts)
 		if err != fork.ErrExpensiveFork {
 			break
@@ -190,13 +193,14 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 			return -1, xerrors.Errorf("getting parent tipset: %w", err)
 		}
 	}
+	fmt.Println("receive gaslimt callgas ")
 	if err != nil {
 		return -1, xerrors.Errorf("CallWithGas failed: %w", err)
 	}
 	if res.Receipt.ExitCode != exitcode.Ok {
 		return -1, xerrors.Errorf("message execution failed: exit %s", res.Receipt.ExitCode)
 	}
-
+	fmt.Println("receive gaslimt callgas2 ")
 	// Special case for PaymentChannel collect, which is deleting actor
 	act, err := mp.ap.GetActorAt(ctx, ts, msg.To)
 	if err != nil {
@@ -205,7 +209,7 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 		// an existing PaymentChannel actor
 		return res.Receipt.GasUsed, nil
 	}
-
+	fmt.Println("receive gaslimt GetActorAt ")
 	if !builtin.IsPaymentChannelActor(act.Code) {
 		return res.Receipt.GasUsed, nil
 	}
