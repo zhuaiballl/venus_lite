@@ -1065,9 +1065,10 @@ func (mp *MessagePool) allPending() ([]*types.SignedMessage, *types.TipSet) {
 func (mp *MessagePool) PendingFor(a address.Address) ([]*types.SignedMessage, *types.TipSet) {
 	mp.curTsLk.Lock()
 	defer mp.curTsLk.Unlock()
-
+	fmt.Println("wait lock lk")
 	mp.lk.Lock()
 	defer mp.lk.Unlock()
+	fmt.Println("get all lock lk")
 	return mp.pendingFor(a), mp.curTs
 }
 
