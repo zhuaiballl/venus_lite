@@ -207,6 +207,48 @@ func (chainInfoAPI *ChainInfoAPI) ChainGetBlockMessages(ctx context.Context, bid
 	}, nil
 }
 
+// ChainGetMessages gets a message collection by CID
+func (chainInfoAPI *ChainInfoAPI) ChainGetBlockSimpleMessage(ctx context.Context, bid cid.Cid) (*SimpleBlockMessages, error) {
+	b, err := chainInfoAPI.chain.ChainReader.GetBlock(ctx, bid)
+	if err != nil {
+		return nil, err
+	}
+
+	smsgs, bmsgs, err := chainInfoAPI.chain.MessageStore.LoadMetaMessages(ctx, b.Messages)
+	if err != nil {
+		return nil, err
+	}
+
+	cids := make([]cid.Cid, len(bmsgs)+len(smsgs))
+
+	sbm := &SimpleBlockMessages{
+		BlsMessages:   make([]*SimpleMessage, len(bmsgs)),
+		SecpkMessages: make([]*SimpleMessage, len(smsgs)),
+		Cids:          cids,
+	}
+	for i, m := range bmsgs {
+		cids[i] = m.Cid()
+		sbm.BlsMessages[i] = &SimpleMessage{
+			Cid:   m.Cid(),
+			From:  m.From,
+			To:    m.To,
+			Nonce: m.Nonce,
+		}
+	}
+
+	for i, m := range smsgs {
+		cids[i+len(bmsgs)] = m.Cid()
+		sbm.SecpkMessages[i] = &SimpleMessage{
+			Cid:   m.Cid(),
+			From:  m.Message.From,
+			To:    m.Message.To,
+			Nonce: m.Message.Nonce,
+		}
+	}
+
+	return sbm, nil
+}
+
 // ChainGetReceipts gets a receipt collection by CID
 func (chainInfoAPI *ChainInfoAPI) ChainGetReceipts(ctx context.Context, id cid.Cid) ([]types.MessageReceipt, error) {
 	return chainInfoAPI.chain.MessageStore.LoadReceipts(ctx, id)

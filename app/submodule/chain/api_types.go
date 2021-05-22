@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/venus/pkg/chain"
 	"time"
 
@@ -70,6 +71,19 @@ type MarketBalance struct {
 type Message struct {
 	Cid     cid.Cid
 	Message *types.UnsignedMessage
+}
+
+type SimpleBlockMessages struct {
+	BlsMessages   []*SimpleMessage
+	SecpkMessages []*SimpleMessage
+	Cids          []cid.Cid
+}
+
+type SimpleMessage struct {
+	Cid   cid.Cid
+	From  address.Address
+	To    address.Address
+	Nonce uint64
 }
 
 type MsgLookup = chain.MsgLookup
