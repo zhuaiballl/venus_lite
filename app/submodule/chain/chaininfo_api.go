@@ -229,20 +229,22 @@ func (chainInfoAPI *ChainInfoAPI) ChainGetBlockSimpleMessage(ctx context.Context
 	for i, m := range bmsgs {
 		cids[i] = m.Cid()
 		sbm.BlsMessages[i] = &SimpleMessage{
-			Cid:   m.Cid(),
-			From:  m.From,
-			To:    m.To,
-			Nonce: m.Nonce,
+			Cid:         m.Cid(),
+			From:        m.From,
+			To:          m.To,
+			Nonce:       m.Nonce,
+			UnSignedCid: m.Cid(),
 		}
 	}
 
 	for i, m := range smsgs {
 		cids[i+len(bmsgs)] = m.Cid()
 		sbm.SecpkMessages[i] = &SimpleMessage{
-			Cid:   m.Cid(),
-			From:  m.Message.From,
-			To:    m.Message.To,
-			Nonce: m.Message.Nonce,
+			Cid:         m.Cid(),
+			From:        m.Message.From,
+			To:          m.Message.To,
+			Nonce:       m.Message.Nonce,
+			UnSignedCid: m.Message.Cid(),
 		}
 	}
 

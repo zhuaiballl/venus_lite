@@ -80,10 +80,11 @@ type SimpleBlockMessages struct {
 }
 
 type SimpleMessage struct {
-	Cid   cid.Cid
-	From  address.Address
-	To    address.Address
-	Nonce uint64
+	Cid         cid.Cid
+	UnSignedCid cid.Cid
+	From        address.Address
+	To          address.Address
+	Nonce       uint64
 }
 
 type MsgLookup = chain.MsgLookup
