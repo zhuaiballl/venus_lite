@@ -132,7 +132,7 @@ func (c *client) doRequest(
 			continue
 		}
 
-		if len(tipsets) != len(validRes.messages) {
+		if tipsets != nil && len(tipsets) != len(validRes.messages) {
 			exchangeClientLogger.Warnf("tipsets length (%d) not match response messages length (%d)", len(tipsets), len(validRes.messages))
 			continue
 		}
