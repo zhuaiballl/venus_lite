@@ -286,6 +286,9 @@ func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateM
 	for _, estimateMessage := range estimateMessages {
 		estimateMsg := estimateMessage.Msg
 		estimateMsg.Nonce = fromNonce
+		if estimateMsg.Method == 5 {
+			fmt.Println("origin feecap ", estimateMsg.GasFeeCap)
+		}
 		if estimateMsg.GasLimit == 0 {
 			gasUsed, err := mp.evalMessageGasLimit(ctx, estimateMsg, priorMsgs, ts)
 			if err != nil {
@@ -311,6 +314,10 @@ func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateM
 		}
 
 		if estimateMsg.GasFeeCap == types.EmptyInt || types.BigCmp(estimateMsg.GasFeeCap, types.NewInt(0)) == 0 {
+			if estimateMsg.Method == 5 {
+				fmt.Println("to estimate feecap ", estimateMsg.GasFeeCap)
+			}
+
 			feeCap, err := mp.GasEstimateFeeCap(ctx, estimateMsg, 20, types.EmptyTSK)
 			if err != nil {
 				estimateMsg.Nonce = 0
