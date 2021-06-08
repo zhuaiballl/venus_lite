@@ -2,6 +2,7 @@ package messagepool
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -227,6 +228,8 @@ func (mp *MessagePool) evalMessageGasLimit(ctx context.Context, msgIn *types.Mes
 func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessage *types.EstimateMessage, _ types.TipSetKey) (*types.Message, error) {
 	if estimateMessage.Msg.Method == 5 {
 		fmt.Println("xxxxxxx GasEstimateMessageGas")
+		xxxxx, _ := json.Marshal(estimateMessage.Msg)
+		fmt.Println(string(xxxxx))
 	}
 
 	if estimateMessage.Msg.GasLimit == 0 {
