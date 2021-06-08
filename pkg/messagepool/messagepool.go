@@ -3,6 +3,7 @@ package messagepool
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -247,6 +248,10 @@ func CapGasFee(mff DefaultMaxFeeFunc, msg *types.Message, sendSepc *types.Messag
 	totalFee := types.BigMul(msg.GasFeeCap, gl)
 
 	if msg.Method == 5 {
+		xxx, _ := json.Marshal(msg)
+		fmt.Println(string(xxx))
+		xxx, _ = json.Marshal(sendSepc)
+		fmt.Println(string(xxx))
 		fmt.Println("xxxxxx feecap", msg.GasFeeCap.String())
 		fmt.Println("xxxxxx totalfee", totalFee.String())
 		fmt.Println("xxxxxx maxfee", maxFee.String())
