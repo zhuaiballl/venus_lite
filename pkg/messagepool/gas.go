@@ -287,7 +287,7 @@ func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateM
 		estimateMsg := estimateMessage.Msg
 		estimateMsg.Nonce = fromNonce
 		if estimateMsg.Method == 5 {
-			fmt.Println("origin feecap ", estimateMsg.GasFeeCap)
+			fmt.Println("xxxxxx origin feecap ", estimateMsg.GasFeeCap)
 		}
 		if estimateMsg.GasLimit == 0 {
 			gasUsed, err := mp.evalMessageGasLimit(ctx, estimateMsg, priorMsgs, ts)

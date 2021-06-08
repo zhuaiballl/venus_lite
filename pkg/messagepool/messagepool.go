@@ -247,9 +247,9 @@ func CapGasFee(mff DefaultMaxFeeFunc, msg *types.Message, sendSepc *types.Messag
 	totalFee := types.BigMul(msg.GasFeeCap, gl)
 
 	if msg.Method == 5 {
-		fmt.Println("feecap", msg.GasFeeCap.String())
-		fmt.Println("totalfee", totalFee.String())
-		fmt.Println("maxfee", maxFee.String())
+		fmt.Println("xxxxxx feecap", msg.GasFeeCap.String())
+		fmt.Println("xxxxxx totalfee", totalFee.String())
+		fmt.Println("xxxxxx maxfee", maxFee.String())
 	}
 
 	if totalFee.LessThanEqual(maxFee) {
