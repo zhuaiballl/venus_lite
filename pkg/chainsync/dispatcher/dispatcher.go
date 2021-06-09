@@ -120,6 +120,7 @@ func (d *Dispatcher) Start(syncingCtx context.Context) {
 
 	go d.syncWorker(syncingCtx)
 }
+
 func (d *Dispatcher) processIncoming(ctx context.Context) {
 	defer func() {
 		log.Info("exiting sync dispatcher")
@@ -173,6 +174,7 @@ func (d *Dispatcher) Concurrent() int64 {
 	return d.maxCount
 }
 
+//syncWorker 定期从workTracker中获取sync target，每次循环读取所有的sync target,并且开始同步
 func (d *Dispatcher) syncWorker(ctx context.Context) {
 	ticker := time.NewTicker(time.Millisecond * 500)
 	defer ticker.Stop()
