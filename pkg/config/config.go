@@ -221,6 +221,7 @@ func newDefaultMessagePoolConfig() *MessagePoolConfig {
 	}
 }
 
+//NetworkParamsConfig record netork parameters
 type NetworkParamsConfig struct {
 	DevNet                  bool                         `json:"devNet"`
 	NetworkType             int                          `json:"networkType"`
@@ -234,6 +235,7 @@ type NetworkParamsConfig struct {
 	PreCommitChallengeDelay abi.ChainEpoch               `json:"preCommitChallengeDelay"`
 }
 
+//ForkUpgradeConfig record upgrade parameters
 type ForkUpgradeConfig struct {
 	UpgradeSmokeHeight       abi.ChainEpoch `json:"upgradeSmokeHeight"`
 	UpgradeBreezeHeight      abi.ChainEpoch `json:"upgradeBreezeHeight"`

@@ -48,6 +48,7 @@ var ErrTemporal = errors.New("temporal error")
 var ErrSoftFailure = errors.New("soft validation failure")
 var ErrInsufficientPower = errors.New("incoming block's miner does not have minimum power")
 
+//BlockValidator used to validate a block is ok or not
 type BlockValidator struct {
 	// TicketValidator validates ticket generation
 	tv           TicketValidator
@@ -71,6 +72,7 @@ type BlockValidator struct {
 	validateBlockCache *lru.ARCCache
 }
 
+//NewBlockValidator create a new block validator
 func NewBlockValidator(tv TicketValidator,
 	bstore blockstore.Blockstore,
 	messageStore *chain.MessageStore,
@@ -101,6 +103,8 @@ func NewBlockValidator(tv TicketValidator,
 	}
 }
 
+//ValidateBlockMsg used to validate block from incoming. check message, signature , wincount.
+// if give a reject error. local node reject this block. if give a ignore error. recheck this block in latest notify
 func (bv *BlockValidator) ValidateBlockMsg(ctx context.Context, blk *types.BlockMsg) pubsub.ValidationResult {
 	validationStart := time.Now()
 	defer func() {
@@ -110,6 +114,7 @@ func (bv *BlockValidator) ValidateBlockMsg(ctx context.Context, blk *types.Block
 	return bv.validateBlockMsg(ctx, blk)
 }
 
+//ValidateFullBlock should match up with 'Semantical Validation' in validation.md in the spec
 func (bv *BlockValidator) ValidateFullBlock(ctx context.Context, blk *types.BlockHeader) (err error) {
 	validationStart := time.Now()
 	defer func() {
