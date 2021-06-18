@@ -2,8 +2,10 @@ package apiface
 
 import (
 	"context"
+
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/venus/app/submodule/apitypes"
 	"github.com/filecoin-project/venus/pkg/types"
 	"github.com/ipfs/go-cid"
 )
@@ -25,6 +27,7 @@ type IMultiSig interface {
 	// @src: sender address of the propose msg
 	// @method: method to call in the proposed message
 	// @params: params to include in the proposed message>
+	MsigCreate(context.Context, uint64, []address.Address, abi.ChainEpoch, types.BigInt, address.Address, types.BigInt) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigPropose(ctx context.Context, msig address.Address, to address.Address, amt types.BigInt, src address.Address, method uint64, params []byte) (cid.Cid, error)
 	// MsigAddPropose proposes adding a signer in the multisig
@@ -32,6 +35,7 @@ type IMultiSig interface {
 	// @src: sender address of the propose msg,
 	// @newAdd: new signer
 	// @inc: whether the number of required signers should be increased
+	MsigPropose(ctx context.Context, msig address.Address, to address.Address, amt types.BigInt, src address.Address, method uint64, params []byte) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigAddPropose(ctx context.Context, msig address.Address, src address.Address, newAdd address.Address, inc bool) (cid.Cid, error)
 	// MsigAddApprove approves a previously proposed AddSigner message
@@ -41,6 +45,7 @@ type IMultiSig interface {
 	// @proposer: proposer address
 	// @newAdd: new signer
 	// @inc: whether the number of required signers should be increased
+	MsigAddPropose(ctx context.Context, msig address.Address, src address.Address, newAdd address.Address, inc bool) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigAddApprove(ctx context.Context, msig address.Address, src address.Address, txID uint64, proposer address.Address, newAdd address.Address, inc bool) (cid.Cid, error)
 	// MsigAddCancel cancels a previously proposed AddSigner message
@@ -49,6 +54,7 @@ type IMultiSig interface {
 	// @txID: proposed message ID
 	// @newAdd: new signer
 	// @inc: whether the number of required signers should be increased
+	MsigAddApprove(ctx context.Context, msig address.Address, src address.Address, txID uint64, proposer address.Address, newAdd address.Address, inc bool) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigAddCancel(ctx context.Context, msig address.Address, src address.Address, txID uint64, newAdd address.Address, inc bool) (cid.Cid, error)
 	// MsigSwapPropose proposes swapping 2 signers in the multisig
@@ -56,6 +62,7 @@ type IMultiSig interface {
 	// @src: sender address of the propose msg
 	// @oldAdd: old signer
 	// @newAdd: new signer
+	MsigAddCancel(ctx context.Context, msig address.Address, src address.Address, txID uint64, newAdd address.Address, inc bool) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigSwapPropose(ctx context.Context, msig address.Address, src address.Address, oldAdd address.Address, newAdd address.Address) (cid.Cid, error)
 	// MsigSwapApprove approves a previously proposed SwapSigner
@@ -65,6 +72,7 @@ type IMultiSig interface {
 	// @proposer: proposer address
 	// @oldAdd: old signer
 	// @newAdd: new signer
+	MsigSwapPropose(ctx context.Context, msig address.Address, src address.Address, oldAdd address.Address, newAdd address.Address) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigSwapApprove(ctx context.Context, msig address.Address, src address.Address, txID uint64, proposer address.Address, oldAdd address.Address, newAdd address.Address) (cid.Cid, error)
 	// MsigSwapCancel cancels a previously proposed SwapSigner message
@@ -73,12 +81,14 @@ type IMultiSig interface {
 	// @txID: proposed message ID
 	// @oldAdd: old signer
 	// @newAdd: new signer
+	MsigSwapApprove(ctx context.Context, msig address.Address, src address.Address, txID uint64, proposer address.Address, oldAdd address.Address, newAdd address.Address) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigSwapCancel(ctx context.Context, msig address.Address, src address.Address, txID uint64, oldAdd address.Address, newAdd address.Address) (cid.Cid, error)
 	// MsigApprove approves a previously-proposed multisig message by transaction ID
 	// @msig: multisig address
 	// @txID: proposed transaction ID
 	// @src: igner address
+	MsigSwapCancel(ctx context.Context, msig address.Address, src address.Address, txID uint64, oldAdd address.Address, newAdd address.Address) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigApprove(ctx context.Context, msig address.Address, txID uint64, src address.Address) (cid.Cid, error)
 	// MsigApproveTxnHash approves a previously-proposed multisig message, specified
@@ -93,6 +103,7 @@ type IMultiSig interface {
 	// @src: sender address of the approve msg
 	// @method: method to call in the proposed message
 	// @params: params to include in the proposed message
+	MsigApprove(ctx context.Context, msig address.Address, txID uint64, src address.Address) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigApproveTxnHash(ctx context.Context, msig address.Address, txID uint64, proposer address.Address, to address.Address, amt types.BigInt, src address.Address, method uint64, params []byte) (cid.Cid, error)
 	// MsigCancel cancels a previously-proposed multisig message
@@ -103,6 +114,7 @@ type IMultiSig interface {
 	// @src: sender address of the cancel msg
 	// @method: method to call in the proposed message
 	// @params: params to include in the proposed message
+	MsigApproveTxnHash(ctx context.Context, msig address.Address, txID uint64, proposer address.Address, to address.Address, amt types.BigInt, src address.Address, method uint64, params []byte) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigCancel(ctx context.Context, msig address.Address, txID uint64, to address.Address, amt types.BigInt, src address.Address, method uint64, params []byte) (cid.Cid, error)
 	// MsigRemoveSigner proposes the removal of a signer from the multisig.
@@ -114,12 +126,14 @@ type IMultiSig interface {
 	// @proposer: proposer address
 	// @toRemove: the member of multisig address
 	// @decrease: whether the number of required signers should be decreased
+	MsigCancel(ctx context.Context, msig address.Address, txID uint64, to address.Address, amt types.BigInt, src address.Address, method uint64, params []byte) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigRemoveSigner(ctx context.Context, msig address.Address, proposer address.Address, toRemove address.Address, decrease bool) (cid.Cid, error)
 	// MsigGetVested returns the amount of FIL that vested in a multisig in a certain period.
 	// @msig: multisig address
 	// @start: start epoch
 	// @end: end epoch
+	MsigRemoveSigner(ctx context.Context, msig address.Address, proposer address.Address, toRemove address.Address, decrease bool) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
 	MsigGetVested(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error)
 }
