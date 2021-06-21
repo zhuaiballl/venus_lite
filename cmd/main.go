@@ -175,7 +175,6 @@ var rootSubcmdsLocal = map[string]*cmds.Command{
 	"fetch":   fetchCmd,
 	"version": versionCmd,
 	"leb128":  leb128Cmd,
-	"seed":    seedCmd,
 }
 
 // all top level commands, available on daemon. set during init() to avoid configuration loops.

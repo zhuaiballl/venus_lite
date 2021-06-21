@@ -3,7 +3,6 @@ package types
 import (
 	"container/list"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -27,7 +26,9 @@ type Target struct {
 	types.ChainInfo
 }
 
-func (target *Target) IsNeibor(t *Target) bool {
+//IsNeighbor the target t is neighbor or not
+//the same height, the same weight, the same parent is neighbor target. the can merge
+func (target *Target) isNeighbor(t *Target) bool {
 	if target.Head.Height() != t.Head.Height() {
 		return false
 	}
@@ -44,16 +45,10 @@ func (target *Target) IsNeibor(t *Target) bool {
 	return true
 }
 
-func (target *Target) HasChild(t *Target) bool {
+//hasChild is another is a child target of current.
+//if the t' blocks in a subset of current target ,the t is a child of current target
+func (target *Target) hasChild(t *Target) bool {
 	return target.Head.Key().ContainsAll(t.Head.Key())
-}
-
-func (target *Target) Key() string {
-	weightIn := target.Head.ParentWeight()
-	return weightIn.String() +
-		strconv.FormatInt(int64(target.Head.Height()), 10) +
-		target.Head.Parents().String()
-
 }
 
 // TargetTracker orders dispatcher syncRequests by the underlying `TargetBuckets`'s
@@ -88,6 +83,16 @@ func NewTargetTracker(size int) *TargetTracker {
 }
 
 // Add adds a sync target to the target queue.
+// First, check whether the weight is received or not, and the message will record the minimum weight.
+// If the weight is less than the current weight, it will exit automatically.
+// Then, check whether the current target and the recorded target can be merged.
+// If they can be merged, a new target containing more blocks will be generated.
+// Try to replace a sub target in idle state. If it does not exist, the message will be displayed,
+// Try to replace the target with the lowest weight and idle.
+// If the above two situations do not exist, check whether the task exceeds the maximum number of saved tasks.
+// If the number exceeds the maximum number, the current target will be abandoned.
+// If there are any vacancies, the current target will be appended to the end.
+// After each completion of this process, all targets will be reordered. First, they will be sorted according to the weight from small to large, and then they will be sorted according to the number of blocks in the group from small to large, Include as many blocks as possible.
 func (tq *TargetTracker) Add(t *Target) bool {
 	tq.lk.Lock()
 	defer tq.lk.Unlock()
@@ -106,7 +111,7 @@ func (tq *TargetTracker) Add(t *Target) bool {
 	var replaceTarget *Target
 	//try to replace a idea child target
 	for i := len(tq.q) - 1; i > -1; i-- {
-		if t.HasChild(tq.q[i]) && tq.q[i].State == StageIdle {
+		if t.hasChild(tq.q[i]) && tq.q[i].State == StageIdle {
 			replaceTarget = tq.q[i]
 			replaceIndex = i
 			log.Infof("%s replace a child target at %d", t.Head.String(), i)
@@ -200,7 +205,7 @@ func (tq *TargetTracker) widen(t *Target) (*Target, bool) {
 	//collect neibor block in queue include history
 	sameWeightBlks := make(map[cid.Cid]*types.BlockHeader)
 	for _, val := range tq.targetSet {
-		if val.IsNeibor(t) {
+		if val.isNeighbor(t) {
 			for _, blk := range val.Head.Blocks() {
 				bid := blk.Cid()
 				if !t.Head.Key().Has(bid) {
