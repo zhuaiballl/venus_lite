@@ -31,7 +31,7 @@ func (w *remoteWallet) HasPassword() bool {
 }
 
 func SetupRemoteWallet(info string) (wallet.WalletIntersection, error) {
-	ai, err := ParseAPIInfo(info)
+	ai, err := ParseApiInfo(info)
 	if err != nil {
 		return nil, err
 	}
