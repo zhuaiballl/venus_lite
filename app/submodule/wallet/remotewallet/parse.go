@@ -1,4 +1,4 @@
-package httpparse
+package remotewallet
 
 import (
 	"github.com/ipfs-force-community/venus-common-utils/apiinfo"
