@@ -19,7 +19,7 @@ type APIInfo struct {
 
 func ParseApiInfo(s string) (*APIInfo, error) {
 	sep := strings.Split(s, ":")
-	if len(sep) == 2 {
+	if len(sep) != 2 {
 		return nil, xerrors.Errorf("invalidate api info string %s", s)
 	}
 	return &APIInfo{
