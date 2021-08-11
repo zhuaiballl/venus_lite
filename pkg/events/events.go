@@ -134,6 +134,7 @@ func (e *Events) listenHeadChangesOnce(ctx context.Context) error {
 	})
 
 	for notif := range notifs {
+		log.Infof("recevie new event from server")
 		var rev, app []*types.TipSet
 		for _, notif := range notif {
 			switch notif.Type {

@@ -527,6 +527,7 @@ func (me *messageEvents) messagesForTS(ts *types.TipSet, consume func(message *t
 		msgsI, ok := me.blockMsgCache.Get(tsb.Cid())
 		var err error
 		if !ok {
+			log.Infof("start to get block messages from server %d %s", tsb.Height, tsb.Cid())
 			msgsI, err = me.cs.ChainGetBlockMessages(context.TODO(), tsb.Cid())
 			if err != nil {
 				log.Errorf("messagesForTs MessagesForBlock failed (ts.H=%d, Bcid:%s, B.Mcid:%s): %s", ts.Height(), tsb.Cid(), tsb.Messages, err)
@@ -534,7 +535,10 @@ func (me *messageEvents) messagesForTS(ts *types.TipSet, consume func(message *t
 				me.blockMsgLk.Unlock()
 				continue
 			}
+			log.Infof("finish block messages from server %d %s", tsb.Height, tsb.Cid())
 			me.blockMsgCache.Add(tsb.Cid(), msgsI)
+		}else{
+			log.Infof("block %s hit cache", tsb.Cid())
 		}
 		me.blockMsgLk.Unlock()
 		msgs := msgsI.(*apitypes.BlockMessages)
