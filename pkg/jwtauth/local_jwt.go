@@ -3,11 +3,12 @@ package jwtauth
 import (
 	"context"
 	"crypto/rand"
-	vjc "github.com/filecoin-project/venus-auth/cmd/jwtclient"
-	"github.com/filecoin-project/venus/app/client/funcrule"
 	"io"
 	"io/ioutil"
 	"strings"
+
+	vjc "github.com/filecoin-project/venus-auth/cmd/jwtclient"
+	"github.com/filecoin-project/venus/app/client/funcrule"
 
 	"github.com/filecoin-project/go-jsonrpc/auth"
 	jwt3 "github.com/gbrlsnchs/jwt/v3"
@@ -75,6 +76,14 @@ func (jwtAuth *JwtAuth) loadAPISecret() (*APIAlg, error) {
 		}
 	} else if err != nil {
 		return nil, xerrors.Errorf("could not get JWT Token: %v", err)
+	}
+	cliToken, err := jwt3.Sign(&jwtAuth.payload, jwt3.NewHS256(sk))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := jwtAuth.lr.SetAPIToken(cliToken); err != nil {
+		return nil, err
 	}
 
 	return (*APIAlg)(jwt3.NewHS256(sk)), nil
