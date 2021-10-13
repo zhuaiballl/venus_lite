@@ -311,7 +311,7 @@ func (ca *channelAccessor) checkVoucherSpendable(ctx context.Context, ch address
 		return false, err
 	}
 
-	if ret.MsgRct.ExitCode != 0 {
+	if ret.Receipt.ExitCode != 0 {
 		return false, nil
 	}
 
