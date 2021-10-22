@@ -11,7 +11,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 )
 
 var TestPassword = []byte("test-password")

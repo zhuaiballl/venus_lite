@@ -2,8 +2,8 @@ package consensus_test
 
 import (
 	"context"
-	emptycid "github.com/filecoin-project/venus/pkg/testhelpers/empty_cid"
-	"github.com/filecoin-project/venus/pkg/types"
+	emptycid "github.com/filecoin-project/venus_lite/pkg/testhelpers/empty_cid"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"testing"
 
 	"github.com/filecoin-project/go-state-types/abi"
@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/consensus"
-	appstate "github.com/filecoin-project/venus/pkg/state"
-	"github.com/filecoin-project/venus/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/consensus"
+	appstate "github.com/filecoin-project/venus_lite/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
 )
 
 func TestWeight(t *testing.T) {

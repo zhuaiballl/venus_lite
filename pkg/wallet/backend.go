@@ -3,7 +3,7 @@ package wallet
 import (
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 )
 
 // Backend is the interface to represent different storage backends

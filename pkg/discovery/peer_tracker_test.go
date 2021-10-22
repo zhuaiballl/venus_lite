@@ -2,20 +2,20 @@ package discovery_test
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/util/test"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/util/test"
 	"github.com/libp2p/go-libp2p-core/network"
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/venus/pkg/discovery"
+	"github.com/filecoin-project/venus_lite/pkg/discovery"
 	"github.com/libp2p/go-libp2p-core/peer"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	th "github.com/filecoin-project/venus/pkg/testhelpers"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	th "github.com/filecoin-project/venus_lite/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestPeerTrackerSelectHead(t *testing.T) {

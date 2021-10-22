@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/specs-actors/v6/actors/builtin/market"
 	"github.com/filecoin-project/specs-actors/v6/actors/builtin/miner"
 	tutil "github.com/filecoin-project/specs-actors/v6/support/testing"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 )
 
 // MakeCommitCfgs creates n gengen commit configs, casting strings to cids.

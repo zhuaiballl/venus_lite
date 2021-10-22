@@ -14,7 +14,7 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // NewFromString sets a state tree based on an int.

@@ -10,7 +10,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/minio/blake2b-simd"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 )
 
 type FakeSyscalls struct {

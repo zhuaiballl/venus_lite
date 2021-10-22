@@ -16,9 +16,9 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	cfg "github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
+	cfg "github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // DrandBeacon connects Lotus with a drand network in order to provide

@@ -3,14 +3,14 @@ package fr32_test
 import (
 	"bufio"
 	"bytes"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"io/ioutil"
 	"testing"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/util/fr32"
+	"github.com/filecoin-project/venus_lite/pkg/util/fr32"
 )
 
 func TestUnpadReader(t *testing.T) {

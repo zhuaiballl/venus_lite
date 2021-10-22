@@ -3,7 +3,7 @@ package types
 import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
 	"github.com/ipfs/go-cid"
 	"time"
 )

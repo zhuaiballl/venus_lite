@@ -2,7 +2,7 @@ package specactors
 
 import (
 	"bytes"
-	aerrors2 "github.com/filecoin-project/venus/pkg/types/specactors/aerrors"
+	aerrors2 "github.com/filecoin-project/venus_lite/pkg/types/specactors/aerrors"
 
 	"github.com/filecoin-project/go-state-types/exitcode"
 	cbg "github.com/whyrusleeping/cbor-gen"

@@ -7,8 +7,8 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	"github.com/filecoin-project/venus/tools/fast"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/tools/fast"
 )
 
 // SendFilecoinFromDefault will send the `value` of FIL from the default wallet

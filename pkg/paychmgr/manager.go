@@ -3,8 +3,8 @@ package paychmgr
 import (
 	"context"
 	"errors"
-	"github.com/filecoin-project/venus/pkg/statemanger"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/statemanger"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"sync"
 
 	"github.com/filecoin-project/go-state-types/big"
@@ -14,7 +14,7 @@ import (
 	xerrors "golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 )
 
 var log = logging.Logger("paych")

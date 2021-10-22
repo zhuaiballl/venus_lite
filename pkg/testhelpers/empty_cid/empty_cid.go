@@ -3,8 +3,8 @@ package emptycid
 import (
 	"context"
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	cbor "github.com/ipfs/go-ipld-cbor"

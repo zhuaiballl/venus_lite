@@ -3,15 +3,15 @@ package cmd_test
 import (
 	"bytes"
 	"context"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"testing"
 
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node/test"
-	"github.com/filecoin-project/venus/pkg/constants"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/app/node/test"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestDagDaemon(t *testing.T) {

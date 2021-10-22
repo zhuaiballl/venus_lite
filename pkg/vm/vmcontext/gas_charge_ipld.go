@@ -1,7 +1,7 @@
 package vmcontext
 
 import (
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"

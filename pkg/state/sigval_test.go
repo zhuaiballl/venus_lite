@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/state"
 	"testing"
 
 	"github.com/filecoin-project/go-address"
@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
 )
 
 type fakeStateView struct {

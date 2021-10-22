@@ -16,11 +16,11 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/cmd/tablewriter"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/cmd/tablewriter"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 )
 
 var errMissPassword = errors.New("the wallet is missing password, please use command `venus wallet set-password` to set password")

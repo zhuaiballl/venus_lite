@@ -2,10 +2,10 @@ package consensus
 
 import (
 	"context"
-	crypto2 "github.com/filecoin-project/venus/pkg/crypto"
+	crypto2 "github.com/filecoin-project/venus_lite/pkg/crypto"
 
 	proof5 "github.com/filecoin-project/specs-actors/v5/actors/runtime/proof"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"

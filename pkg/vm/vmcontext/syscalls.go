@@ -12,10 +12,10 @@ import (
 	proof5 "github.com/filecoin-project/specs-actors/v5/actors/runtime/proof"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	vmState "github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	vmState "github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 )
 
 type SyscallsStateView interface {

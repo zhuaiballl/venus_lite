@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestTriangleEncoding(t *testing.T) {
@@ -32,7 +32,7 @@ func TestTriangleEncoding(t *testing.T) {
 	// the newBlock by cid which yeilds a json-encoded ipld node (first half of
 	// the second case). It json decodes this ipld node and then decodes the node
 	// into a newBlock (second half of the second case). I don't claim this is ideal,
-	// see: https://github.com/filecoin-project/venus/issues/599
+	// see: https://github.com/filecoin-project/venus_lite/issues/599
 
 	newAddress := NewForTestGetter()
 

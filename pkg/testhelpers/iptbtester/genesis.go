@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 // GenesisInfo chains require information to start a single node with funds

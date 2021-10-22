@@ -9,7 +9,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-storage/storage"
 
-	"github.com/filecoin-project/venus/pkg/util/storiface"
+	"github.com/filecoin-project/venus_lite/pkg/util/storiface"
 )
 
 type sectorFile struct {

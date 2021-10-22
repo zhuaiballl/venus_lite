@@ -7,7 +7,7 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	init0 "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	adt0 "github.com/filecoin-project/specs-actors/actors/util/adt"

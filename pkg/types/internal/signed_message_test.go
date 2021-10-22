@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
 )
 
 var mockSigner = NewMockSigner(MustGenerateKeyInfo(1, 42))

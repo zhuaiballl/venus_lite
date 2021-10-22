@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	files "github.com/ipfs/go-ipfs-files"
 
-	"github.com/filecoin-project/venus/tools/fast"
+	"github.com/filecoin-project/venus_lite/tools/fast"
 )
 
 // SetupGenesisNode will initialize, start, configure, and issue the

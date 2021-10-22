@@ -8,8 +8,8 @@ import (
 	"github.com/filecoin-project/specs-storage/storage"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/basicfs"
-	"github.com/filecoin-project/venus/pkg/util/storiface"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/basicfs"
+	"github.com/filecoin-project/venus_lite/pkg/util/storiface"
 )
 
 type StorageSealer interface {

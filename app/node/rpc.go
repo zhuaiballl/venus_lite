@@ -1,17 +1,17 @@
 package node
 
 import (
-	"github.com/filecoin-project/venus/app/client/funcrule"
+	"github.com/filecoin-project/venus_lite/app/client/funcrule"
 	"github.com/ipfs-force-community/metrics/ratelimit"
 	"reflect"
 
-	"github.com/filecoin-project/venus/app/client/v0api"
+	"github.com/filecoin-project/venus_lite/app/client/v0api"
 
 	"github.com/filecoin-project/go-jsonrpc"
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/app/client"
+	"github.com/filecoin-project/venus_lite/app/client"
 )
 
 type RPCService interface {

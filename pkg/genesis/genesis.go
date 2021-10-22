@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"io/ioutil"
 	"os"
 
@@ -23,14 +23,14 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/gen"
-	genesis2 "github.com/filecoin-project/venus/pkg/gen/genesis"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/gen"
+	genesis2 "github.com/filecoin-project/venus_lite/pkg/gen/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 var glog = logging.Logger("genesis")

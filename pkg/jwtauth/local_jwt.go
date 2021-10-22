@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	vjc "github.com/filecoin-project/venus-auth/cmd/jwtclient"
-	"github.com/filecoin-project/venus/app/client/funcrule"
+	"github.com/filecoin-project/venus_lite/app/client/funcrule"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -14,7 +14,7 @@ import (
 	logging "github.com/ipfs/go-log"
 	xerrors "github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 )
 
 type APIAlg jwt3.HMACSHA

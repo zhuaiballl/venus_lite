@@ -8,7 +8,7 @@ import (
 	"path"
 
 	"github.com/filecoin-project/go-jsonrpc"
-	"github.com/filecoin-project/venus/app/paths"
+	"github.com/filecoin-project/venus_lite/app/paths"
 )
 
 func getVenusClientInfo(version string) (string, http.Header, error) {

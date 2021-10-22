@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"os"
 	"strings"
 	"time"
@@ -18,10 +18,10 @@ import (
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 var chainCmd = &cmds.Command{

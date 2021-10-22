@@ -6,21 +6,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/chainsync/exchange"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	fbig "github.com/filecoin-project/go-state-types/big"
-	fnet "github.com/filecoin-project/venus/pkg/net"
+	fnet "github.com/filecoin-project/venus_lite/pkg/net"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/host"
 	net "github.com/libp2p/go-libp2p-core/network"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/venus/pkg/metrics"
+	"github.com/filecoin-project/venus_lite/pkg/metrics"
 )
 
 var log = logging.Logger("/fil/hello")

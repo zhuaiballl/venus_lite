@@ -31,16 +31,16 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/constants"
-	crypto2 "github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/messagepool/journal"
-	"github.com/filecoin-project/venus/pkg/net/msgsub"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	crypto2 "github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/messagepool/journal"
+	"github.com/filecoin-project/venus_lite/pkg/net/msgsub"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 )
 
 type MpoolChange int

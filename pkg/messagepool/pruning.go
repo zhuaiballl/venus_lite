@@ -9,7 +9,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 func (mp *MessagePool) pruneExcessMessages() error {

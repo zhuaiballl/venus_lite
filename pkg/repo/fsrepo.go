@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/venus/pkg/repo/fskeystore"
+	"github.com/filecoin-project/venus_lite/pkg/repo/fskeystore"
 
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 
 	badgerds "github.com/ipfs/go-ds-badger2"
@@ -22,7 +22,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/config"
 )
 
 // Version is the version of repo schema that this code understands.

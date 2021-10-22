@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bls "github.com/filecoin-project/filecoin-ffi"
-	"github.com/filecoin-project/venus/pkg/consensus"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/consensus"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // RequireSignedTestBlockFromTipSet creates a block with a valid signature by

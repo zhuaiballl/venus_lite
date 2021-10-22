@@ -2,7 +2,7 @@ package impl
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	proof5 "github.com/filecoin-project/specs-actors/v5/actors/runtime/proof"

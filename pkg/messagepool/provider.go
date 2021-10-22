@@ -10,11 +10,11 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/state"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/policy"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
 )
 
 var (

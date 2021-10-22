@@ -13,8 +13,8 @@ import (
 	"context"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 // Protocol is an interface defining a blockchain consensus protocol.  The

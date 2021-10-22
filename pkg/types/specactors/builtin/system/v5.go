@@ -3,7 +3,7 @@ package system
 import (
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	system5 "github.com/filecoin-project/specs-actors/v5/actors/builtin/system"
 )

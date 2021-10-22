@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
-	"github.com/filecoin-project/venus/pkg/beacon"
+	"github.com/filecoin-project/venus_lite/pkg/beacon"
 	"golang.org/x/xerrors"
 	"math/rand"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/minio/blake2b-simd"
 	"github.com/pkg/errors"
 )
@@ -49,7 +49,7 @@ func (g *GenesisRandomnessSource) GetChainRandomnessV1(ctx context.Context, pers
 
 func (g *GenesisRandomnessSource) GetChainRandomnessV2(ctx context.Context, pers crypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) ([]byte, error) {
 	out := make([]byte, 32)
-	_, _ = rand.New(rand.NewSource(int64(randEpoch * 1000 ))).Read(out) //nolint
+	_, _ = rand.New(rand.NewSource(int64(randEpoch * 1000))).Read(out) //nolint
 	return out, nil
 }
 

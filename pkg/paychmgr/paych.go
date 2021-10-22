@@ -3,8 +3,8 @@ package paychmgr
 import (
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
@@ -13,8 +13,8 @@ import (
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/filecoin-project/go-state-types/big"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 )
 
 // insufficientFundsErr indicates that there are not enough funds in the

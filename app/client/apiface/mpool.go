@@ -3,12 +3,12 @@ package apiface
 import (
 	"context"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/messagepool"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/messagepool"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/ipfs/go-cid"
 )
 

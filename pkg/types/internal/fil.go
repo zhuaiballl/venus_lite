@@ -4,7 +4,7 @@ import (
 	"encoding"
 	"fmt"
 	fbig "github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	"math/big"
 	"strings"
 )

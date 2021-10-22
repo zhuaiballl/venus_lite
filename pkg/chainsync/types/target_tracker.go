@@ -8,7 +8,7 @@ import (
 	"time"
 
 	fbig "github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 )

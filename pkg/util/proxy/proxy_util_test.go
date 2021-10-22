@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"testing"
 
 	"github.com/stretchr/testify/require"

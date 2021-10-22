@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/app/node"
+	"github.com/filecoin-project/venus_lite/app/node"
 	"github.com/ipfs/go-cid"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"github.com/libp2p/go-libp2p-core/metrics"
@@ -14,7 +14,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"time"
 
-	"github.com/filecoin-project/venus/pkg/net"
+	"github.com/filecoin-project/venus_lite/pkg/net"
 )
 
 const (

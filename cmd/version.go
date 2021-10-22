@@ -4,7 +4,7 @@ import (
 	"fmt"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
-	"github.com/filecoin-project/venus/build/flags"
+	"github.com/filecoin-project/venus_lite/build/flags"
 )
 
 type versionInfo struct {

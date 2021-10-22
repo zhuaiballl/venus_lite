@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -24,8 +24,8 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/ipld/go-car"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 // ExecuteMessageVector executes a message-class test vector.

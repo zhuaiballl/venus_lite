@@ -2,8 +2,8 @@ package blockstore
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 )
 

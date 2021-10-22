@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"  // enable bls signatures
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp" // enable secp signatures
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"  // enable bls signatures
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp" // enable secp signatures
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 func writeKey(ki *crypto.KeyInfo, name string, jsonout bool) error {

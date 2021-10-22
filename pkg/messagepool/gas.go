@@ -14,12 +14,12 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 const MinGasPremium = 100e3

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 )

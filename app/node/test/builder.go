@@ -2,18 +2,18 @@ package test
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/jwtauth"
+	"github.com/filecoin-project/venus_lite/pkg/jwtauth"
 	"testing"
 
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/genesis"
-	"github.com/filecoin-project/venus/pkg/repo"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 // NodeBuilder creates and configures Filecoin nodes for in-process testing.

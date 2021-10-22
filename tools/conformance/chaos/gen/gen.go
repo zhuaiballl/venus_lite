@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/filecoin-project/venus/tools/conformance/chaos"
+	"github.com/filecoin-project/venus_lite/tools/conformance/chaos"
 
 	gen "github.com/whyrusleeping/cbor-gen"
 )

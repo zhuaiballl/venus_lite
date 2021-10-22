@@ -1,8 +1,8 @@
 package cron
 
 import (
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 	"golang.org/x/xerrors"
 	"github.com/ipfs/go-cid"
 {{range .versions}}

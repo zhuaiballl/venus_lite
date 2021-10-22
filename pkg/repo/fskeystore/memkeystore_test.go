@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestMemKeyStoreBasics(t *testing.T) {

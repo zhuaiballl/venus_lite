@@ -9,8 +9,8 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 const NoTimeout = math.MaxInt64

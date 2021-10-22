@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 	"golang.org/x/xerrors"
 
 	"github.com/google/uuid"
@@ -18,7 +18,7 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	fbig "github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 )
 
 var ErrChannelNotTracked = errors.New("channel not tracked")

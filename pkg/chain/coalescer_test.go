@@ -2,7 +2,7 @@ package chain
 
 import (
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"testing"
 	"time"
 
@@ -11,9 +11,9 @@ import (
 	tbig "github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func mkAddress(i uint64) address.Address {

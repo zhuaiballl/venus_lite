@@ -10,12 +10,12 @@ import (
 	"math/big"
 
 	fbig "github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	xerrors "github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/state"
 )
 
 var log = logging.Logger("chain_selector")

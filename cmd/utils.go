@@ -18,7 +18,7 @@ import (
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/app/node"
+	"github.com/filecoin-project/venus_lite/app/node"
 )
 
 // SilentWriter writes to a stream, stopping after the first error and discarding output until

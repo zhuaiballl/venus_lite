@@ -16,4 +16,4 @@ Venus loosely describes a collection of modules that work together to realize a 
 
 ## License
 
-This project is dual-licensed under [Apache 2.0](https://github.com/filecoin-project/venus/blob/master/LICENSE-APACHE) and [MIT](https://github.com/filecoin-project/venus/blob/master/LICENSE-MIT).
+This project is dual-licensed under [Apache 2.0](https://github.com/filecoin-project/venus_lite/blob/master/LICENSE-APACHE) and [MIT](https://github.com/filecoin-project/venus_lite/blob/master/LICENSE-MIT).

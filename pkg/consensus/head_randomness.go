@@ -2,11 +2,11 @@ package consensus
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/vm/vmcontext"
+	"github.com/filecoin-project/venus_lite/pkg/vm/vmcontext"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	acrypto "github.com/filecoin-project/go-state-types/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 //ChainRandomness define randomness method in filecoin

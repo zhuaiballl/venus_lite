@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 )
 
 const RFC3339nocolon = "2006-01-02T150405Z0700"

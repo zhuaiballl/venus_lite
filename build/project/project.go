@@ -3,8 +3,8 @@ package project
 import (
 	"path/filepath"
 
-	"github.com/filecoin-project/venus/build/flags"
-	"github.com/filecoin-project/venus/build/internal/helpers"
+	"github.com/filecoin-project/venus_lite/build/flags"
+	"github.com/filecoin-project/venus_lite/build/internal/helpers"
 )
 
 // Root return the project root joined with any path fragments

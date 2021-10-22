@@ -31,8 +31,8 @@ fi
 iptb testbed create --count "$1" --type localfilecoin --force
 
 # set common paths to find bins and config files
-GENDIR=$GOPATH/src/github.com/filecoin-project/venus/tools/gengen
-FIXDIR=$GOPATH/src/github.com/filecoin-project/venus/fixtures
+GENDIR=$GOPATH/src/github.com/filecoin-project/venus_lite/tools/gengen
+FIXDIR=$GOPATH/src/github.com/filecoin-project/venus_lite/fixtures
 
 printf "Setting up initial boostrap node (0)\n"
 # configure mining on node 0

@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bls "github.com/filecoin-project/filecoin-ffi"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 func newWalletAndDSBackend(t *testing.T) (*Wallet, *DSBackend) {

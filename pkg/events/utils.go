@@ -5,8 +5,8 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // CheckMsg convenience function for checking and matching messages

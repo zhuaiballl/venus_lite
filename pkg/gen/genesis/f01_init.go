@@ -15,10 +15,10 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	init_ "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
-	bstore "github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	init_ "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	bstore "github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 )
 
 func SetupInitActor(ctx context.Context, bs bstore.Blockstore, netname string, initialActors []Actor, rootVerifier Actor, remainder Actor, av specactors.Version) (int64, *types.Actor, map[address.Address]address.Address, error) {

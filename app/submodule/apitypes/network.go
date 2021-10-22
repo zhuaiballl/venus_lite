@@ -1,6 +1,6 @@
 package apitypes
 
-import "github.com/filecoin-project/venus/pkg/constants"
+import "github.com/filecoin-project/venus_lite/pkg/constants"
 
 // Version provides various build-time information
 type Version struct {

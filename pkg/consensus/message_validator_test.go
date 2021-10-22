@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
@@ -16,12 +16,12 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 
 	bls "github.com/filecoin-project/filecoin-ffi"
-	"github.com/filecoin-project/venus/pkg/consensus"
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
-	"github.com/filecoin-project/venus/pkg/state"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/consensus"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
+	"github.com/filecoin-project/venus_lite/pkg/state"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 var keys = types.MustGenerateKeyInfo(2, 42)

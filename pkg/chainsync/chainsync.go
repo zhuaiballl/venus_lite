@@ -3,18 +3,18 @@ package chainsync
 import (
 	"context"
 
-	"github.com/filecoin-project/venus/pkg/chainsync/types"
-	"github.com/filecoin-project/venus/pkg/consensus"
-	types2 "github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/types"
+	"github.com/filecoin-project/venus_lite/pkg/consensus"
+	types2 "github.com/filecoin-project/venus_lite/pkg/types"
 
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/chainsync/dispatcher"
-	"github.com/filecoin-project/venus/pkg/chainsync/exchange"
-	"github.com/filecoin-project/venus/pkg/chainsync/syncer"
-	"github.com/filecoin-project/venus/pkg/clock"
-	"github.com/filecoin-project/venus/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/dispatcher"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/syncer"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
 )
 
 // BlockProposer allows callers to propose new blocks for inclusion in the chain.

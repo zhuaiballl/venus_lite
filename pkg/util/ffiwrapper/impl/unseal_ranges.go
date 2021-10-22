@@ -6,7 +6,7 @@ import (
 	rlepluslazy "github.com/filecoin-project/go-bitfield/rle"
 	"github.com/filecoin-project/go-state-types/abi"
 
-	"github.com/filecoin-project/venus/pkg/util/storiface"
+	"github.com/filecoin-project/venus_lite/pkg/util/storiface"
 )
 
 // merge gaps between ranges which are close to each other

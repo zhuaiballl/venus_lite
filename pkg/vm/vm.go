@@ -1,9 +1,9 @@
 package vm
 
 import (
-	"github.com/filecoin-project/venus/pkg/vm/dispatch"
-	"github.com/filecoin-project/venus/pkg/vm/register"
-	"github.com/filecoin-project/venus/pkg/vm/vmcontext"
+	"github.com/filecoin-project/venus_lite/pkg/vm/dispatch"
+	"github.com/filecoin-project/venus_lite/pkg/vm/register"
+	"github.com/filecoin-project/venus_lite/pkg/vm/vmcontext"
 )
 
 // Re-exports

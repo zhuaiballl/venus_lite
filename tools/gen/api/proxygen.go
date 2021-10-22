@@ -14,7 +14,7 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/filecoin-project/venus/app/client/funcrule"
+	"github.com/filecoin-project/venus_lite/app/client/funcrule"
 	"github.com/ipfs/go-path"
 
 	"golang.org/x/xerrors"

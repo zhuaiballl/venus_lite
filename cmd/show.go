@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 
 	"github.com/ipfs/go-cid"
 	cmds "github.com/ipfs/go-ipfs-cmds"

@@ -10,7 +10,7 @@ import (
 	host "github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/filecoin-project/venus/pkg/net"
+	"github.com/filecoin-project/venus_lite/pkg/net"
 )
 
 type peerStats struct {

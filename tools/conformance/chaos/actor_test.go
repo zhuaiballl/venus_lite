@@ -13,7 +13,7 @@ import (
 	mock2 "github.com/filecoin-project/specs-actors/v2/support/mock"
 	atesting2 "github.com/filecoin-project/specs-actors/v6/support/testing"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestSingleton(t *testing.T) {

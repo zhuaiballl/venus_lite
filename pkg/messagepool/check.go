@@ -10,10 +10,10 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 )
 
 var baseFeeUpperBoundFactor = types.NewInt(10)

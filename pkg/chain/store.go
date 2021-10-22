@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/filecoin-project/go-state-types/network"
-	"github.com/filecoin-project/venus/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/state"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -29,22 +29,22 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/metrics/tracing"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	_init "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/market"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/multisig"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/power"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/reward"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/verifreg"
-	"github.com/filecoin-project/venus/pkg/types/specactors/policy"
-	"github.com/filecoin-project/venus/pkg/util"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/metrics/tracing"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	_init "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/multisig"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/power"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/reward"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/verifreg"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
+	"github.com/filecoin-project/venus_lite/pkg/util"
 )
 
 // HeadChangeTopic is the topic used to publish new heads.
@@ -132,7 +132,7 @@ type Store struct {
 	// TODO: rename to notifications.  Also, reconsider ordering assumption depending
 	// on decisions made around the FC node notification system.
 	// TODO: replace this with a synchronous event bus
-	// https://github.com/filecoin-project/venus/issues/2309
+	// https://github.com/filecoin-project/venus_lite/issues/2309
 	headEvents *pubsub.PubSub
 
 	// Tracks tipsets by height/parentset for use by expected consensus.

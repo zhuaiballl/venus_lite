@@ -10,9 +10,9 @@ import (
 	init0 "github.com/filecoin-project/specs-actors/actors/builtin/init"
 	multisig0 "github.com/filecoin-project/specs-actors/actors/builtin/multisig"
 
-	"github.com/filecoin-project/venus/pkg/types/internal"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	init_ "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	init_ "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
 )
 
 type message0 struct{ from address.Address }

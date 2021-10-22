@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/util/ulimit"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/util/ulimit"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +14,7 @@ import (
 	"os"
 
 	paramfetch "github.com/filecoin-project/go-paramfetch"
-	"github.com/filecoin-project/venus/fixtures/asset"
+	"github.com/filecoin-project/venus_lite/fixtures/asset"
 
 	"golang.org/x/xerrors"
 
@@ -27,16 +27,16 @@ import (
 	"github.com/ipld/go-car"
 	"github.com/libp2p/go-libp2p-core/crypto"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/app/paths"
-	"github.com/filecoin-project/venus/fixtures/networks"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/genesis"
-	"github.com/filecoin-project/venus/pkg/journal"
-	"github.com/filecoin-project/venus/pkg/migration"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/types"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/app/paths"
+	"github.com/filecoin-project/venus_lite/fixtures/networks"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/journal"
+	"github.com/filecoin-project/venus_lite/pkg/migration"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 var log = logging.Logger("daemon")

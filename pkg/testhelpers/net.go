@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 
-	"github.com/filecoin-project/venus/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/exchange"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/connmgr"
 	"github.com/libp2p/go-libp2p-core/event"

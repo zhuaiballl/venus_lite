@@ -4,7 +4,7 @@ package ulimit
 
 import (
 	"fmt"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"os"
 	"strings"
 	"syscall"

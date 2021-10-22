@@ -16,10 +16,10 @@ import (
 	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/app/paths"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/app/paths"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 const (

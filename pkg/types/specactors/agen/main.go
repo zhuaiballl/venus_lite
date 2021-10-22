@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
 	"io/ioutil"
 	"os"
 	"path/filepath"

@@ -1,7 +1,7 @@
 package mock
 
 import (
-	paych2 "github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	paych2 "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 	"io"
 
 	"github.com/filecoin-project/go-address"

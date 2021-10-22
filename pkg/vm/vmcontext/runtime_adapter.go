@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/aerrors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/aerrors"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
 
 	"github.com/ipfs/go-cid"
 	cbor2 "github.com/ipfs/go-ipld-cbor"
@@ -23,8 +23,8 @@ import (
 	"github.com/filecoin-project/go-state-types/rt"
 	rt0 "github.com/filecoin-project/specs-actors/actors/runtime"
 	rt5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
-	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 )
 
 var EmptyObjectCid cid.Cid

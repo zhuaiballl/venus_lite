@@ -2,15 +2,15 @@ package test
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/impl"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/impl"
 	"math/rand"
 	"testing"
 
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	ds "github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -19,11 +19,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/fixtures/fortest"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/wallet"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/fixtures/fortest"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 // ChainSeed is a generalized struct for configuring node

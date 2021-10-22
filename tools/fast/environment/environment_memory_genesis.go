@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	"io"
 	"math/big"
 	"net"
@@ -18,10 +18,10 @@ import (
 	"github.com/filecoin-project/go-address"
 	logging "github.com/ipfs/go-log/v2"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/tools/fast"
-	"github.com/filecoin-project/venus/tools/fast/series"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/tools/fast"
+	"github.com/filecoin-project/venus_lite/tools/fast/series"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 
 	iptb "github.com/ipfs/iptb/testbed"
 )

@@ -12,9 +12,9 @@ import (
 
 	manet "github.com/multiformats/go-multiaddr/net"
 
-	"github.com/filecoin-project/venus/build/project"
-	th "github.com/filecoin-project/venus/pkg/testhelpers"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/build/project"
+	th "github.com/filecoin-project/venus_lite/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -4,8 +4,8 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 )
 
 // IsAccountActor pattern checks if the caller is an account actor.

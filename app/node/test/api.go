@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node"
-	th "github.com/filecoin-project/venus/pkg/testhelpers"
+	"github.com/filecoin-project/venus_lite/app/node"
+	th "github.com/filecoin-project/venus_lite/pkg/testhelpers"
 )
 
 // NodeAPI wraps an in-process Node to provide a command API server and client for testing.
@@ -74,7 +74,7 @@ func (c *Client) Address() string {
 func (c *Client) run(ctx context.Context, command ...string) (*th.CmdOutput, int, error) {
 	c.tb.Helper()
 	args := []string{
-		"venus", // A dummy first arg is required, simulating shell invocation.
+		"venus_lite", // A dummy first arg is required, simulating shell invocation.
 		fmt.Sprintf("--cmdapiaddr=%s", c.address),
 		fmt.Sprintf("--token=%s", c.token),
 	}

@@ -1,6 +1,6 @@
 ### The FAST Shell
 
-FAST has a [`Shell`](https://godoc.org/github.com/filecoin-project/venus/tools/fast#Filecoin.Shell) which can be used to start the users shell with the environment setup to run `venus` commands against the process it is called on.
+FAST has a [`Shell`](https://godoc.org/github.com/filecoin-project/venus_lite/tools/fast#Filecoin.Shell) which can be used to start the users shell with the environment setup to run `venus` commands against the process it is called on.
 
 The exact environment the shell will have is largely dependent on the plugin use are using.
 Generally, this will be the Filecoin localplugin when writing tests using FAST.
@@ -71,7 +71,7 @@ Tests can be used to get nodes into certain state.
 You may want to then use a shell to execute additional commands to debug an issue.
 You may have added additional logging you want to look at, or look at existing logging that will be produced by commands you run.
 
-FAST Provides a [`StartLogCapture`](https://godoc.org/github.com/filecoin-project/venus/tools/fast#Filecoin.StartLogCapture) which will capture all output written to the daemons `stderr` until `Stop` is called.
+FAST Provides a [`StartLogCapture`](https://godoc.org/github.com/filecoin-project/venus_lite/tools/fast#Filecoin.StartLogCapture) which will capture all output written to the daemons `stderr` until `Stop` is called.
 The captured logs are stored in the return value of `StartLogCapture`, which can be copied to any `io.Writer`.
 
 ```go

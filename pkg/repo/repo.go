@@ -1,9 +1,9 @@
 package repo
 
 import (
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/repo/fskeystore"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/repo/fskeystore"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	"github.com/ipfs/go-datastore"
 )
 

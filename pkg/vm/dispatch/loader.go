@@ -7,8 +7,8 @@ import (
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	vmr "github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	vmr "github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 )
 
 // CodeLoader allows you to load an actor's code based on its id an epoch.

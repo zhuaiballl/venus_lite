@@ -5,7 +5,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 )
 
 type IBlockStore interface {

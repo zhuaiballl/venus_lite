@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	syncTypes "github.com/filecoin-project/venus/pkg/chainsync/types"
+	syncTypes "github.com/filecoin-project/venus_lite/pkg/chainsync/types"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
 	"github.com/filecoin-project/go-state-types/big"
@@ -19,16 +19,16 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/chainsync/exchange"
-	"github.com/filecoin-project/venus/pkg/clock"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/metrics"
-	"github.com/filecoin-project/venus/pkg/metrics/tracing"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/policy"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/metrics"
+	"github.com/filecoin-project/venus_lite/pkg/metrics/tracing"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 )
 
 // Syncer updates its chain.Store according to the methods of its

@@ -5,8 +5,8 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 //

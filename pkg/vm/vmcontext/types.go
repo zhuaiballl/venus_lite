@@ -4,17 +4,17 @@ import (
 	"context"
 	acrypto "github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/exitcode"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/network"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm/dispatch"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm/dispatch"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 )
 
 type ExecCallBack func(cid.Cid, VmMessage, *Ret) error

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/ipfs/go-cid"
 
 	logging "github.com/ipfs/go-log/v2"
@@ -12,7 +12,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/config"
 )
 
 var log = logging.Logger("mysql")

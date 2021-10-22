@@ -15,7 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	inet "github.com/libp2p/go-libp2p-core/network"
 
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 var exchangeServerLog = logging.Logger("exchange.server")

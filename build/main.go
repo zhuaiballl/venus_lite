@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/venus/build/internal/helpers"
-	"github.com/filecoin-project/venus/build/internal/version"
+	"github.com/filecoin-project/venus_lite/build/internal/helpers"
+	"github.com/filecoin-project/venus_lite/build/internal/version"
 )
 
 func init() {
@@ -208,17 +208,17 @@ func generateGenesis() {
 
 func flags() string {
 	return fmt.Sprintf("-ldflags=github.com/filecoin-project/venus=\"%s\"", strings.Join([]string{
-		fmt.Sprintf("-X github.com/filecoin-project/venus/build/flags.GitRoot=%s", helpers.GetGitRoot()),
-		fmt.Sprintf("-X github.com/filecoin-project/venus/build/flags.GitCommit=%s", helpers.GetCommitSha()),
-		fmt.Sprintf("-X github.com/filecoin-project/venus/build/flags.GitTag=%s", helpers.GetLastTag()),
+		fmt.Sprintf("-X github.com/filecoin-project/venus_lite/build/flags.GitRoot=%s", helpers.GetGitRoot()),
+		fmt.Sprintf("-X github.com/filecoin-project/venus_lite/build/flags.GitCommit=%s", helpers.GetCommitSha()),
+		fmt.Sprintf("-X github.com/filecoin-project/venus_lite/build/flags.GitTag=%s", helpers.GetLastTag()),
 	}, " "))
 }
 
 func buildFilecoin() {
-	log.Println("Building venus...")
+	log.Println("Building venus_lite...")
 
 	runCmd(cmd([]string{
-		"bash", "-c", fmt.Sprintf("go build %s -v -o venus .", flags()),
+		"bash", "-c", fmt.Sprintf("go build %s -v -o venus_lite .", flags()),
 	}...))
 }
 

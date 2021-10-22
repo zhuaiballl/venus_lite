@@ -10,12 +10,12 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/build/project"
-	"github.com/filecoin-project/venus/pkg/clock"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/build/project"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 const blockTime = builtin.EpochDurationSeconds * time.Second

@@ -6,17 +6,17 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/ipfs/go-datastore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestDSBackendSimple(t *testing.T) {

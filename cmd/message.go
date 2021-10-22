@@ -17,11 +17,11 @@ import (
 	"github.com/pkg/errors"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 // MessageSendResult is the return type for message send command

@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	repo2 "github.com/filecoin-project/venus/pkg/repo"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	repo2 "github.com/filecoin-project/venus_lite/pkg/repo"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 func TestConfigGet(t *testing.T) {

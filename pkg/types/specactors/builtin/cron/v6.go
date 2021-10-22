@@ -3,7 +3,7 @@ package cron
 import (
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	cron6 "github.com/filecoin-project/specs-actors/v6/actors/builtin/cron"
 )

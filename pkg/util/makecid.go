@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 )

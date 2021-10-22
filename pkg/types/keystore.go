@@ -6,7 +6,7 @@ import (
 
 	logging "github.com/ipfs/go-log/v2"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 )
 
 var log = logging.Logger("types")

@@ -12,7 +12,7 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	msig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 )

@@ -2,9 +2,9 @@ package apiface
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 
-	"github.com/filecoin-project/venus/pkg/net"
+	"github.com/filecoin-project/venus_lite/pkg/net"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/peer"

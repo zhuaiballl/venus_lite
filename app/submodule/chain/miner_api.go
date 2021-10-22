@@ -2,8 +2,8 @@ package chain
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/pkg/types/specactors/policy"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
@@ -12,15 +12,15 @@ import (
 	"github.com/filecoin-project/go-state-types/dline"
 	xerrors "github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/market"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/power"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/reward"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/power"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/reward"
 )
 
 var _ apiface.IMinerState = &minerStateAPI{}

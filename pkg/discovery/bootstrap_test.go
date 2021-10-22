@@ -10,9 +10,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/venus/pkg/repo"
-	th "github.com/filecoin-project/venus/pkg/testhelpers"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	th "github.com/filecoin-project/venus_lite/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func panicConnect(_ context.Context, _ peer.AddrInfo) error { panic("shouldn't be called") }

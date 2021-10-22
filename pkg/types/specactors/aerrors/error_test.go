@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/xerrors"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	. "github.com/filecoin-project/venus/pkg/types/specactors/aerrors"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	. "github.com/filecoin-project/venus_lite/pkg/types/specactors/aerrors"
 )
 
 func TestFatalError(t *testing.T) {

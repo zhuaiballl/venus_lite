@@ -11,11 +11,11 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/testhelpers"
-	"github.com/filecoin-project/venus/tools/fast"
-	"github.com/filecoin-project/venus/tools/fast/environment"
-	"github.com/filecoin-project/venus/tools/fast/series"
-	localplugin "github.com/filecoin-project/venus/tools/iptb-plugins/filecoin/local"
+	"github.com/filecoin-project/venus_lite/pkg/testhelpers"
+	"github.com/filecoin-project/venus_lite/tools/fast"
+	"github.com/filecoin-project/venus_lite/tools/fast/environment"
+	"github.com/filecoin-project/venus_lite/tools/fast/series"
+	localplugin "github.com/filecoin-project/venus_lite/tools/iptb-plugins/filecoin/local"
 )
 
 // DeploymentEnvironment provides common setup for writing tests which will run against

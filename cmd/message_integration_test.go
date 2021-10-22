@@ -2,16 +2,16 @@ package cmd_test
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	"strconv"
 	"testing"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node/test"
-	"github.com/filecoin-project/venus/fixtures/fortest"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/app/node/test"
+	"github.com/filecoin-project/venus_lite/fixtures/fortest"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestMessageSend(t *testing.T) {

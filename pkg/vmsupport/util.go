@@ -6,7 +6,7 @@ import (
 
 	rt5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
 
-	"github.com/filecoin-project/venus/pkg/consensusfault"
+	"github.com/filecoin-project/venus_lite/pkg/consensusfault"
 )
 
 type NilFaultChecker struct {

@@ -5,25 +5,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/venus/pkg/chainsync/types"
-	types2 "github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/types"
+	types2 "github.com/filecoin-project/venus_lite/pkg/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/chainsync/syncer"
-	"github.com/filecoin-project/venus/pkg/clock"
-	"github.com/filecoin-project/venus/pkg/fork"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/syncer"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 // Syncer is capable of recovering from a fork reorg after the bsstore is loaded.
 // This is a regression test to guard against the syncer assuming that the bsstore having all
 // blocks from a tipset means the syncer has computed its state.
 // Such a case happens when the bsstore has just loaded, but this tipset is not on its heaviest chain).
-// See https://github.com/filecoin-project/venus/issues/1148#issuecomment-432008060
+// See https://github.com/filecoin-project/venus_lite/issues/1148#issuecomment-432008060
 func TestLoadFork(t *testing.T) {
 	tf.UnitTest(t)
 	ctx := context.Background()

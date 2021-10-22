@@ -2,7 +2,7 @@ version: "{build}"
 
 # Source Config
 
-clone_folder: c:\gopath\src\github.com\filecoin-project\venus
+clone_folder: c:\gopath\src\github.com\filecoin-project\venus_lite
 
 # Build host
 

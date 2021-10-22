@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	emptycid "github.com/filecoin-project/venus/pkg/testhelpers/empty_cid"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	emptycid "github.com/filecoin-project/venus_lite/pkg/testhelpers/empty_cid"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node/test"
-	"github.com/filecoin-project/venus/fixtures/fortest"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/app/node/test"
+	"github.com/filecoin-project/venus_lite/fixtures/fortest"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // Receipt is what is returned by executing a message on the vm.

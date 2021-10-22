@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	xerrors "github.com/pkg/errors"
 
-	cfg "github.com/filecoin-project/venus/pkg/config"
+	cfg "github.com/filecoin-project/venus_lite/pkg/config"
 )
 
 type Schedule []BeaconPoint

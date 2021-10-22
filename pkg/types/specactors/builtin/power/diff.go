@@ -3,7 +3,7 @@ package power
 import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	adt2 "github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	adt2 "github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 	cbg "github.com/whyrusleeping/cbor-gen"
 )
 

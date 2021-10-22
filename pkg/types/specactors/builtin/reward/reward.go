@@ -3,7 +3,7 @@ package reward
 import (
 	"github.com/filecoin-project/go-state-types/abi"
 	reward0 "github.com/filecoin-project/specs-actors/actors/builtin/reward"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
@@ -21,9 +21,9 @@ import (
 
 	builtin6 "github.com/filecoin-project/specs-actors/v6/actors/builtin"
 
-	"github.com/filecoin-project/venus/pkg/types/internal"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
 )
 
 func init() {

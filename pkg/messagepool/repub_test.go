@@ -9,9 +9,9 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	"github.com/ipfs/go-datastore"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/messagepool/gasguess"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/messagepool/gasguess"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestRepubMessages(t *testing.T) {

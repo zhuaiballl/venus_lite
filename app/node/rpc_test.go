@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/filecoin-project/venus/app/client/funcrule"
+	"github.com/filecoin-project/venus_lite/app/client/funcrule"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/filecoin-project/go-jsonrpc"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"github.com/stretchr/testify/require"
 	"gotest.tools/assert"
 )

@@ -15,9 +15,9 @@ import (
 
 	iptb "github.com/ipfs/iptb/testbed"
 
-	th "github.com/filecoin-project/venus/pkg/testhelpers"
+	th "github.com/filecoin-project/venus_lite/pkg/testhelpers"
 
-	localplugin "github.com/filecoin-project/venus/tools/iptb-plugins/filecoin/local"
+	localplugin "github.com/filecoin-project/venus_lite/tools/iptb-plugins/filecoin/local"
 )
 
 var log = logging.Logger("iptbtester")

@@ -7,8 +7,8 @@ import (
 
 	proof5 "github.com/filecoin-project/specs-actors/v5/actors/runtime/proof"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 )
 
 //GasCharge amount of gas consumed at one time

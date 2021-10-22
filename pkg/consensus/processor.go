@@ -7,10 +7,10 @@ import (
 	"go.opencensus.io/trace"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/pkg/metrics/tracing"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/metrics/tracing"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 // ApplicationResult contains the result of successfully applying one message.

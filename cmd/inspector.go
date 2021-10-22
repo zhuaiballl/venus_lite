@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/pkg/config"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 )
 

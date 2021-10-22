@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"github.com/filecoin-project/venus/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
 )
 
 type chainAPI struct { // nolint: golint

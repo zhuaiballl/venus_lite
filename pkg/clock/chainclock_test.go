@@ -7,8 +7,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/venus/pkg/clock"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestChainEpochClock(t *testing.T) {

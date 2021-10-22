@@ -15,8 +15,8 @@ import (
 
 	init2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // paychFundsRes is the response to a create channel or add funds request

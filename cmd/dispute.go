@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"strconv"
 	"time"
 
@@ -19,10 +19,10 @@ import (
 
 	logging "github.com/ipfs/go-log/v2"
 
-	"github.com/filecoin-project/venus/app/node"
-	chainpkg "github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/app/node"
+	chainpkg "github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
 )
 
 var disputeLog = logging.Logger("disputer")

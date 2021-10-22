@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/config"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
 	"github.com/ipfs/go-datastore"
 
 	"sync"
@@ -24,8 +24,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 
 	tutils "github.com/filecoin-project/specs-actors/v6/support/testing"
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
 	"github.com/ipfs/go-cid"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	"github.com/stretchr/testify/require"

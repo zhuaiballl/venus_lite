@@ -8,9 +8,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-pubsub"
 
-	"github.com/filecoin-project/venus/pkg/consensus"
-	"github.com/filecoin-project/venus/pkg/metrics"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/consensus"
+	"github.com/filecoin-project/venus_lite/pkg/metrics"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 var messageTopicLogger = logging.Logger("net/message_validator")

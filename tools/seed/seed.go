@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/impl"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/impl"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,11 +29,11 @@ import (
 	"github.com/minio/blake2b-simd"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/gen/genesis"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/basicfs"
-	"github.com/filecoin-project/venus/pkg/util/storiface"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/gen/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/basicfs"
+	"github.com/filecoin-project/venus_lite/pkg/util/storiface"
 )
 
 var log = logging.Logger("preseal")

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -17,13 +17,13 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/app/submodule/chain"
-	"github.com/filecoin-project/venus/cmd/tablewriter"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/app/submodule/chain"
+	"github.com/filecoin-project/venus_lite/cmd/tablewriter"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
 )
 
 var minerActorCmd = &cmds.Command{

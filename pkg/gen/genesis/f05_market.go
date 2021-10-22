@@ -6,12 +6,12 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	bstore "github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	bstore "github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 )
 
 func SetupStorageMarketActor(ctx context.Context, bs bstore.Blockstore, av specactors.Version) (*types.Actor, error) {

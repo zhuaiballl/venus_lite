@@ -2,8 +2,8 @@ package fast
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/pkg/config"
 )
 
 // InspectAll runs the `inspect all` command against the filecoin process

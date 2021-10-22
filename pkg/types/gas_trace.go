@@ -3,7 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
 	"runtime"
 	"strings"
 	"time"

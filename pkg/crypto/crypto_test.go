@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bls "github.com/filecoin-project/filecoin-ffi"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestGenerateSecpKey(t *testing.T) {

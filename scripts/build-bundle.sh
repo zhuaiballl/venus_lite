@@ -8,7 +8,7 @@ pushd bundle
 mkdir -p filecoin
 
 # binary
-cp ../venus filecoin/
-chmod +x filecoin/venus
+cp ../venus_lite filecoin/
+chmod +x filecoin/venus_lite
 
 popd

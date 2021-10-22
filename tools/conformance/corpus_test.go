@@ -2,7 +2,7 @@ package conformance
 
 import (
 	"encoding/json"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"io/ioutil"
 	"os"
 	"path/filepath"

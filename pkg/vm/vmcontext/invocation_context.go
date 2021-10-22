@@ -16,16 +16,16 @@ import (
 	ipfscbor "github.com/ipfs/go-ipld-cbor"
 	xerrors "github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/aerrors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/account"
-	init_ "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
-	"github.com/filecoin-project/venus/pkg/vm/dispatch"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
-	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/aerrors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/account"
+	init_ "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/vm/dispatch"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 )
 
 var gasOnActorExec = gas.NewGasCharge("OnActorExec", 0, 0)

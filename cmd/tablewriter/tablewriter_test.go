@@ -6,7 +6,7 @@ import (
 
 	"github.com/fatih/color"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestTableWriter(t *testing.T) {

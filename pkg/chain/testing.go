@@ -24,15 +24,15 @@ import (
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/filecoin-project/venus/fixtures/asset"
-	"github.com/filecoin-project/venus/pkg/chainsync/exchange"
-	"github.com/filecoin-project/venus/pkg/clock"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/repo"
-	emptycid "github.com/filecoin-project/venus/pkg/testhelpers/empty_cid"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/util"
+	"github.com/filecoin-project/venus_lite/fixtures/asset"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	emptycid "github.com/filecoin-project/venus_lite/pkg/testhelpers/empty_cid"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/util"
 )
 
 // Builder builds fake chains and acts as a provider and fetcher for the chain thus generated.

@@ -5,7 +5,7 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/venus/tools/fast"
+	"github.com/filecoin-project/venus_lite/tools/fast"
 )
 
 // SendFilecoinDefaults sends the `value` amount of fil from the default wallet

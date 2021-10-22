@@ -9,8 +9,8 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types/internal"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	market6 "github.com/filecoin-project/specs-actors/v6/actors/builtin/market"
 	adt6 "github.com/filecoin-project/specs-actors/v6/actors/util/adt"

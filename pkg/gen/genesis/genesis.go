@@ -6,16 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/filecoin-project/venus/pkg/consensusfault"
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/impl"
-	"github.com/filecoin-project/venus/pkg/vmsupport"
+	"github.com/filecoin-project/venus_lite/pkg/consensusfault"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/impl"
+	"github.com/filecoin-project/venus_lite/pkg/vmsupport"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
 
 	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 	verifreg0 "github.com/filecoin-project/specs-actors/actors/builtin/verifreg"
@@ -23,27 +23,27 @@ import (
 
 	"github.com/filecoin-project/go-state-types/network"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/multisig"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/multisig"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/account"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/account"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/verifreg"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/verifreg"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/power"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/power"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/cron"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/cron"
 
-	init_ "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/reward"
+	init_ "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/reward"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/system"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/system"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
 
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -56,12 +56,12 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	sigs "github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/types"
-	bstore "github.com/filecoin-project/venus/pkg/util/blockstoreutil"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	sigs "github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	bstore "github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 const AccountStart = 100

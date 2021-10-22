@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 )
 

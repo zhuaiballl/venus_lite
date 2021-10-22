@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/tools/fast"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/tools/fast"
 	"github.com/ipfs/go-cid"
 )
 

@@ -5,8 +5,8 @@ package version_test
 import (
 	"testing"
 
-	"github.com/filecoin-project/venus/build/internal/version"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/build/internal/version"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"github.com/stretchr/testify/assert"
 )
 

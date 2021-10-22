@@ -14,7 +14,7 @@ import (
 
 	ci "github.com/libp2p/go-libp2p-core/crypto"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func assertDirContents(dir string, exp []string) error {

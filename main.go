@@ -5,7 +5,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	logging "github.com/ipfs/go-log/v2"
 )
 

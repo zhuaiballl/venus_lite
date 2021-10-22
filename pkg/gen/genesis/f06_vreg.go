@@ -3,8 +3,8 @@ package genesis
 import (
 	"context"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/verifreg"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/verifreg"
 
 	"github.com/filecoin-project/go-address"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -13,8 +13,8 @@ import (
 
 	"github.com/filecoin-project/specs-actors/actors/util/adt"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	bstore "github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	bstore "github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 )
 
 var RootVerifierID address.Address

@@ -6,7 +6,7 @@ import (
 	"github.com/ipfs/go-cid"
 	format "github.com/ipfs/go-ipld-format"
 
-	"github.com/filecoin-project/venus/pkg/gen/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/gen/genesis"
 )
 
 //CarWalkFunc get each child node under the node (nd)

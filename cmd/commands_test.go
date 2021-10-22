@@ -3,9 +3,9 @@ package cmd_test
 import (
 	"testing"
 
-	"github.com/filecoin-project/venus/app/node/test"
-	"github.com/filecoin-project/venus/fixtures/fortest"
-	th "github.com/filecoin-project/venus/pkg/testhelpers"
+	"github.com/filecoin-project/venus_lite/app/node/test"
+	"github.com/filecoin-project/venus_lite/fixtures/fortest"
+	th "github.com/filecoin-project/venus_lite/pkg/testhelpers"
 )
 
 // create a basic new TestDaemon, with a miner and the KeyInfo it needs to sign

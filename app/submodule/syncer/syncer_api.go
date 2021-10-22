@@ -2,14 +2,14 @@ package syncer
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"time"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	syncTypes "github.com/filecoin-project/venus/pkg/chainsync/types"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	syncTypes "github.com/filecoin-project/venus_lite/pkg/chainsync/types"
 
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	logging "github.com/ipfs/go-log/v2"
 	xerrors "github.com/pkg/errors"
 )

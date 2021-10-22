@@ -5,7 +5,7 @@ import (
 	fbig "github.com/filecoin-project/go-state-types/big"
 	acrypto "github.com/filecoin-project/go-state-types/crypto"
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
-	syncTypes "github.com/filecoin-project/venus/pkg/chainsync/types"
+	syncTypes "github.com/filecoin-project/venus_lite/pkg/chainsync/types"
 	"sort"
 	"testing"
 
@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/venus/pkg/chainsync/dispatcher"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/dispatcher"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 type mockSyncer struct {

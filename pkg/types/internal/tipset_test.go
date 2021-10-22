@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/filecoin-project/venus/pkg/util/test"
+	"github.com/filecoin-project/venus_lite/pkg/util/test"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	fbig "github.com/filecoin-project/go-state-types/big"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 const parentWeight = uint64(1337000)

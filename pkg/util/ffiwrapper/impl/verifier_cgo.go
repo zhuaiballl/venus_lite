@@ -4,7 +4,7 @@ package impl
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -13,7 +13,7 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/util/storiface"
+	"github.com/filecoin-project/venus_lite/pkg/util/storiface"
 )
 
 func (sb *Sealer) GenerateWinningPoSt(ctx context.Context, minerID abi.ActorID, sectorInfo []proof5.SectorInfo, randomness abi.PoStRandomness) ([]proof5.PoStProof, error) {

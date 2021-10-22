@@ -5,15 +5,15 @@ import (
 	"io"
 	"testing"
 
-	"github.com/filecoin-project/venus/pkg/util"
+	"github.com/filecoin-project/venus_lite/pkg/util"
 
 	"github.com/filecoin-project/go-state-types/cbor"
 	rt5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/vm/vmcontext"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/vm/vmcontext"
 )
 
 type testActorStateHandleState struct {

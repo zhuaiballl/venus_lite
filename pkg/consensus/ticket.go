@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/filecoin-project/venus/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -12,8 +12,8 @@ import (
 	"github.com/minio/blake2b-simd"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 type ChainSampler interface {

@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/filecoin-project/venus/app/client/apiface"
-	repo2 "github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	repo2 "github.com/filecoin-project/venus_lite/pkg/repo"
 	"sync"
 )
 

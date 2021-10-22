@@ -13,8 +13,8 @@ import (
 	cbor "github.com/ipfs/go-ipld-cbor"
 	node "github.com/ipfs/go-ipld-format"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
 )
 
 // BlockHeader is a newBlock in the blockchain.

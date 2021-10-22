@@ -2,12 +2,12 @@ package node
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/app/client/apiface/v0api"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface/v0api"
 
 	cmds "github.com/ipfs/go-ipfs-cmds"
 
-	"github.com/filecoin-project/venus/app/submodule/storagenetworking"
+	"github.com/filecoin-project/venus_lite/app/submodule/storagenetworking"
 )
 
 // Env is the environment for command API handlers.

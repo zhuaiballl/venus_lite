@@ -1,14 +1,14 @@
 package mining
 
 import (
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/app/submodule/blockstore"
-	chain2 "github.com/filecoin-project/venus/app/submodule/chain"
-	"github.com/filecoin-project/venus/app/submodule/network"
-	"github.com/filecoin-project/venus/app/submodule/syncer"
-	"github.com/filecoin-project/venus/app/submodule/wallet"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/submodule/blockstore"
+	chain2 "github.com/filecoin-project/venus_lite/app/submodule/chain"
+	"github.com/filecoin-project/venus_lite/app/submodule/network"
+	"github.com/filecoin-project/venus_lite/app/submodule/syncer"
+	"github.com/filecoin-project/venus_lite/app/submodule/wallet"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper"
 )
 
 type miningConfig interface {

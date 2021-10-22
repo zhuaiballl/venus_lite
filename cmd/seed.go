@@ -21,13 +21,13 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/network"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/gen"
-	"github.com/filecoin-project/venus/pkg/gen/genesis"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
-	"github.com/filecoin-project/venus/tools/seed"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/gen"
+	"github.com/filecoin-project/venus_lite/pkg/gen/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/tools/seed"
 )
 
 var seedCmd = &cmds.Command{

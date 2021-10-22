@@ -2,9 +2,9 @@ package node
 
 import (
 	"fmt"
-	"github.com/filecoin-project/venus/build/flags"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/build/flags"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 	sysi "github.com/whyrusleeping/go-sysinfo"
 	"os"
 	"runtime"

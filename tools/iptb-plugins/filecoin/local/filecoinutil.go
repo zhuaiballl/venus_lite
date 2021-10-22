@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,7 +17,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/tools/iptb-plugins/filecoin"
+	"github.com/filecoin-project/venus_lite/tools/iptb-plugins/filecoin"
 )
 
 func (l *Localfilecoin) isAlive() (bool, error) {

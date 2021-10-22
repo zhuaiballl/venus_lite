@@ -6,7 +6,7 @@ import (
 
 	"github.com/minio/blake2b-simd"
 
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 )
 
 // VRFPi is the proof output from running a VRF.

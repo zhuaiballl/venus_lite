@@ -13,13 +13,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/state"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
-	gengen "github.com/filecoin-project/venus/tools/gengen/util"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/state"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	gengen "github.com/filecoin-project/venus_lite/tools/gengen/util"
 )
 
 func TestTotal(t *testing.T) {
@@ -39,7 +39,7 @@ func TestTotal(t *testing.T) {
 	require.NoError(t, err)
 
 	// TODO: test that the QA power is used when it differs from raw byte power after gengen computes it properly
-	// https://github.com/filecoin-project/venus/issues/4011
+	// https://github.com/filecoin-project/venus_lite/issues/4011
 	expected := big.NewIntUnsigned(uint64(constants.DevSectorSize) * numCommittedSectors * uint64(numMiners))
 	assert.True(t, expected.Equals(networkPower))
 }

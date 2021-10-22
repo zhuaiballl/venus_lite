@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 const dsKeyActorNonce = "ActorNextNonce"

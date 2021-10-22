@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	emptycid "github.com/filecoin-project/venus/pkg/testhelpers/empty_cid"
+	emptycid "github.com/filecoin-project/venus_lite/pkg/testhelpers/empty_cid"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/assert"
@@ -22,11 +22,11 @@ import (
 	net "github.com/libp2p/go-libp2p-core/network"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/metrics"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/metrics"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 var testCid cid.Cid

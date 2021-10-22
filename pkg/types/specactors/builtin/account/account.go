@@ -1,16 +1,16 @@
 package account
 
 import (
-	"github.com/filecoin-project/venus/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types/internal"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
 
 	builtin0 "github.com/filecoin-project/specs-actors/actors/builtin"
 

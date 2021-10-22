@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/venus/build/project"
-	"github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/build/project"
+	"github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 // GetFreePort gets a free port from the kernel

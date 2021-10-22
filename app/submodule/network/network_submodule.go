@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,9 +14,9 @@ import (
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	dtnet "github.com/filecoin-project/go-data-transfer/network"
 	dtgstransport "github.com/filecoin-project/go-data-transfer/transport/graphsync"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	blocks "github.com/ipfs/go-block-format"
 	bserv "github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-datastore"
@@ -24,10 +24,10 @@ import (
 	logging "github.com/ipfs/go-log"
 
 	dtimpl "github.com/filecoin-project/go-data-transfer/impl"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/discovery"
-	"github.com/filecoin-project/venus/pkg/net"
-	appstate "github.com/filecoin-project/venus/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/discovery"
+	"github.com/filecoin-project/venus_lite/pkg/net"
+	appstate "github.com/filecoin-project/venus_lite/pkg/state"
 	"github.com/ipfs/go-bitswap"
 	bsnet "github.com/ipfs/go-bitswap/network"
 	"github.com/ipfs/go-cid"
@@ -50,7 +50,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/app/submodule/network/v0api"
+	"github.com/filecoin-project/venus_lite/app/submodule/network/v0api"
 )
 
 var networkLogger = logging.Logger("network_module")

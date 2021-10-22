@@ -5,7 +5,7 @@ import (
 
 	"github.com/filecoin-project/go-address"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 )
 
 type BestSpendableAPI interface {

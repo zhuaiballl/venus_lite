@@ -3,7 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
 	"net"
 	"net/http"
 	"os"
@@ -24,29 +24,29 @@ import (
 
 	"github.com/filecoin-project/venus-auth/cmd/jwtclient"
 
-	"github.com/filecoin-project/venus/app/submodule/blockstore"
-	chain2 "github.com/filecoin-project/venus/app/submodule/chain"
-	configModule "github.com/filecoin-project/venus/app/submodule/config"
-	"github.com/filecoin-project/venus/app/submodule/dagservice"
-	"github.com/filecoin-project/venus/app/submodule/discovery"
-	"github.com/filecoin-project/venus/app/submodule/market"
-	"github.com/filecoin-project/venus/app/submodule/mining"
-	"github.com/filecoin-project/venus/app/submodule/mpool"
-	"github.com/filecoin-project/venus/app/submodule/multisig"
-	"github.com/filecoin-project/venus/app/submodule/multisig/v0api"
-	network2 "github.com/filecoin-project/venus/app/submodule/network"
-	"github.com/filecoin-project/venus/app/submodule/paych"
-	"github.com/filecoin-project/venus/app/submodule/storagenetworking"
-	syncer2 "github.com/filecoin-project/venus/app/submodule/syncer"
-	"github.com/filecoin-project/venus/app/submodule/wallet"
-	"github.com/filecoin-project/venus/pkg/clock"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/jwtauth"
-	"github.com/filecoin-project/venus/pkg/metrics"
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/app/submodule/blockstore"
+	chain2 "github.com/filecoin-project/venus_lite/app/submodule/chain"
+	configModule "github.com/filecoin-project/venus_lite/app/submodule/config"
+	"github.com/filecoin-project/venus_lite/app/submodule/dagservice"
+	"github.com/filecoin-project/venus_lite/app/submodule/discovery"
+	"github.com/filecoin-project/venus_lite/app/submodule/market"
+	"github.com/filecoin-project/venus_lite/app/submodule/mining"
+	"github.com/filecoin-project/venus_lite/app/submodule/mpool"
+	"github.com/filecoin-project/venus_lite/app/submodule/multisig"
+	"github.com/filecoin-project/venus_lite/app/submodule/multisig/v0api"
+	network2 "github.com/filecoin-project/venus_lite/app/submodule/network"
+	"github.com/filecoin-project/venus_lite/app/submodule/paych"
+	"github.com/filecoin-project/venus_lite/app/submodule/storagenetworking"
+	syncer2 "github.com/filecoin-project/venus_lite/app/submodule/syncer"
+	"github.com/filecoin-project/venus_lite/app/submodule/wallet"
+	"github.com/filecoin-project/venus_lite/pkg/clock"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/jwtauth"
+	"github.com/filecoin-project/venus_lite/pkg/metrics"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"  // enable bls signatures
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp" // enable secp signatures
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"  // enable bls signatures
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp" // enable secp signatures
 )
 
 var log = logging.Logger("node") // nolint: deadcode
@@ -281,7 +281,7 @@ func (node *Node) RunRPCAndWait(ctx context.Context, rootCmdDaemon *cmds.Command
 		Handler: authMux,
 		BaseContext: func(listener net.Listener) context.Context {
 			ctx, _ := tag.New(context.Background(),
-				tag.Upsert(apikey, "venus"))
+				tag.Upsert(apikey, "venus_lite"))
 			return ctx
 		},
 	}

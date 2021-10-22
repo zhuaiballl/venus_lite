@@ -18,7 +18,7 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 )
 
 const MessageVersion = uint64(0)

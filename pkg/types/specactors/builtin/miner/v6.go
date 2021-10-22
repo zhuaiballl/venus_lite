@@ -14,7 +14,7 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	builtin6 "github.com/filecoin-project/specs-actors/v6/actors/builtin"
 

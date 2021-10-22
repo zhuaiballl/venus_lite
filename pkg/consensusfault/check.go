@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/network"
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
 
-	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/config"
 	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
 
 	runtime5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
 
-	"github.com/filecoin-project/venus/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/state"
 )
 
 type FaultStateView interface {

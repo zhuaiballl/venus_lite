@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/impl"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/impl"
 	goruntime "runtime"
 	"sync"
 
@@ -12,16 +12,16 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	rt5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
 	proof5 "github.com/filecoin-project/specs-actors/v5/actors/runtime/proof"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/minio/blake2b-simd"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/consensusfault"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/state"
-	"github.com/filecoin-project/venus/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/consensusfault"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
 var log = logging.Logger("vmsupport")
@@ -36,7 +36,7 @@ type faultChecker interface {
 // entirely deterministic and repeatable by other implementations.
 // Any non-deterministic error will instead trigger a panic.
 // TODO: determine a more robust mechanism for distinguishing transient runtime failures from deterministic errors
-// in VM and supporting code. https://github.com/filecoin-project/venus/issues/3844
+// in VM and supporting code. https://github.com/filecoin-project/venus_lite/issues/3844
 type Syscalls struct {
 	faultChecker faultChecker
 	verifier     ffiwrapper.Verifier

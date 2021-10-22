@@ -2,7 +2,7 @@ package storagenetworking
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/submodule/network"
+	"github.com/filecoin-project/venus_lite/app/submodule/network"
 
 	exchange "github.com/ipfs/go-ipfs-exchange-interface"
 )

@@ -8,9 +8,9 @@ import (
 	init5 "github.com/filecoin-project/specs-actors/v5/actors/builtin/init"
 	paych5 "github.com/filecoin-project/specs-actors/v5/actors/builtin/paych"
 
-	"github.com/filecoin-project/venus/pkg/types/internal"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	init_ "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	init_ "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
 )
 
 type message5 struct{ from address.Address }

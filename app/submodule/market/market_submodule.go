@@ -1,8 +1,8 @@
 package market
 
 import (
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/pkg/statemanger"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/pkg/statemanger"
 )
 
 // MarketSubmodule enhances the `Node` with market capabilities.

@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/builtin"
 	"github.com/filecoin-project/specs-actors/actors/runtime"
 	tutil "github.com/filecoin-project/specs-actors/support/testing"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -2,33 +2,33 @@ package conformance
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/impl"
-	"github.com/filecoin-project/venus/pkg/vm/vmcontext"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/impl"
+	"github.com/filecoin-project/venus_lite/pkg/vm/vmcontext"
 	gobig "math/big"
 	"os"
 
-	"github.com/filecoin-project/venus/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/filecoin-project/venus/app/node"
-	"github.com/filecoin-project/venus/fixtures/networks"
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/consensusfault"
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"  // enable bls signatures
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp" // enable secp signatures
-	"github.com/filecoin-project/venus/pkg/fork"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/vm"
-	"github.com/filecoin-project/venus/pkg/vm/register"
-	"github.com/filecoin-project/venus/pkg/vmsupport"
+	"github.com/filecoin-project/venus_lite/app/node"
+	"github.com/filecoin-project/venus_lite/fixtures/networks"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/consensusfault"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"  // enable bls signatures
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp" // enable secp signatures
+	"github.com/filecoin-project/venus_lite/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/vm/register"
+	"github.com/filecoin-project/venus_lite/pkg/vmsupport"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/test-vectors/schema"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/tools/conformance/chaos"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/tools/conformance/chaos"
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"

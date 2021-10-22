@@ -10,7 +10,7 @@ import (
 	"time"
 
 	cborutil "github.com/filecoin-project/go-cbor-util"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	logging "github.com/ipfs/go-log"
 
 	"github.com/libp2p/go-libp2p-core/host"
@@ -20,7 +20,7 @@ import (
 	"go.opencensus.io/trace"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/pkg/net"
+	"github.com/filecoin-project/venus_lite/pkg/net"
 )
 
 var exchangeClientLogger = logging.Logger("exchange.client")

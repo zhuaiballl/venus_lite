@@ -8,8 +8,8 @@ import (
 
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 type uncachedAPI interface {

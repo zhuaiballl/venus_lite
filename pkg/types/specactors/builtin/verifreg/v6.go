@@ -5,8 +5,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	builtin6 "github.com/filecoin-project/specs-actors/v6/actors/builtin"
 	verifreg6 "github.com/filecoin-project/specs-actors/v6/actors/builtin/verifreg"

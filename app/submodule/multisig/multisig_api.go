@@ -2,7 +2,7 @@ package multisig
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -10,10 +10,10 @@ import (
 	multisig2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/multisig"
 	"golang.org/x/xerrors"
 
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/multisig"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/multisig"
 )
 
 var _ apiface.IMultiSig = &multiSig{}

@@ -3,7 +3,7 @@ package market
 import (
 	"bytes"
 
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 
 	cborrpc "github.com/filecoin-project/go-cbor-util"
 	"github.com/ipfs/go-datastore"

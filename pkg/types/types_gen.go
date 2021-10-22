@@ -2,7 +2,7 @@
 
 package types
 
-import "github.com/filecoin-project/venus/pkg/types/internal"
+import "github.com/filecoin-project/venus_lite/pkg/types/internal"
 
 //type redefine
 type BlockMessagesInfo = internal.BlockMessagesInfo

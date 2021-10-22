@@ -3,8 +3,8 @@ package paychmgr
 import (
 	"bytes"
 	"context"
-	crypto2 "github.com/filecoin-project/venus/pkg/crypto"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	crypto2 "github.com/filecoin-project/venus_lite/pkg/crypto"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"testing"
 
 	"github.com/ipfs/go-cid"
@@ -20,11 +20,11 @@ import (
 	paych2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/paych"
 	tutils "github.com/filecoin-project/specs-actors/v6/support/testing"
 
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
-	paychmock "github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych/mock"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
+	paychmock "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych/mock"
 )
 
 func TestCheckVoucherValid(t *testing.T) {

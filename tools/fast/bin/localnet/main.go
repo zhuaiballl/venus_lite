@@ -9,7 +9,7 @@ import (
 	"context"
 	flg "flag"
 	"fmt"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -25,10 +25,10 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
 
-	"github.com/filecoin-project/venus/tools/fast"
-	"github.com/filecoin-project/venus/tools/fast/environment"
-	"github.com/filecoin-project/venus/tools/fast/series"
-	lpfc "github.com/filecoin-project/venus/tools/iptb-plugins/filecoin/local"
+	"github.com/filecoin-project/venus_lite/tools/fast"
+	"github.com/filecoin-project/venus_lite/tools/fast/environment"
+	"github.com/filecoin-project/venus_lite/tools/fast/series"
+	lpfc "github.com/filecoin-project/venus_lite/tools/iptb-plugins/filecoin/local"
 )
 
 var (
@@ -377,7 +377,7 @@ func getFilecoinBinary() (string, error) {
 		return "", err
 	}
 
-	bin := filepath.Join(gopath, "/src/github.com/filecoin-project/venus/venus")
+	bin := filepath.Join(gopath, "/src/github.com/filecoin-project/venus_lite/venus")
 	_, err = os.Stat(bin)
 	if err != nil {
 		return "", err

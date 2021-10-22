@@ -2,8 +2,8 @@ package paychmgr
 
 import (
 	"context"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"testing"
 
 	"github.com/filecoin-project/go-state-types/abi"
@@ -16,8 +16,8 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	tutils2 "github.com/filecoin-project/specs-actors/v6/support/testing"
 
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
-	paychmock "github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych/mock"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
+	paychmock "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych/mock"
 )
 
 // TestPaychAddVoucherAfterAddFunds tests adding a voucher to a channel with

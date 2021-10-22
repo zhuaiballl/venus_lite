@@ -2,7 +2,7 @@ package init
 
 import (
 	"bytes"
-	adt2 "github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	adt2 "github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"

@@ -3,9 +3,9 @@ package apiface
 import (
 	"context"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
-	syncTypes "github.com/filecoin-project/venus/pkg/chainsync/types"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
+	syncTypes "github.com/filecoin-project/venus_lite/pkg/chainsync/types"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 type ISyncer interface {

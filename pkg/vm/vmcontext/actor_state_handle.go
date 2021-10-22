@@ -4,7 +4,7 @@ import (
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/filecoin-project/go-state-types/exitcode"
 	rt5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
-	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 	"github.com/ipfs/go-cid"
 )
 

@@ -71,7 +71,7 @@ Other patterns, we've evolving for our needs:
 - go-ipfs relies heavily on shell-based integration testing; we aim to rely heavily on unit testing and Go-based integration tests.
 - The go-ipfs package structure involves a deep hierarchy of dependent implementations; 
 we're moving towards a more Go-idiomatic approach with narrow interfaces defined in consuming packages (see [Patterns](#patterns).
-- The term "block" is heavily overloaded: a blockchain block ([`types/block.go`](https://github.com/filecoin-project/venus/tree/master/pkg/types/block.go)), 
+- The term "block" is heavily overloaded: a blockchain block ([`types/block.go`](https://github.com/filecoin-project/venus_lite/tree/master/pkg/types/block.go)), 
 but also content-id-addressed blocks in the block service. 
 Blockchain blocks are stored in block service blocks, but are not the same thing.
 
@@ -122,10 +122,10 @@ Internal │        │   Protocol   │    Protocol     │  Protocol   │  �
 
 ### History–the Node object
 
-The `Node` ([`node/`](https://github.com/filecoin-project/venus/tree/master/app/node)) object is the "server". 
+The `Node` ([`node/`](https://github.com/filecoin-project/venus_lite/tree/master/app/node)) object is the "server". 
 It contains much of the core protocol implementation and plumbing. 
 
-The [`api`](https://github.com/filecoin-project/venus/tree/master/app/client) package contains the API of all the 
+The [`api`](https://github.com/filecoin-project/venus_lite/tree/master/app/client) package contains the API of all the 
 core building blocks upon which the protocols are implemented. 
 The implementation of this API is the `Node`. 
 
@@ -159,7 +159,7 @@ which are transmitted to the daemon over the HTTP API.
 
 The commands package uses the [go-ipfs command library](https://github.com/ipfs/go-ipfs-cmds) and defines commands as both CLI and JSON entry points.
 
-[Commands](https://github.com/filecoin-project/venus/tree/master/cmd) implement user- and tool-facing functionality. 
+[Commands](https://github.com/filecoin-project/venus_lite/tree/master/cmd) implement user- and tool-facing functionality. 
 Command implementations should be very, very small. 
 With no logic of their own, they should call just into a single plumbing or porcelain method (never into core APIs directly). 
 The go-ipfs command library introduces some boilerplate which we can reduce with some effort in the future. 
@@ -178,7 +178,7 @@ It is expected that other implementations will match the behaviour of the Go act
 An ABI describes how inputs and outputs to the VM are encoded. 
 Future work will replace this implementation with a "real" VM.
 
-The [Actor](https://github.com/filecoin-project/venus/blob/master/pkg/types/actor.go) struct is the base implementation of actors, with fields common to all of them.
+The [Actor](https://github.com/filecoin-project/venus_lite/blob/master/pkg/types/actor.go) struct is the base implementation of actors, with fields common to all of them.
 
 - `Code` is a CID identifying the actor code, but since these actors are implemented in Go, is actually some fixed bytes acting as an identifier. 
 This identifier selects the kind of actor implementation when a message is sent to its address.
@@ -197,7 +197,7 @@ Method implementations typically load the state tree, perform some query or muta
 
 ### The state tree
 
-Blockchain state is represented in the [state tree](https://github.com/filecoin-project/venus/blob/master/pkg/state/tree/state.go), 
+Blockchain state is represented in the [state tree](https://github.com/filecoin-project/venus_lite/blob/master/pkg/state/tree/state.go), 
 which contains the state of all actors. 
 The state tree is a map of address to (encoded) actor structs. 
 The state tree interface exposes getting and setting actors at addresses, and iterating actors. 
@@ -231,19 +231,19 @@ These messages are executed locally against a read only version of the state tre
 They never leave the node, they are not broadcast. 
 The plumbing API exposes `MessageSend` and `MessageQuery` for these two cases. 
 
-The [processor](https://github.com/filecoin-project/venus/blob/master/pkg/consensus/processor.go) is the 
+The [processor](https://github.com/filecoin-project/venus_lite/blob/master/pkg/consensus/processor.go) is the 
 entry point for making and validating state transitions represented by the messages. 
 It is modelled Ethereum’s message processing system. 
 The processor manages the application of messages to the state tree from the prior block/s. 
 It loads the actor from which a message came, check signatures, 
 then loads the actor and state to which a message is addressed and passes the message to the VM for execution. 
 
-The [vm](https://github.com/filecoin-project/venus/blob/master/pkg/vm) package has the low level detail of calling actor methods. 
-A [VM context](https://github.com/filecoin-project/venus/blob/master/pkg/vm/context.go) defines the world visible from an actor implementation while executing.
+The [vm](https://github.com/filecoin-project/venus_lite/blob/master/pkg/vm) package has the low level detail of calling actor methods. 
+A [VM context](https://github.com/filecoin-project/venus_lite/blob/master/pkg/vm/context.go) defines the world visible from an actor implementation while executing.
 
 ### Consensus
 
-Venus uses a consensus algorithm called [expected consensus](https://github.com/filecoin-project/venus/blob/master/pkg/consensus/expected.go). 
+Venus uses a consensus algorithm called [expected consensus](https://github.com/filecoin-project/venus_lite/blob/master/pkg/consensus/expected.go). 
 Unlike proof-of-work schemes, expected-consensus is a proof-of-stake model, where probability of mining a block in each round (30 seconds) 
 is proportional to amount of storage a miner has committed to the network. 
 Each round, miners are elected through a probabilistic but private mechanism akin to rolling independent, private, but verifiable dice. 
@@ -252,7 +252,7 @@ If a miner is elected, they have the right to mine a block in that round.
 
 Given the probabilistic nature of mining new blocks, more than one block may be mined in any given round. 
 Hence, a new block might have more than one parent block. 
-The parents form a set, which we call a [tipset](https://github.com/filecoin-project/venus/blob/master/pkg/types/tipset.go). 
+The parents form a set, which we call a [tipset](https://github.com/filecoin-project/venus_lite/blob/master/pkg/types/tipset.go). 
 All the blocks in a tipset are at the same height and share the same parents. 
 Tipsets contain one or more blocks. 
 A null block count indicates the absence of any blocks mined in a previous round. 
@@ -362,22 +362,22 @@ We’re driving towards both wide unit test coverage, with integration tests to 
 Code generally uses simple manual dependency injection. 
 A component that takes a large number of deps at construction can have them factored into a struct.
 
-Some [node integration tests](https://github.com/filecoin-project/venus/blob/master/app/node/test/node.go) start one or more full nodes in-process. 
+Some [node integration tests](https://github.com/filecoin-project/venus_lite/blob/master/app/node/test/node.go) start one or more full nodes in-process. 
 This is useful for fine-grained control over the node being tested. 
 Setup for these tests is a bit difficult and we aim to make it much easier to instantiate and test full nodes in-process.
 
 Daemon tests are end-to-end integration tests that exercise the command interface of the `venus` binary. 
 These execute separate `venus` processes and drive them via the command line. 
-These tests are mostly under the [`commands`](https://github.com/filecoin-project/venus/blob/master/cmd) package, 
+These tests are mostly under the [`commands`](https://github.com/filecoin-project/venus_lite/blob/master/cmd) package, 
 
 The `functional-tests` directory contains some Go and Bash scripts which perform complicated multi-node tests on our continuous build. 
 These are not daemon tests, but run separately.
 
 Some packages have a `testing.go` file with helpers for setting up tests involving that package’s types. 
-The [`types/testing.go`](https://github.com/filecoin-project/venus/blob/master/pkg/types/testing.go) file has some more generally useful constructors. 
-There is also a top-level [`testhelpers`](https://github.com/filecoin-project/venus/blob/master/pkg/testhelpers) package with higher level helpers, often used by daemon tests.
+The [`types/testing.go`](https://github.com/filecoin-project/venus_lite/blob/master/pkg/types/testing.go) file has some more generally useful constructors. 
+There is also a top-level [`testhelpers`](https://github.com/filecoin-project/venus_lite/blob/master/pkg/testhelpers) package with higher level helpers, often used by daemon tests.
 
-We’re in process of creating the venus Automation and Systems Toolkit (FAST) [library](https://github.com/filecoin-project/venus/tree/master/tools/fast). 
+We’re in process of creating the venus Automation and Systems Toolkit (FAST) [library](https://github.com/filecoin-project/venus_lite/tree/master/tools/fast). 
 The goal of this is to unify duplicated code paths which bootstrap and drive `venus` daemons for daemon tests, functional tests, 
 and network deployment verification, providing a common library for filecoin automation in Go. 
 
@@ -422,11 +422,11 @@ Stats are exported for consumption via [Prometheus](https://prometheus.io/).
 #### Metrics
 
 venus can be configured to collect and export metrics to Prometheus via the `MetricsConfig`.
-The details of this can be found inside the [`config/`](https://pkg.go.dev/github.com/filecoin-project/venus/pkg/config#ObservabilityConfig) package.
+The details of this can be found inside the [`config/`](https://pkg.go.dev/github.com/filecoin-project/venus_lite/pkg/config#ObservabilityConfig) package.
 To view metrics from your filecoin node using the default configuration options set the `prometheusEnabled` value to `true`, start the filecoin daemon, then visit `localhost:9400/metrics` in your web-browser. 
 
 #### Tracing
 
 venus can be configured to collect and export traces to Jaeger via the `TraceConfig`.
-The details of this can be found inside the [`config/`](https://pkg.go.dev/github.com/filecoin-project/venus/pkg/config#ObservabilityConfig) package.
+The details of this can be found inside the [`config/`](https://pkg.go.dev/github.com/filecoin-project/venus_lite/pkg/config#ObservabilityConfig) package.
 To collect traces from your venus node using the default configuration options set the `jaegerTracingEnabled` value to `true`, start the venus daemon, then follow the [Jaeger Getting](https://www.jaegertracing.io/docs/1.11/getting-started/#all-in-one) started guide.

@@ -1,8 +1,8 @@
 package cmd_test
 
 import (
-	"github.com/filecoin-project/venus/pkg/testhelpers"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/testhelpers"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"

@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/util/ffiwrapper/impl"
+	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper/impl"
 	"io"
 	mrand "math/rand"
 
-	"github.com/filecoin-project/venus/pkg/fork"
+	"github.com/filecoin-project/venus_lite/pkg/fork"
 
 	"github.com/filecoin-project/go-address"
 	ds "github.com/ipfs/go-datastore"
@@ -34,17 +34,17 @@ import (
 	mh "github.com/multiformats/go-multihash"
 	xerrors "github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/genesis"
-	gfcstate "github.com/filecoin-project/venus/pkg/state"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/types"
-	blockstore "github.com/filecoin-project/venus/pkg/util/blockstoreutil"
-	"github.com/filecoin-project/venus/pkg/vm"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
-	"github.com/filecoin-project/venus/pkg/vmsupport"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/genesis"
+	gfcstate "github.com/filecoin-project/venus_lite/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	blockstore "github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/vm"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/vmsupport"
 )
 
 const InitialBaseFee = 100e6

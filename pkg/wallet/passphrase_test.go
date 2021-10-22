@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/scrypt"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestEncrypKeyAndDecryptKey(t *testing.T) {

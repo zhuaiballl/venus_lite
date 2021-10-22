@@ -26,8 +26,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 
-	"github.com/filecoin-project/venus/pkg/types/internal"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 
 	miner6 "github.com/filecoin-project/specs-actors/v6/actors/builtin/miner"
 	proof6 "github.com/filecoin-project/specs-actors/v6/actors/runtime/proof"

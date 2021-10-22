@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"github.com/filecoin-project/venus/pkg/types/internal"
+	"github.com/filecoin-project/venus_lite/pkg/types/internal"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )

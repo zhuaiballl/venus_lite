@@ -3,7 +3,7 @@ package constants
 import (
 	"os"
 
-	"github.com/filecoin-project/venus/build/flags"
+	"github.com/filecoin-project/venus_lite/build/flags"
 )
 
 // BuildVersion is the local build version, set by build system

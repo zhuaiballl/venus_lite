@@ -12,8 +12,8 @@ import (
 	xerrors "github.com/pkg/errors"
 
 	"github.com/filecoin-project/go-state-types/cbor"
-	"github.com/filecoin-project/venus/pkg/vm/gas"
-	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
+	"github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 )
 
 // ActorStorage hides the storage methods From the actors and turns the errors into runtime panics.

@@ -3,7 +3,7 @@ package bls
 import (
 	"crypto/rand"
 	"fmt"
-	crypto2 "github.com/filecoin-project/venus/pkg/crypto"
+	crypto2 "github.com/filecoin-project/venus_lite/pkg/crypto"
 	"io"
 
 	"github.com/filecoin-project/go-address"

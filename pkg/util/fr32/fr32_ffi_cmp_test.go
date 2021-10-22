@@ -12,8 +12,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/stretchr/testify/require"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/util/fr32"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/util/fr32"
 )
 
 func TestWriteTwoPcs(t *testing.T) {

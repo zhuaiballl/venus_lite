@@ -16,8 +16,8 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 	adt2 "github.com/filecoin-project/specs-actors/v2/actors/util/adt"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 )
 
 func TestDiffAdtArray(t *testing.T) {

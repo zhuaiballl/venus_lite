@@ -1,4 +1,4 @@
-module github.com/filecoin-project/venus
+module github.com/filecoin-project/venus_lite
 
 go 1.16
 
@@ -142,7 +142,7 @@ replace (
 	github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
 	github.com/filecoin-project/go-jsonrpc => github.com/ipfs-force-community/go-jsonrpc v0.1.4-0.20210731021807-68e5207079bc
 	github.com/filecoin-project/test-vectors => ./extern/test-vectors
-	github.com/filecoin-project/venus => ./
+	github.com/filecoin-project/venus_lite => ./
 	github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v1.39.0
 	github.com/ipfs/go-ipfs-cmds => github.com/ipfs-force-community/go-ipfs-cmds v0.6.1-0.20210521090123-4587df7fa0ab
 )

@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/app/node/test"
-	"github.com/filecoin-project/venus/pkg/config"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/app/node/test"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestConfigDaemon(t *testing.T) {

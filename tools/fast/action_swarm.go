@@ -3,14 +3,14 @@ package fast
 import (
 	"context"
 	"encoding/json"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	"github.com/ipfs/go-cid"
 	"io"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
 
-	"github.com/filecoin-project/venus/pkg/net"
+	"github.com/filecoin-project/venus_lite/pkg/net"
 )
 
 // ID runs the `id` command against the filecoin process

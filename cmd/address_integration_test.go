@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/specs-actors/v2/actors/builtin"
-	"github.com/filecoin-project/venus/app/node/test"
-	"github.com/filecoin-project/venus/cmd"
-	"github.com/filecoin-project/venus/fixtures/fortest"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/app/node/test"
+	"github.com/filecoin-project/venus_lite/cmd"
+	"github.com/filecoin-project/venus_lite/fixtures/fortest"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 )
 
 func TestAddressNewAndList(t *testing.T) {

@@ -3,15 +3,15 @@ package node
 import (
 	"context"
 
-	"github.com/filecoin-project/venus/pkg/repo/fskeystore"
+	"github.com/filecoin-project/venus_lite/pkg/repo/fskeystore"
 
 	cbor "github.com/ipfs/go-ipld-cbor"
 	acrypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/genesis"
-	"github.com/filecoin-project/venus/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
 )
 
 const defaultPeerKeyBits = 2048

@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/chainsync/exchange"
-	"github.com/filecoin-project/venus/pkg/discovery"
-	"github.com/filecoin-project/venus/pkg/market"
-	"github.com/filecoin-project/venus/pkg/paychmgr"
-	"github.com/filecoin-project/venus/pkg/state/tree"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm/dispatch"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chainsync/exchange"
+	"github.com/filecoin-project/venus_lite/pkg/discovery"
+	"github.com/filecoin-project/venus_lite/pkg/market"
+	"github.com/filecoin-project/venus_lite/pkg/paychmgr"
+	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm/dispatch"
 	gen "github.com/whyrusleeping/cbor-gen"
 )
 

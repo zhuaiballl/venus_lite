@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	cmds "github.com/ipfs/go-ipfs-cmds"
 	"github.com/stretchr/testify/assert"
 )

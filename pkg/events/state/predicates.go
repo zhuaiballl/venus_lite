@@ -8,14 +8,14 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	cbor "github.com/ipfs/go-ipld-cbor"
 
-	"github.com/filecoin-project/venus/app/submodule/chain"
+	"github.com/filecoin-project/venus_lite/app/submodule/chain"
 
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
-	init_ "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/market"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/miner"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
+	init_ "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
 )
 
 // UserData is the data returned from the DiffTipSetKeyFunc

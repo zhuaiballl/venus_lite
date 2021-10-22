@@ -4,14 +4,14 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/filecoin-project/venus/pkg/repo/fskeystore"
-	"github.com/filecoin-project/venus/pkg/util/blockstoreutil"
+	"github.com/filecoin-project/venus_lite/pkg/repo/fskeystore"
+	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 
 	"github.com/ipfs/go-datastore"
 	dss "github.com/ipfs/go-datastore/sync"
 
-	"github.com/filecoin-project/venus/app/paths"
-	"github.com/filecoin-project/venus/pkg/config"
+	"github.com/filecoin-project/venus_lite/app/paths"
+	"github.com/filecoin-project/venus_lite/pkg/config"
 )
 
 // MemRepo is an in-memory implementation of the repo interface.

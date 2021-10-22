@@ -16,15 +16,15 @@ import (
 
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
-	"github.com/filecoin-project/venus/pkg/messagepool/gasguess"
-	"github.com/filecoin-project/venus/pkg/repo"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
+	"github.com/filecoin-project/venus_lite/pkg/messagepool/gasguess"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 )
 
 func init() {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/filecoin-project/go-state-types/cbor"
 	rt5 "github.com/filecoin-project/specs-actors/v5/actors/runtime"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	"github.com/ipfs/go-cid"
 	cborUtil "github.com/ipfs/go-ipld-cbor"
 )

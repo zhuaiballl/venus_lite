@@ -17,9 +17,9 @@ import (
 	dag "github.com/ipfs/go-merkledag"
 	car "github.com/ipld/go-car"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/genesis"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/genesis"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 // CreateStorageMinerConfig holds configuration options used to create a storage

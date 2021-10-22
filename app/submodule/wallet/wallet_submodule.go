@@ -2,20 +2,20 @@ package wallet
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
-	chain2 "github.com/filecoin-project/venus/pkg/chain"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	chain2 "github.com/filecoin-project/venus_lite/pkg/chain"
 
 	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/app/submodule/chain"
-	"github.com/filecoin-project/venus/app/submodule/config"
-	"github.com/filecoin-project/venus/app/submodule/wallet/remotewallet"
-	pconfig "github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/state"
-	"github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/wallet"
+	"github.com/filecoin-project/venus_lite/app/submodule/chain"
+	"github.com/filecoin-project/venus_lite/app/submodule/config"
+	"github.com/filecoin-project/venus_lite/app/submodule/wallet/remotewallet"
+	pconfig "github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/wallet"
 )
 
 var log = logging.Logger("wallet")

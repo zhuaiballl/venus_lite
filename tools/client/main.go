@@ -12,10 +12,10 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 
-	"github.com/filecoin-project/venus/app/client"
-	"github.com/filecoin-project/venus/app/client/v0api"
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/app/client"
+	"github.com/filecoin-project/venus_lite/app/client/v0api"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 const Filecoin = "Filecoin"

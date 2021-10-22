@@ -2,7 +2,7 @@ package paychmgr
 
 import (
 	"context"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 	"sync"
 	"testing"
 	"time"
@@ -20,12 +20,12 @@ import (
 	init2 "github.com/filecoin-project/specs-actors/v2/actors/builtin/init"
 	tutils "github.com/filecoin-project/specs-actors/v6/support/testing"
 
-	_ "github.com/filecoin-project/venus/pkg/crypto/bls"
-	_ "github.com/filecoin-project/venus/pkg/crypto/secp"
-	"github.com/filecoin-project/venus/pkg/types"
-	lotusinit "github.com/filecoin-project/venus/pkg/types/specactors/builtin/init"
-	"github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych"
-	paychmock "github.com/filecoin-project/venus/pkg/types/specactors/builtin/paych/mock"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/bls"
+	_ "github.com/filecoin-project/venus_lite/pkg/crypto/secp"
+	"github.com/filecoin-project/venus_lite/pkg/types"
+	lotusinit "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych"
+	paychmock "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/paych/mock"
 )
 
 func testChannelResponse(t *testing.T, ch address.Address) types.MessageReceipt {

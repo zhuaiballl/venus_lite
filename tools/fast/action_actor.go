@@ -2,7 +2,7 @@ package fast
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/cmd"
+	"github.com/filecoin-project/venus_lite/cmd"
 	"io"
 )
 

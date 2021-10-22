@@ -9,8 +9,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	mockplugin "github.com/filecoin-project/venus/tools/iptb-plugins/filecoin/mock"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	mockplugin "github.com/filecoin-project/venus_lite/tools/iptb-plugins/filecoin/mock"
 )
 
 // must register all filecoin iptb plugins

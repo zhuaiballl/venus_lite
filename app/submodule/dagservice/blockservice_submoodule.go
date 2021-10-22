@@ -2,10 +2,10 @@ package dagservice
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/app/submodule/network"
-	"github.com/filecoin-project/venus/pkg/repo"
-	"github.com/filecoin-project/venus/pkg/util/dag"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/submodule/network"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	"github.com/filecoin-project/venus_lite/pkg/util/dag"
 	"github.com/ipfs/go-merkledag"
 
 	bserv "github.com/ipfs/go-blockservice"

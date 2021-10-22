@@ -4,13 +4,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/filecoin-project/venus/app/node"
+	"github.com/filecoin-project/venus_lite/app/node"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/filecoin-project/venus/pkg/config"
-	"github.com/filecoin-project/venus/pkg/repo"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/config"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 )
 
 func TestRuntime(t *testing.T) {

@@ -16,7 +16,7 @@ $> go get -u github.com/ipfs/iptb
 
 Next, ensure you have venus **installed**, IPTB requires that the venus bin be in your path:
 ```shell
-$> cd $GOPATH/src/github.com/filecoin-project/venus
+$> cd $GOPATH/src/github.com/filecoin-project/venus_lite
 $> go run build/main.go deps
 $> go run build/main.go install
 ```

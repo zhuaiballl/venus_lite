@@ -3,8 +3,8 @@ package chain
 import (
 	"bufio"
 	"context"
-	"github.com/filecoin-project/venus/app/client/apiface"
-	"github.com/filecoin-project/venus/app/submodule/apitypes"
+	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 	logging "github.com/ipfs/go-log/v2"
 	"io"
 	"time"
@@ -15,8 +15,8 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	acrypto "github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/network"
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 )

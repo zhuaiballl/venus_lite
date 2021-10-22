@@ -6,8 +6,8 @@ import (
 
 	"github.com/filecoin-project/go-state-types/exitcode"
 
-	types2 "github.com/filecoin-project/venus/pkg/types"
-	"github.com/filecoin-project/venus/pkg/vm/runtime"
+	types2 "github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/vm/runtime"
 )
 
 // GasTracker maintains the stateView of gas usage throughout the execution of a message.

@@ -8,11 +8,11 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/pkg/errors"
 
-	"github.com/filecoin-project/venus/pkg/constants"
-	"github.com/filecoin-project/venus/pkg/crypto"
-	"github.com/filecoin-project/venus/pkg/metrics"
-	"github.com/filecoin-project/venus/pkg/state"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	"github.com/filecoin-project/venus_lite/pkg/metrics"
+	"github.com/filecoin-project/venus_lite/pkg/state"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 var invReceiverUndefCt *metrics.Int64Counter
@@ -28,7 +28,7 @@ var invGasAboveBlockLimitCt *metrics.Int64Counter
 var msgMaxValue = types.NewAttoFILFromFIL(2e9)
 
 // These gas cost values must match those in vm/gas.
-// TODO: Look up gas costs from the same place the VM gets them, keyed by epoch. https://github.com/filecoin-project/venus/issues/3955
+// TODO: Look up gas costs from the same place the VM gets them, keyed by epoch. https://github.com/filecoin-project/venus_lite/issues/3955
 const onChainMessageBase = int64(0)
 const onChainMessagePerByte = int64(2)
 

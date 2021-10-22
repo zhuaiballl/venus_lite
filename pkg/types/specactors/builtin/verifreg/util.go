@@ -1,8 +1,8 @@
 package verifreg
 
 import (
-	specactors2 "github.com/filecoin-project/venus/pkg/types/specactors"
-	adt2 "github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	specactors2 "github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	adt2 "github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"

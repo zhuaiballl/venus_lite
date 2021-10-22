@@ -2,7 +2,7 @@ package consensus_test
 
 import (
 	"context"
-	"github.com/filecoin-project/venus/pkg/constants"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	"testing"
 
 	fbig "github.com/filecoin-project/go-state-types/big"
@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/crypto"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/crypto"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
 
-	"github.com/filecoin-project/venus/pkg/consensus"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/consensus"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 func TestGenValidTicketChain(t *testing.T) {

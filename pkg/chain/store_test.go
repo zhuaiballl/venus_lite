@@ -5,17 +5,17 @@ import (
 	"testing"
 
 	"github.com/filecoin-project/go-address"
-	emptycid "github.com/filecoin-project/venus/pkg/testhelpers/empty_cid"
-	"github.com/filecoin-project/venus/pkg/util/test"
+	emptycid "github.com/filecoin-project/venus_lite/pkg/testhelpers/empty_cid"
+	"github.com/filecoin-project/venus_lite/pkg/util/test"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/filecoin-project/venus/pkg/chain"
-	"github.com/filecoin-project/venus/pkg/repo"
-	tf "github.com/filecoin-project/venus/pkg/testhelpers/testflags"
-	"github.com/filecoin-project/venus/pkg/types"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/repo"
+	tf "github.com/filecoin-project/venus_lite/pkg/testhelpers/testflags"
+	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 type CborBlockStore struct {

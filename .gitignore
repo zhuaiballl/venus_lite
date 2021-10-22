@@ -1,7 +1,7 @@
 go-filecoin
-venus
-!cmd/venus
-!app/venus
+venus_lite
+!cmd/venus_lite
+!app/venus_lite
 devgen.car
 localnet.json
 *.log

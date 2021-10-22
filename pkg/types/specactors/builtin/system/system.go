@@ -1,8 +1,8 @@
 package system
 
 import (
-	"github.com/filecoin-project/venus/pkg/types/specactors"
-	"github.com/filecoin-project/venus/pkg/types/specactors/adt"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/adt"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
