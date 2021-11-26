@@ -3,16 +3,16 @@ package consensus
 import (
 	"context"
 	"github.com/filecoin-project/venus_lite/pkg/vm/vmcontext"
+	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	acrypto "github.com/filecoin-project/go-state-types/crypto"
-	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 //ChainRandomness define randomness method in filecoin
 type ChainRandomness interface {
-	ChainGetRandomnessFromBeacon(ctx context.Context, key types.TipSetKey, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
-	ChainGetRandomnessFromTickets(ctx context.Context, tsk types.TipSetKey, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
+	ChainGetRandomnessFromBeacon(ctx context.Context, key cid.Cid, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
+	ChainGetRandomnessFromTickets(ctx context.Context, tsk cid.Cid, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
 }
 
 var _ vmcontext.HeadChainRandomness = (*HeadRandomness)(nil)
@@ -20,10 +20,10 @@ var _ vmcontext.HeadChainRandomness = (*HeadRandomness)(nil)
 // A Chain randomness source with a fixed Head tipset key.
 type HeadRandomness struct {
 	chain ChainRandomness
-	head  types.TipSetKey
+	head  cid.Cid
 }
 
-func NewHeadRandomness(chain ChainRandomness, head types.TipSetKey) *HeadRandomness {
+func NewHeadRandomness(chain ChainRandomness, head cid.Cid) *HeadRandomness {
 	return &HeadRandomness{chain: chain, head: head}
 }
 

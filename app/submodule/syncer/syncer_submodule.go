@@ -199,8 +199,8 @@ func (syncer *SyncerSubmodule) handleIncommingBlocks(ctx context.Context, msg pu
 
 		syncer.NetworkModule.Host.ConnManager().TagPeer(sender, "new-block", 20)
 		log.Infof("fetch message success at %s", bm.Header.Cid())
-		ts, _ := types.NewTipSet(header)
-		chainInfo := types.NewChainInfo(source, sender, ts)
+		//ts, _ := types.NewTipSet(header)
+		chainInfo := types.NewChainInfo(source, sender, header)
 		err = syncer.ChainSyncManager.BlockProposer().SendGossipBlock(chainInfo)
 		if err != nil {
 			log.Errorf("failed to notify syncer of new block, block: %s", err)
@@ -210,7 +210,7 @@ func (syncer *SyncerSubmodule) handleIncommingBlocks(ctx context.Context, msg pu
 }
 
 // nolint
-func (syncer *SyncerSubmodule) loadLocalFullTipset(ctx context.Context, tsk types.TipSetKey) (*types.FullTipSet, error) {
+/*func (syncer *SyncerSubmodule) loadLocalFullTipset(ctx context.Context, tsk types.TipSetKey) (*types.FullTipSet, error) {
 	ts, err := syncer.ChainModule.ChainReader.GetTipSet(tsk)
 	if err != nil {
 		return nil, err
@@ -232,7 +232,7 @@ func (syncer *SyncerSubmodule) loadLocalFullTipset(ctx context.Context, tsk type
 	}
 
 	return fts, nil
-}
+}*/
 
 // Start starts the syncer submodule for a node.
 func (syncer *SyncerSubmodule) Start(ctx context.Context) error {

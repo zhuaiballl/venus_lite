@@ -76,7 +76,7 @@ type MigrationFunc func(
 	cache MigrationCache,
 	oldState cid.Cid,
 	height abi.ChainEpoch,
-	ts *types.TipSet,
+	ts *types.BlockHeader,
 ) (newState cid.Cid, err error)
 
 // PreMigrationFunc is a function run _before_ a network upgrade to pre-compute part of the network
@@ -86,7 +86,7 @@ type PreMigrationFunc func(
 	cache MigrationCache,
 	oldState cid.Cid,
 	height abi.ChainEpoch,
-	ts *types.TipSet,
+	ts *types.BlockHeader,
 ) error
 
 // PreMigration describes a pre-migration step to prepare for a network state upgrade. Pre-migrations
@@ -331,16 +331,17 @@ func (us UpgradeSchedule) Validate() error {
 }
 
 type chainReader interface {
-	GetHead() *types.TipSet
+	GetHead() *types.BlockHeader
+	GetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
 	GetTipSet(types.TipSetKey) (*types.TipSet, error)
-	GetTipSetByHeight(context.Context, *types.TipSet, abi.ChainEpoch, bool) (*types.TipSet, error)
-	GetTipSetState(context.Context, *types.TipSet) (vmstate.Tree, error)
+	GetTipSetByHeight(context.Context, *types.BlockHeader, abi.ChainEpoch, bool) (*types.BlockHeader, error)
+	GetTipSetState(context.Context, *types.BlockHeader) (vmstate.Tree, error)
 	GetGenesisBlock(context.Context) (*types.BlockHeader, error)
 	SubHeadChanges(context.Context) chan []*chain.HeadChange
 }
 
 type IFork interface {
-	HandleStateForks(ctx context.Context, root cid.Cid, height abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error)
+	HandleStateForks(ctx context.Context, root cid.Cid, height abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error)
 	GetNtwkVersion(ctx context.Context, height abi.ChainEpoch) network.Version
 	HasExpensiveFork(ctx context.Context, height abi.ChainEpoch) bool
 	GetForkUpgrade() *config.ForkUpgradeConfig
@@ -442,7 +443,7 @@ func (c *ChainFork) StateTree(ctx context.Context, st cid.Cid) (*vmstate.State, 
 	return vmstate.LoadState(ctx, c.ipldstore, st)
 }
 
-func (c *ChainFork) HandleStateForks(ctx context.Context, root cid.Cid, height abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) HandleStateForks(ctx context.Context, root cid.Cid, height abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	retCid := root
 	var err error
 	u := c.stateMigrations[height]
@@ -488,9 +489,9 @@ func (c *ChainFork) GetNtwkVersion(ctx context.Context, height abi.ChainEpoch) n
 	return c.latestVersion
 }
 
-func runPreMigration(ctx context.Context, fn PreMigrationFunc, cache *nv10.MemMigrationCache, ts *types.TipSet) {
-	height := ts.Height()
-	parent := ts.Blocks()[0].ParentStateRoot
+func runPreMigration(ctx context.Context, fn PreMigrationFunc, cache *nv10.MemMigrationCache, ts *types.BlockHeader) {
+	height := ts.Height
+	parent := ts.ParentStateRoot
 
 	startTime := time.Now()
 
@@ -517,7 +518,7 @@ func (c *ChainFork) preMigrationWorker(ctx context.Context) {
 	type op struct {
 		after    abi.ChainEpoch
 		notAfter abi.ChainEpoch
-		run      func(ts *types.TipSet)
+		run      func(ts *types.BlockHeader)
 	}
 
 	var wg sync.WaitGroup
@@ -545,7 +546,7 @@ func (c *ChainFork) preMigrationWorker(ctx context.Context) {
 				notAfter: notAfterEpoch,
 
 				// TODO: are these values correct?
-				run: func(ts *types.TipSet) {
+				run: func(ts *types.BlockHeader) {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
@@ -558,7 +559,7 @@ func (c *ChainFork) preMigrationWorker(ctx context.Context) {
 			schedule = append(schedule, op{
 				after:    stopEpoch,
 				notAfter: -1,
-				run:      func(ts *types.TipSet) { preCancel() },
+				run:      func(ts *types.BlockHeader) { preCancel() },
 			})
 		}
 	}
@@ -575,12 +576,12 @@ func (c *ChainFork) preMigrationWorker(ctx context.Context) {
 		for _, head := range change {
 			for len(schedule) > 0 {
 				op := &schedule[0]
-				if head.Val.Height() < op.after {
+				if head.Val.Height < op.after {
 					break
 				}
 
 				// If we haven't passed the pre-migration height...
-				if op.notAfter < 0 || head.Val.Height() < op.notAfter {
+				if op.notAfter < 0 || head.Val.Height < op.notAfter {
 					op.run(head.Val)
 				}
 				schedule = schedule[1:]
@@ -627,12 +628,12 @@ func doTransfer(tree vmstate.Tree, from, to address.Address, amt abi.TokenAmount
 func (c *ChainFork) ParentState(ts *types.TipSet) cid.Cid {
 	if ts == nil {
 		tts := c.cr.GetHead()
-		return tts.Blocks()[0].ParentStateRoot
+		return tts.ParentStateRoot
 	}
 	return ts.Blocks()[0].ParentStateRoot
 }
 
-func (c *ChainFork) UpgradeFaucetBurnRecovery(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeFaucetBurnRecovery(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	// Some initial parameters
 	FundsForMiners := types.NewAttoFILFromFIL(1_000_000)
 	LookbackEpoch := abi.ChainEpoch(32000)
@@ -662,7 +663,7 @@ func (c *ChainFork) UpgradeFaucetBurnRecovery(ctx context.Context, cache Migrati
 		return cid.Undef, xerrors.Errorf("failed to get tipset at lookback height: %v", err)
 	}
 
-	pts, err := c.cr.GetTipSet(lbts.Parents())
+	pts, err := c.cr.GetBlock(ctx, lbts.Parent)
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("failed to get tipset : %v", err)
 	}
@@ -1142,7 +1143,7 @@ func resetMultisigVesting0(ctx context.Context, store adt0.Store, tree *vmstate.
 	return nil
 }
 
-func (c *ChainFork) UpgradeIgnition(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeIgnition(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	store := adt.WrapStore(ctx, c.ipldstore)
 
 	if c.forkUpgrade.UpgradeLiftoffHeight <= epoch {
@@ -1197,7 +1198,7 @@ func (c *ChainFork) UpgradeIgnition(ctx context.Context, cache MigrationCache, r
 	return tree.Flush(ctx)
 }
 
-func (c *ChainFork) UpgradeRefuel(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeRefuel(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	store := adt.WrapStore(ctx, c.ipldstore)
 	tree, err := c.StateTree(ctx, root)
 	if err != nil {
@@ -1366,7 +1367,7 @@ func Copy(ctx context.Context, from, to blockstore.Blockstore, root cid.Cid) err
 	return nil
 }
 
-func (c *ChainFork) UpgradeActorsV2(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeActorsV2(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	buf := blockstoreutil.NewTieredBstore(c.bs, blockstoreutil.NewTemporarySync())
 	store := chain.ActorStore(ctx, buf)
 
@@ -1412,7 +1413,7 @@ func (c *ChainFork) UpgradeActorsV2(ctx context.Context, cache MigrationCache, r
 	return newRoot, nil
 }
 
-func (c *ChainFork) UpgradeLiftoff(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeLiftoff(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	tree, err := c.StateTree(ctx, root)
 	if err != nil {
 		return cid.Undef, xerrors.Errorf("getting state tree: %v", err)
@@ -1426,7 +1427,7 @@ func (c *ChainFork) UpgradeLiftoff(ctx context.Context, cache MigrationCache, ro
 	return tree.Flush(ctx)
 }
 
-func (c *ChainFork) UpgradeCalico(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeCalico(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	if c.networkType != constants.NetworkMainnet {
 		return root, nil
 	}
@@ -1517,7 +1518,7 @@ func terminateActor(ctx context.Context, tree *vmstate.State, addr address.Addre
 	return tree.SetActor(ctx, init_.Address, ia)
 }
 
-func (c *ChainFork) UpgradeActorsV3(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeActorsV3(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	// Use all the CPUs except 3.
 	workerCount := runtime.NumCPU() - 3
 	if workerCount <= 0 {
@@ -1555,7 +1556,7 @@ func (c *ChainFork) UpgradeActorsV3(ctx context.Context, cache MigrationCache, r
 	return newRoot, nil
 }
 
-func (c *ChainFork) PreUpgradeActorsV3(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) error {
+func (c *ChainFork) PreUpgradeActorsV3(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) error {
 	log.Info("PreUpgradeActorsV3 ......")
 	// Use half the CPUs for pre-migration, but leave at least 3.
 	workerCount := runtime.NumCPU()
@@ -1571,7 +1572,7 @@ func (c *ChainFork) PreUpgradeActorsV3(ctx context.Context, cache MigrationCache
 
 func (c *ChainFork) upgradeActorsV3Common(
 	ctx context.Context, cache MigrationCache,
-	root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet,
+	root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader,
 	config nv10.Config,
 ) (cid.Cid, error) {
 	buf := blockstoreutil.NewTieredBstore(c.bs, blockstoreutil.NewTemporarySync())
@@ -1620,7 +1621,7 @@ func (c *ChainFork) upgradeActorsV3Common(
 	return newRoot, nil
 }
 
-func (c *ChainFork) UpgradeActorsV4(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeActorsV4(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	// Use all the CPUs except 3.
 	workerCount := runtime.NumCPU() - 3
 	if workerCount <= 0 {
@@ -1642,7 +1643,7 @@ func (c *ChainFork) UpgradeActorsV4(ctx context.Context, cache MigrationCache, r
 	return newRoot, nil
 }
 
-func (c *ChainFork) PreUpgradeActorsV4(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) error {
+func (c *ChainFork) PreUpgradeActorsV4(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) error {
 	// Use half the CPUs for pre-migration, but leave at least 3.
 	workerCount := runtime.NumCPU()
 	if workerCount <= 4 {
@@ -1657,7 +1658,7 @@ func (c *ChainFork) PreUpgradeActorsV4(ctx context.Context, cache MigrationCache
 
 func (c *ChainFork) upgradeActorsV4Common(
 	ctx context.Context, cache MigrationCache,
-	root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet,
+	root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader,
 	config nv12.Config,
 ) (cid.Cid, error) {
 	buf := blockstoreutil.NewTieredBstore(c.bs, blockstoreutil.NewTemporarySync())
@@ -1706,7 +1707,7 @@ func (c *ChainFork) upgradeActorsV4Common(
 	return newRoot, nil
 }
 
-func (c *ChainFork) UpgradeActorsV5(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeActorsV5(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	// Use all the CPUs except 3.
 	workerCount := runtime.NumCPU() - 3
 	if workerCount <= 0 {
@@ -1728,7 +1729,7 @@ func (c *ChainFork) UpgradeActorsV5(ctx context.Context, cache MigrationCache, r
 	return newRoot, nil
 }
 
-func (c *ChainFork) PreUpgradeActorsV5(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) error {
+func (c *ChainFork) PreUpgradeActorsV5(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) error {
 	// Use half the CPUs for pre-migration, but leave at least 3.
 	workerCount := runtime.NumCPU()
 	if workerCount <= 4 {
@@ -1743,7 +1744,7 @@ func (c *ChainFork) PreUpgradeActorsV5(ctx context.Context, cache MigrationCache
 
 func (c *ChainFork) upgradeActorsV5Common(
 	ctx context.Context, cache MigrationCache,
-	root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet,
+	root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader,
 	config nv13.Config,
 ) (cid.Cid, error) {
 	buf := blockstoreutil.NewTieredBstore(c.bs, blockstoreutil.NewTemporarySync())
@@ -1792,7 +1793,7 @@ func (c *ChainFork) upgradeActorsV5Common(
 	return newRoot, nil
 }
 
-func (c *ChainFork) UpgradeActorsV6(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (c *ChainFork) UpgradeActorsV6(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	// Use all the CPUs except 3.
 	workerCount := runtime.NumCPU() - 3
 	if workerCount <= 0 {
@@ -1814,7 +1815,7 @@ func (c *ChainFork) UpgradeActorsV6(ctx context.Context, cache MigrationCache, r
 	return newRoot, nil
 }
 
-func (c *ChainFork) PreUpgradeActorsV6(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.TipSet) error {
+func (c *ChainFork) PreUpgradeActorsV6(ctx context.Context, cache MigrationCache, root cid.Cid, epoch abi.ChainEpoch, ts *types.BlockHeader) error {
 	// Use half the CPUs for pre-migration, but leave at least 3.
 	workerCount := runtime.NumCPU()
 	if workerCount <= 4 {
@@ -1831,7 +1832,7 @@ func (c *ChainFork) upgradeActorsV6Common(
 	ctx context.Context,
 	cache MigrationCache,
 	root cid.Cid, epoch abi.ChainEpoch,
-	ts *types.TipSet,
+	ts *types.BlockHeader,
 	config nv14.Config,
 ) (cid.Cid, error) {
 	buf := blockstoreutil.NewTieredBstore(c.bs, blockstoreutil.NewTemporarySync())

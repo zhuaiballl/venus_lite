@@ -9,6 +9,9 @@ import (
 	xerrors "github.com/pkg/errors"
 )
 
+//TODO: delete or modify all the structure and function using tipset
+//TODO: try to achieve the same in the fileDAG according to this file
+
 var DefaultChainIndexCacheSize = 32 << 10
 
 //ChainIndex tipset height index, used to getting tipset by height quickly
@@ -16,16 +19,28 @@ type ChainIndex struct { //nolint
 	skipCache *lru.ARCCache
 
 	loadTipSet loadTipSetFunc
+	loadBlock  loadBlockFunc
 
 	skipLength abi.ChainEpoch
 }
 
-//NewChainIndex return a new chain index with arc cache
+/*//NewChainIndex return a new chain index with arc cache
 func NewChainIndex(lts loadTipSetFunc) *ChainIndex {
 	sc, _ := lru.NewARC(DefaultChainIndexCacheSize)
 	return &ChainIndex{
 		skipCache:  sc,
+		loadTipSet: lts,    //in chain/store.go GetTipSet this function will be changed
+		skipLength: 20,
+	}
+}*/
+
+//NewChainIndex return a new chain index with arc cache
+func NewChainIndex(lts loadTipSetFunc, lb loadBlockFunc) *ChainIndex {
+	sc, _ := lru.NewARC(DefaultChainIndexCacheSize)
+	return &ChainIndex{
+		skipCache:  sc,
 		loadTipSet: lts,
+		loadBlock:  lb, //in chain/store.go GetTipSet this function will be changed
 		skipLength: 20,
 	}
 }
@@ -69,7 +84,8 @@ func (ci *ChainIndex) GetTipSetByHeight(_ context.Context, from *types.TipSet, t
 		} else if to > lbe.targetHeight {
 			return ci.walkBack(lbe.ts, to)
 		}
-
+		//else if to < lbe.targetHeight ,need next for to change the target such as from 43 to 3 ,get the target less than 40,
+		//so the height 40-20 is found,then the next for, the 20-0 is found
 		cur = lbe.target
 	}
 }
@@ -78,6 +94,8 @@ func (ci *ChainIndex) GetTipSetByHeight(_ context.Context, from *types.TipSet, t
 func (ci *ChainIndex) GetTipsetByHeightWithoutCache(from *types.TipSet, to abi.ChainEpoch) (*types.TipSet, error) {
 	return ci.walkBack(from, to)
 }
+
+//so,for simple,can we just use reading the database??
 
 func (ci *ChainIndex) fillCache(tsk types.TipSetKey) (*lbEntry, error) {
 	ts, err := ci.loadTipSet(tsk)

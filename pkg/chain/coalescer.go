@@ -29,12 +29,12 @@ type HeadChangeCoalescer struct {
 
 	eventq chan headChange
 
-	revert []*types.TipSet
-	apply  []*types.TipSet
+	revert *types.BlockHeader
+	apply  *types.BlockHeader
 }
 
 type headChange struct {
-	revert, apply []*types.TipSet
+	revert, apply *types.BlockHeader
 }
 
 // NewHeadChangeCoalescer creates a HeadChangeCoalescer.
@@ -54,7 +54,7 @@ func NewHeadChangeCoalescer(fn ReorgNotifee, minDelay, maxDelay, mergeInterval t
 
 // HeadChange is the ReorgNotifee callback for the stateful coalescer; it receives an incoming
 // head change and schedules dispatch of a coalesced head change in the background.
-func (c *HeadChangeCoalescer) HeadChange(revert, apply []*types.TipSet) error {
+func (c *HeadChangeCoalescer) HeadChange(revert, apply *types.BlockHeader) error {
 	select {
 	case c.eventq <- headChange{revert: revert, apply: apply}:
 		return nil

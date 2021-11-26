@@ -74,21 +74,23 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 	//
 	// Set default values on un-initialized fields
 	//
+	//TODO:no problems
 	if b.repo == nil {
 		b.repo = repo.NewInMemoryRepo()
 	}
-
+	//TODO:no problems
 	var err error
 	if b.journal == nil {
 		b.journal = journal.NewNoopJournal()
 	}
 
 	// fetch genesis block id
+	//TODO:no problems
 	b.genBlk, err = readGenesisCid(b.repo.ChainDatastore(), b.repo.Datastore())
 	if err != nil {
 		return nil, err
 	}
-
+	//TODO:no problems
 	if b.chainClock == nil {
 		// get the genesis block time from the chainsubmodule
 		b.chainClock = clock.NewChainClock(b.genBlk.Timestamp, b.blockTime)
@@ -101,26 +103,32 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 	}
 
 	//modules
+	//TODO:no problems
 	nd.circulatiingSupplyCalculator = chain2.NewCirculatingSupplyCalculator(b.repo.Datastore(), b.genBlk.ParentStateRoot, b.repo.Config().NetworkParams.ForkUpgradeParam)
 
 	//services
+	//TODO:no problems
 	nd.configModule = config2.NewConfigModule(b.repo)
 
+	//TODO:no problems
 	nd.blockstore, err = blockstore.NewBlockstoreSubmodule(ctx, (*builder)(b))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.blockstore")
 	}
 
+	//TODO:no problems (may be),because the change of block do not influence the construction of network
 	nd.network, err = network.NewNetworkSubmodule(ctx, (*builder)(b))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Network")
 	}
 
+	//TODO:no problems......???
 	nd.blockservice, err = dagservice.NewDagserviceSubmodule(ctx, (*builder)(b), nd.network)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.dagservice")
 	}
 
+	//TODO:chainfork and chainwaiter have some problems as I simplified the file store.go,fixed
 	nd.chain, err = chain.NewChainSubmodule(ctx, (*builder)(b), nd.circulatiingSupplyCalculator)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Chain")
@@ -129,34 +137,43 @@ func (b *Builder) build(ctx context.Context) (*Node, error) {
 	nd.chainClock = b.chainClock
 
 	// todo change builder interface to read config
+	//TODO:no problems
 	nd.discovery, err = discovery.NewDiscoverySubmodule(ctx, (*builder)(b), nd.network, nd.chain.ChainReader, nd.chain.MessageStore)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.discovery")
 	}
 
+	//TODO:no problems
 	nd.syncer, err = syncer.NewSyncerSubmodule(ctx, (*builder)(b), nd.blockstore, nd.network, nd.discovery, nd.chain, nd.circulatiingSupplyCalculator)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.Syncer")
 	}
 
+	//TODO:headsignviwe have some problems as I simplified the file store.go，now the problems are fixed
 	nd.wallet, err = wallet.NewWalletSubmodule(ctx, b.repo, nd.configModule, nd.chain, b.walletPassword)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.wallet")
 	}
 
+	//TODO:no problems
 	nd.mpool, err = mpool.NewMpoolSubmodule((*builder)(b), nd.network, nd.chain, nd.syncer, nd.wallet)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.mpool")
 	}
 
+	//TODO:no problems
 	nd.storageNetworking, err = storagenetworking.NewStorgeNetworkingSubmodule(ctx, nd.network)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build node.storageNetworking")
 	}
+
+	//TODO:no problems
 	nd.mining = mining.NewMiningModule((*builder)(b), nd.chain, nd.blockstore, nd.network, nd.syncer, *nd.wallet)
 
+	//TODO:no problems
 	nd.multiSig = multisig.NewMultiSigSubmodule(nd.chain.API(), nd.mpool.API(), nd.chain.ChainReader)
 
+	//TODO:some problems in this file as I change the tipset to blockheader,fixed
 	stmgr := statemanger.NewStateMangerAPI(nd.chain.ChainReader, nd.syncer.Consensus)
 	mgrps := &paychmgr.ManagerParams{
 		MPoolAPI:     nd.mpool.API(),

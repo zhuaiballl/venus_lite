@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	acrypto "github.com/filecoin-project/go-state-types/crypto"
+	"github.com/ipfs/go-cid"
 	"github.com/minio/blake2b-simd"
 	"github.com/pkg/errors"
 
@@ -21,7 +22,7 @@ type ChainSampler interface {
 }
 
 type tipsetLoader interface {
-	GetTipSet(types.TipSetKey) (*types.TipSet, error)
+	GetBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error)
 }
 
 // TicketMachine uses a VRF and VDF to generate deterministic, unpredictable

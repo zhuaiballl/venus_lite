@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"context"
+	"fmt"
 	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"github.com/filecoin-project/venus_lite/app/submodule/network"
 	"github.com/filecoin-project/venus_lite/pkg/repo"
@@ -37,7 +38,8 @@ type DiscoverySubmodule struct { //nolint
 	ExchangeClient         exchange.Client
 	host                   host.Host
 	PeerDiscoveryCallbacks []discovery.PeerDiscoveredCallback
-	TipSetLoader           discovery.GetTipSetFunc
+	//TipSetLoader           discovery.GetTipSetFunc
+	BlockHeaderLoader discovery.GetBlockFunc
 }
 
 type discoveryConfig interface {
@@ -87,7 +89,7 @@ func NewDiscoverySubmodule(ctx context.Context,
 		PeerDiscoveryCallbacks: []discovery.PeerDiscoveredCallback{func(msg *types.ChainInfo) {
 			bootStrapReady.Done()
 		}},
-		TipSetLoader: func() (*types.TipSet, error) {
+		BlockHeaderLoader: func() (*types.BlockHeader, error) {
 			return chainStore.GetHead(), nil
 		},
 	}, nil
@@ -97,17 +99,19 @@ func NewDiscoverySubmodule(ctx context.Context,
 // satisfies the configured security conditions.
 func (discovery *DiscoverySubmodule) Start(offline bool) error {
 	// Register peer tracker disconnect function with network.
+	//fmt.Println("in function discovery_submodule.start:")
 	discovery.PeerTracker.RegisterDisconnect(discovery.host.Network())
-
+	//fmt.Println("register disconnect succeed!")
 	// Start up 'hello' handshake service,recv HelloMessage ???
 	peerDiscoveredCallback := func(ci *types.ChainInfo) {
+		fmt.Println(ci.String())
 		for _, fn := range discovery.PeerDiscoveryCallbacks {
 			fn(ci)
 		}
 	}
 
 	// Register the "hello" protocol with the network
-	discovery.HelloHandler.Register(peerDiscoveredCallback, discovery.TipSetLoader)
+	discovery.HelloHandler.Register(peerDiscoveredCallback, discovery.BlockHeaderLoader)
 
 	//registre exchange protocol
 	discovery.ExchangeHandler.Register()

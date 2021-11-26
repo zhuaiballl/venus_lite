@@ -3,6 +3,7 @@ package node
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 
@@ -16,6 +17,7 @@ import (
 // readGenesisCid is a helper function that queries the provided datastore for
 // an entry with the genesisKey cid, returning if found.
 func readGenesisCid(chainDs datastore.Datastore, bs blockstoreutil.Blockstore) (types.BlockHeader, error) {
+	fmt.Println("the target key is: ", chain.GenesisKey.String())
 	bb, err := chainDs.Get(chain.GenesisKey)
 	if err != nil {
 		return types.BlockHeader{}, errors.Wrap(err, "failed to read genesisKey")

@@ -81,15 +81,15 @@ type StateViewer interface {
 }
 
 type chainReader interface {
-	GetTipSet(types.TipSetKey) (*types.TipSet, error)
-	GetHead() *types.TipSet
-	GetTipSetStateRoot(*types.TipSet) (cid.Cid, error)
-	GetTipSetReceiptsRoot(*types.TipSet) (cid.Cid, error)
+	GetBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error)
+	GetHead() *types.BlockHeader
+	GetTipSetStateRoot(*types.BlockHeader) (cid.Cid, error)
+	//GetTipSetReceiptsRoot(*types.TipSet) (cid.Cid, error)
 	GetGenesisBlock(context.Context) (*types.BlockHeader, error)
-	GetLatestBeaconEntry(*types.TipSet) (*types.BeaconEntry, error)
-	GetTipSetByHeight(context.Context, *types.TipSet, abi.ChainEpoch, bool) (*types.TipSet, error)
+	//GetLatestBeaconEntry(*types.TipSet) (*types.BeaconEntry, error)
+	//GetTipSetByHeight(context.Context, *types.TipSet, abi.ChainEpoch, bool) (*types.TipSet, error)
 	GetCirculatingSupplyDetailed(context.Context, abi.ChainEpoch, tree.Tree) (chain.CirculatingSupply, error)
-	GetLookbackTipSetForRound(ctx context.Context, ts *types.TipSet, round abi.ChainEpoch, version network.Version) (*types.TipSet, cid.Cid, error)
+	//GetLookbackTipSetForRound(ctx context.Context, ts *types.TipSet, round abi.ChainEpoch, version network.Version) (*types.TipSet, cid.Cid, error)
 }
 
 // Expected implements expected consensus.
@@ -168,7 +168,7 @@ func NewExpected(cs cbor.IpldStore,
 // It errors if the tipset was not mined according to the EC rules, or if any of the messages
 // in the tipset results in an error.
 func (c *Expected) RunStateTransition(ctx context.Context,
-	ts *types.TipSet,
+	ts *types.BlockHeader,
 	parentStateRoot cid.Cid,
 ) (cid.Cid, cid.Cid, error) {
 	ctx, span := trace.StartSpan(ctx, "Expected.RunStateTransition")
@@ -179,16 +179,16 @@ func (c *Expected) RunStateTransition(ctx context.Context,
 		return cid.Undef, cid.Undef, nil
 	}
 	// process tipset
-	var pts *types.TipSet
-	if ts.Height() == 0 {
+	var pts *types.BlockHeader
+	if ts.Height == 0 {
 		// NB: This is here because the process that executes blocks requires that the
 		// block miner reference a valid miner in the state tree. Unless we create some
 		// magical genesis miner, this won't work properly, so we short circuit here
 		// This avoids the question of 'who gets paid the genesis block reward'
-		return ts.Blocks()[0].ParentStateRoot, ts.Blocks()[0].ParentMessageReceipts, nil
-	} else if ts.Height() > 0 {
-		parent := ts.Parents()
-		pts, err = c.chainState.GetTipSet(parent)
+		return ts.ParentStateRoot, ts.ParentMessageReceipts, nil
+	} else if ts.Height > 0 {
+		parent := ts.Parent
+		pts, err = c.chainState.GetBlock(ctx, parent)
 		if err != nil {
 			return cid.Undef, cid.Undef, err
 		}
@@ -205,10 +205,10 @@ func (c *Expected) RunStateTransition(ctx context.Context,
 			return dertail.FilCirculating, nil
 		},
 		NtwkVersionGetter: c.fork.GetNtwkVersion,
-		Rnd:               NewHeadRandomness(c.rnd, ts.Key()),
-		BaseFee:           ts.At(0).ParentBaseFee,
+		Rnd:               NewHeadRandomness(c.rnd, ts.Cid()),
+		BaseFee:           ts.ParentBaseFee,
 		Fork:              c.fork,
-		Epoch:             ts.At(0).Height,
+		Epoch:             ts.Height,
 		GasPriceSchedule:  c.gasPirceSchedule,
 		Bsstore:           c.bstore,
 		PRoot:             parentStateRoot,

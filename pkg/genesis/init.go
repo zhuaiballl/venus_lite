@@ -40,7 +40,7 @@ func Init(ctx context.Context, r repo.Repo, bs bstore.Blockstore, cst cbor.IpldS
 	if err = chainStore.PutTipSetMetadata(ctx, genTsas); err != nil {
 		return nil, errors.Wrap(err, "failed to put genesis block in chain store")
 	}
-	if err = chainStore.SetHead(ctx, genTipSet); err != nil {
+	if err = chainStore.SetHead(ctx, genesis); err != nil {
 		return nil, errors.Wrap(err, "failed to persist genesis block in chain store")
 	}
 	// Persist the genesis cid to the repo.

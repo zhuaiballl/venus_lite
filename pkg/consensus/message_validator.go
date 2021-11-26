@@ -138,9 +138,9 @@ type MessageSignatureValidator struct {
 
 // signatureValidatorAPI allows the validator to access state needed for signature checking
 type signatureValidatorAPI interface {
-	GetHead() *types.TipSet
+	GetHead() *types.BlockHeader
 	GetTipSet(types.TipSetKey) (*types.TipSet, error)
-	AccountView(ts *types.TipSet) (state.AccountView, error)
+	AccountView(ts *types.BlockHeader) (state.AccountView, error)
 }
 
 func NewMessageSignatureValidator(api signatureValidatorAPI) *MessageSignatureValidator {

@@ -20,7 +20,7 @@ import (
 // BlockHeader is a newBlock in the blockchain.
 type BlockHeader struct {
 	// Miner is the address of the miner actor that mined this newBlock.
-	Miner address.Address `json:"miner"`
+	Miner address.Address `json:"miner, type:string"`
 
 	// Ticket is the ticket submitted with this newBlock.
 	Ticket Ticket `json:"ticket"`
@@ -44,7 +44,7 @@ type BlockHeader struct {
 	ParentWeight fbig.Int `json:"parentWeight"`
 
 	// Height is the chain height of this newBlock.
-	Height abi.ChainEpoch `json:"height"`
+	Height abi.ChainEpoch `json:"height, type:int64"`
 
 	// ParentStateRoot is the CID of the root of the state tree after application of the messages in the parent tipset
 	// to the parent tipset's state root.
@@ -55,19 +55,31 @@ type BlockHeader struct {
 	ParentMessageReceipts cid.Cid `json:"parentMessageReceipts,omitempty"`
 
 	// Messages is the set of messages included in this newBlock
-	Messages cid.Cid `json:"messages,omitempty"`
+	Messages cid.Cid `json:"messages,omitempty, type:string"`
 
 	// The aggregate signature of all BLS signed messages in the newBlock
-	BLSAggregate *crypto.Signature `json:"BLSAggregate"`
+	BLSAggregate *crypto.Signature `json:"BLSAggregate, type:struct[type:byte,data:[]byte]"`
 
 	// The timestamp, in seconds since the Unix epoch, at which this newBlock was created.
-	Timestamp uint64 `json:"timestamp"`
+	Timestamp uint64 `json:"timestamp, type:uint64"`
+
+	//In PoW, the parent of a block is PrveBlockHash. In FileDAG, a block can have more than one parents, so this is PrveBlockheadersHashes.
+	PrveBlockHeaderHashes []byte `json:"PrveBlockHeaderHashes, type:[]byte"`
+
+	//The hash, the result of PoW of this block
+	Hash []byte `json:"hash, the result of PoW, type:[]byte"`
+
+	//The nonce, the PoW of a miner
+	Nonce uint64 `json:"nonce,the PoW of a miner, type:uint64"`
+
+	//for simple,use cid to get the parent of a blockheader,as cid is used to get parent tipset in filecoin
+	Parent cid.Cid `json:"parent,type: string"`
 
 	// The signature of the miner's worker key over the newBlock
-	BlockSig *crypto.Signature `json:"blocksig"`
+	BlockSig *crypto.Signature `json:"blocksig, type:struct[type:byte,data:[]byte]"`
 
 	// ForkSignaling is extra data used by miners to communicate
-	ForkSignaling uint64 `json:"forkSignaling"`
+	ForkSignaling uint64 `json:"forkSignaling, type:uint64"`
 
 	//identical for all blocks in same tipset: the base fee after executing parent tipset
 	ParentBaseFee abi.TokenAmount `json:"parentBaseFee"`
@@ -81,6 +93,7 @@ type BlockHeader struct {
 
 // Cid returns the content id of this newBlock.
 func (b *BlockHeader) Cid() cid.Cid {
+	//fmt.Println("block.go Cid called")
 	if b.cachedCid == cid.Undef {
 		if b.cachedBytes == nil {
 			buf := new(bytes.Buffer)
@@ -96,8 +109,9 @@ func (b *BlockHeader) Cid() cid.Cid {
 		}
 
 		b.cachedCid = c
+		//fmt.Println("cachedCid undefined create it:",b.cachedCid.String())
 	}
-
+	//fmt.Println("cachedCid defined :",b.cachedCid.String())
 	return b.cachedCid
 }
 

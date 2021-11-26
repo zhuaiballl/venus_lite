@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/ipfs/go-cid"
 	"io/ioutil"
 	"math/rand"
 	"time"
@@ -73,7 +75,7 @@ func (c *client) doRequest(
 	// need them to check the integrity of the `CompactedMessages` in the response
 	// so the tipset blocks need to be provided by the caller.
 	tipsets []*types.TipSet,
-) (*validatedResponse, error) {
+) ([]*types.FullBlock, error) {
 	// Validate request.
 	if req.Length == 0 {
 		return nil, xerrors.Errorf("invalid request of length 0")
@@ -149,7 +151,7 @@ func (c *client) doRequest(
 // errors. Peer penalization should happen here then, before returning, so
 // we can apply the correct penalties depending on the cause of the error.
 // FIXME: Add the `peer` as argument once we implement penalties.
-func (c *client) processResponse(req *Request, res *Response, tipsets []*types.TipSet) (*validatedResponse, error) {
+func (c *client) processResponse(req *Request, res *Response, tipsets []*types.TipSet) ([]*types.FullBlock, error) {
 	err := res.statusToError()
 	if err != nil {
 		return nil, xerrors.Errorf("status error: %s", err)
@@ -176,82 +178,76 @@ func (c *client) processResponse(req *Request, res *Response, tipsets []*types.T
 		return nil, xerrors.Errorf("got less than requested without a proper status: %d", res.Status)
 	}
 
-	validRes := &validatedResponse{}
+	//validRes := &validatedResponse{}
 	if options.IncludeHeaders {
 		// Check for valid block sets and extract them into `TipSet`s.
-		validRes.tipsets = make([]*types.TipSet, resLength)
+		//validRes.tipsets = make([]*types.TipSet, resLength)
 		for i := 0; i < resLength; i++ {
 			if res.Chain[i] == nil {
-				return nil, xerrors.Errorf("response with nil tipset in pos %d", i)
+				return nil, xerrors.Errorf("response with nil full block in pos %d", 0)
 			}
-			for blockIdx, block := range res.Chain[i].Blocks {
-				if block == nil {
-					return nil, xerrors.Errorf("tipset with nil block in pos %d", blockIdx)
-					// FIXME: Maybe we should move this check to `NewTipSet`.
-				}
+			if res.Chain[i].Blocks == nil {
+				return nil, xerrors.Errorf("full block with nil blockheader in pos %d", i)
+				// FIXME: Maybe we should move this check to `NewTipSet`.
 			}
-
-			validRes.tipsets[i], err = types.NewTipSet(res.Chain[i].Blocks...)
-			if err != nil {
-				return nil, xerrors.Errorf("invalid tipset blocks at height (head - %d): %w", i, err)
-			}
-		}
-
-		// Check that the returned head matches the one requested
-		if !types.CidArrsEqual(validRes.tipsets[0].Key().Cids(), req.Head) {
-			return nil, xerrors.Errorf("returned chain head does not match request")
-		}
-
-		// Check `TipSet`s are connected (valid chain).
-		for i := 0; i < len(validRes.tipsets)-1; i++ {
-			if !validRes.tipsets[i].IsChildOf(validRes.tipsets[i+1]) {
-				return nil, fmt.Errorf("tipsets are not connected at height (head - %d)/(head - %d)",
-					i, i+1)
-				// FIXME: Maybe give more information here, like CIDs.
+			// Check that the returned head matches the one requested
+			if !(res.Chain[i].Blocks[0].Cid() == req.Head[i]) {
+				return nil, xerrors.Errorf("returned chain head does not match request")
 			}
 		}
 	}
 
 	if options.IncludeMessages {
-		validRes.messages = make([]*CompactedMessages, resLength)
+		//validRes.messages = make([]*CompactedMessages, resLength)
 		for i := 0; i < resLength; i++ {
 			if res.Chain[i].Messages == nil {
 				return nil, xerrors.Errorf("no messages included for tipset at height (head - %d)", i)
 			}
-			validRes.messages[i] = res.Chain[i].Messages
+			//validRes.messages[i] = res.Chain[i].Messages
 		}
 
-		if options.IncludeHeaders {
-			// If the headers were also returned check that the compression
-			// indexes are valid before `toFullTipSets()` is called by the
-			// consumer.
-			err := c.validateCompressedIndices(res.Chain)
+		//if options.IncludeHeaders {
+		// If the headers were also returned check that the compression
+		// indexes are valid before `toFullTipSets()` is called by the
+		// consumer.
+		//err := c.validateCompressedIndices(res.Chain)
+		/*
 			if err != nil {
 				return nil, err
+			}*/
+		//} else {
+		// If we didn't request the headers they should have been provided
+		// by the caller.
+		/*if len(tipsets) < len(res.Chain) {
+			return nil, xerrors.Errorf("not enought tipsets provided for message response validation, needed %d, have %d", len(res.Chain), len(tipsets))
+		}
+		chain := make([]*BSTipSet, 0, resLength)
+		for i, resChain := range res.Chain {
+			next := &BSTipSet{
+				Blocks:   tipsets[i].Blocks(),
+				Messages: resChain.Messages,
 			}
-		} else {
-			// If we didn't request the headers they should have been provided
-			// by the caller.
-			if len(tipsets) < len(res.Chain) {
-				return nil, xerrors.Errorf("not enought tipsets provided for message response validation, needed %d, have %d", len(res.Chain), len(tipsets))
-			}
-			chain := make([]*BSTipSet, 0, resLength)
-			for i, resChain := range res.Chain {
-				next := &BSTipSet{
-					Blocks:   tipsets[i].Blocks(),
-					Messages: resChain.Messages,
-				}
-				chain = append(chain, next)
-			}
+			chain = append(chain, next)
+		}
 
-			err := c.validateCompressedIndices(chain)
-			if err != nil {
-				return nil, err
-			}
+		err := c.validateCompressedIndices(chain)
+		if err != nil {
+			return nil, err
+		}*/
+	}
+	//FB:=types.FullBlock{res.Chain[0].Blocks[0],res.Chain[0].Messages.Bls,res.Chain[0].Messages.Secpk}
+	FB := make([]*types.FullBlock, resLength)
+	for i := 0; i < resLength; i++ {
+		if options.IncludeHeaders {
+			FB[i].Header = res.Chain[i].Blocks[0]
+		}
+		if options.IncludeMessages {
+			FB[i].BLSMessages = res.Chain[i].Messages.Bls
+			FB[i].SECPMessages = res.Chain[i].Messages.Secpk
 		}
 	}
 
-	return validRes, nil
+	return FB, nil
 }
 
 func (c *client) validateCompressedIndices(chain []*BSTipSet) error {
@@ -290,37 +286,12 @@ func (c *client) validateCompressedIndices(chain []*BSTipSet) error {
 	return nil
 }
 
-// GetBlocks implements Client.GetBlocks(). Refer to the godocs there.
-func (c *client) GetBlocks(ctx context.Context, tsk types.TipSetKey, count int) ([]*types.TipSet, error) {
-	ctx, span := trace.StartSpan(ctx, "bsync.GetBlocks")
-	defer span.End()
-	if span.IsRecordingEvents() {
-		span.AddAttributes(
-			trace.StringAttribute("tipset", fmt.Sprint(tsk.Cids())),
-			trace.Int64Attribute("count", int64(count)),
-		)
-	}
-
-	req := &Request{
-		Head:    tsk.Cids(),
-		Length:  uint64(count),
-		Options: Headers,
-	}
-
-	validRes, err := c.doRequest(ctx, req, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return validRes.tipsets, nil
-}
-
 // GetFullTipSet implements Client.GetFullTipSet(). Refer to the godocs there.
-func (c *client) GetFullTipSet(ctx context.Context, peers []peer.ID, tsk types.TipSetKey) (*types.FullTipSet, error) {
+func (c *client) GetFullBlock(ctx context.Context, peers []peer.ID, blockID cid.Cid) (*types.FullBlock, error) {
 	// TODO: round robin through these peers on error
-
+	requestHeader := []cid.Cid{blockID}
 	req := &Request{
-		Head:    tsk.Cids(),
+		Head:    requestHeader,
 		Length:  1,
 		Options: Headers | Messages,
 	}
@@ -329,38 +300,70 @@ func (c *client) GetFullTipSet(ctx context.Context, peers []peer.ID, tsk types.T
 	if err != nil {
 		return nil, err
 	}
-
-	return validRes.toFullTipSets()[0], nil
+	FB := types.FullBlock{validRes[0].Header, validRes[0].BLSMessages, validRes[0].SECPMessages}
+	return &FB, nil
 	// If `doRequest` didn't fail we are guaranteed to have at least
 	//  *one* tipset here, so it's safe to index directly.
 }
 
-// GetChainMessages implements Client.GetChainMessages(). Refer to the godocs there.
-func (c *client) GetChainMessages(ctx context.Context, tipsets []*types.TipSet) ([]*CompactedMessages, error) {
-	head := tipsets[0]
-	length := uint64(len(tipsets))
+// GetBlocks implements Client.GetBlocks(). Refer to the godocs there.
+func (c *client) GetBlocks(ctx context.Context, blockID cid.Cid, count int) ([]*types.BlockHeader, error) {
+	ctx, span := trace.StartSpan(ctx, "bsync.GetBlocks")
+	defer span.End()
+	if span.IsRecordingEvents() {
+		span.AddAttributes(
+			trace.StringAttribute("blockID", fmt.Sprint(blockID.String())),
+			trace.Int64Attribute("count", int64(count)),
+		)
+	}
+	requestHead := []cid.Cid{blockID}
+	req := &Request{
+		Head:    requestHead,
+		Length:  uint64(count),
+		Options: Headers,
+	}
+
+	validRes, err := c.doRequest(ctx, req, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	BlockHeaders := make([]*types.BlockHeader, len(validRes))
+	for i, fb := range validRes {
+		BlockHeaders[i] = fb.Header
+	}
+	return BlockHeaders, nil
+}
+
+// GetBlocks implements Client.GetBlocks(). Refer to the godocs there.
+func (c *client) GetChainMessages(ctx context.Context, headers []*types.BlockHeader) ([]*types.FullBlock, error) {
+	chain.Reverse(headers)
+	//e.g.blockheader[]={height:4,height:5,height:6}
+	requesthead := []cid.Cid{headers[0].Cid()}
+	length := uint64(len(headers))
 
 	ctx, span := trace.StartSpan(ctx, "GetChainMessages")
 	if span.IsRecordingEvents() {
 		span.AddAttributes(
-			trace.StringAttribute("tipset", fmt.Sprint(head.Key().Cids())),
+			trace.StringAttribute("blockheader", fmt.Sprint(headers[0].Cid().String())),
 			trace.Int64Attribute("count", int64(length)),
 		)
 	}
 	defer span.End()
 
 	req := &Request{
-		Head:    head.Key().Cids(),
+		Head:    requesthead,
 		Length:  length,
 		Options: Messages,
 	}
 
-	validRes, err := c.doRequest(ctx, req, nil, tipsets)
+	vaildRes, err := c.doRequest(ctx, req, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	return validRes.messages, nil
+	for i, _ := range headers {
+		vaildRes[i].Header = headers[i]
+	}
+	return vaildRes, nil
 }
 
 // Send a request to a peer. Write request in the stream and read the

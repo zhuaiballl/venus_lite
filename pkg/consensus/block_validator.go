@@ -138,7 +138,7 @@ func (bv *BlockValidator) ValidateFullBlock(ctx context.Context, blk *types.Bloc
 	return err
 }
 
-func (bv *BlockValidator) validateBlock(ctx context.Context, blk *types.BlockHeader) error {
+/*func (bv *BlockValidator) validateBlock(ctx context.Context, blk *types.BlockHeader) error {
 	parent, err := bv.chainState.GetTipSet(blk.Parents)
 	if err != nil {
 		return xerrors.Errorf("load parent tipset failed %w", err)
@@ -311,6 +311,16 @@ func (bv *BlockValidator) validateBlock(ctx context.Context, blk *types.BlockHea
 				len(es), strings.Join(points, "\n\t"))
 		}
 		return mulErr
+	}
+	return nil
+}*/
+
+//TODO: check every data in the block is vaild
+func (bv *BlockValidator) validateBlock(ctx context.Context, blk *types.BlockHeader) error {
+	pow := NewProofOfWork(blk)
+	err := pow.validate()
+	if err == false {
+		return xerrors.Errorf("block has wrong proof of work!")
 	}
 	return nil
 }

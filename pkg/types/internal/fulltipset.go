@@ -52,6 +52,7 @@ func (fts *FullTipSet) TipSet() *TipSet {
 	return ts
 }
 
+/*
 // Reverse reverses the order of the slice `chain`.
 func ReverseFullBlock(chain []*FullTipSet) {
 	// https://github.com/golang/go/wiki/SliceTricks#reversing
@@ -59,7 +60,7 @@ func ReverseFullBlock(chain []*FullTipSet) {
 		opp := len(chain) - 1 - i
 		chain[i], chain[opp] = chain[opp], chain[i]
 	}
-}
+}*/
 
 // Reverse reverses the order of the slice `chain`.
 func ReverseTipSet(chain []*TipSet) {

@@ -30,7 +30,7 @@ import (
 // MessageProvider is an interface exposing the load methods of the
 // MessageStore.
 type MessageProvider interface {
-	LoadTipSetMessage(ctx context.Context, ts *types.TipSet) ([]types.BlockMessagesInfo, error)
+	LoadTipSetMessage(ctx context.Context, ts *types.BlockHeader) ([]types.BlockMessagesInfo, error)
 	LoadMetaMessages(context.Context, cid.Cid) ([]*types.SignedMessage, []*types.UnsignedMessage, error)
 	ReadMsgMetaCids(ctx context.Context, mmc cid.Cid) ([]cid.Cid, []cid.Cid, error)
 	LoadUnsignedMessagesFromCids(blsCids []cid.Cid) ([]*types.UnsignedMessage, error)
@@ -228,7 +228,7 @@ func (ms *MessageStore) StoreMessages(ctx context.Context, secpMessages []*types
 }
 
 //load message from tipset NOTICE skip message with the same nonce
-func (ms *MessageStore) LoadTipSetMesssages(ctx context.Context, ts *types.TipSet) ([][]*types.SignedMessage, [][]*types.UnsignedMessage, error) {
+func (ms *MessageStore) LoadTipSetMessages(ctx context.Context, ts *types.TipSet) ([][]*types.SignedMessage, [][]*types.UnsignedMessage, error) {
 	var secpMessages [][]*types.SignedMessage
 	var blsMessages [][]*types.UnsignedMessage
 
@@ -387,19 +387,19 @@ func (ms *MessageStore) LoadTxMeta(ctx context.Context, c cid.Cid) (types.TxMeta
 }
 
 //LoadTipSetMessage message from tipset NOTICE skip message with the same nonce
-func (ms *MessageStore) LoadTipSetMessage(ctx context.Context, ts *types.TipSet) ([]types.BlockMessagesInfo, error) {
+func (ms *MessageStore) LoadTipSetMessage(ctx context.Context, ts *types.BlockHeader) ([]types.BlockMessagesInfo, error) {
 	//gather message
 	applied := make(map[address.Address]uint64)
 
 	vms := cbor.NewCborStore(ms.bs)
-	st, err := tree.LoadState(ctx, vms, ts.Blocks()[0].ParentStateRoot)
+	st, err := tree.LoadState(ctx, vms, ts.ParentStateRoot)
 	if err != nil {
 		return nil, errors.Errorf("failed to load state tree")
 	}
 
 	selectMsg := func(m *types.UnsignedMessage) (bool, error) {
 		var sender address.Address
-		if ts.Height() >= ms.fkCfg.UpgradeHyperdriveHeight {
+		if ts.Height >= ms.fkCfg.UpgradeHyperdriveHeight {
 			sender, err = st.LookupID(m.From)
 			if err != nil {
 				return false, err
@@ -423,46 +423,46 @@ func (ms *MessageStore) LoadTipSetMessage(ctx context.Context, ts *types.TipSet)
 	}
 
 	var blockMsg []types.BlockMessagesInfo
-	for i := 0; i < ts.Len(); i++ {
-		blk := ts.At(i)
-		secpMsgs, blsMsgs, err := ms.LoadMetaMessages(ctx, blk.Messages) // Corresponding to  MessagesForBlock of lotus
-		if err != nil {
-			return nil, errors.Wrapf(err, "syncing tip %s failed loading message list %s for block %s", ts.Key(), blk.Messages, blk.Cid())
-		}
-
-		sBlsMsg := make([]types.ChainMsg, 0, len(blsMsgs))
-		sSecpMsg := make([]types.ChainMsg, 0, len(secpMsgs))
-		for _, msg := range blsMsgs {
-			b, err := selectMsg(msg)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to decide whether to select message for block")
-			}
-			if b {
-				sBlsMsg = append(sBlsMsg, msg)
-			}
-		}
-		for _, msg := range secpMsgs {
-			b, err := selectMsg(&msg.Message)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to decide whether to select message for block")
-			}
-			if b {
-				sSecpMsg = append(sSecpMsg, msg)
-			}
-		}
-
-		blockMsg = append(blockMsg, types.BlockMessagesInfo{
-			BlsMessages:   sBlsMsg,
-			SecpkMessages: sSecpMsg,
-			Block:         blk,
-		})
+	//for i := 0; i < ts.Len(); i++ {
+	//blk := ts.At(i)
+	secpMsgs, blsMsgs, err := ms.LoadMetaMessages(ctx, ts.Messages) // Corresponding to  MessagesForBlock of lotus
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed loading message %s for block %s", ts.Messages, ts.Cid())
 	}
+
+	sBlsMsg := make([]types.ChainMsg, 0, len(blsMsgs))
+	sSecpMsg := make([]types.ChainMsg, 0, len(secpMsgs))
+	for _, msg := range blsMsgs {
+		b, err := selectMsg(msg)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decide whether to select message for block")
+		}
+		if b {
+			sBlsMsg = append(sBlsMsg, msg)
+		}
+	}
+	for _, msg := range secpMsgs {
+		b, err := selectMsg(&msg.Message)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decide whether to select message for block")
+		}
+		if b {
+			sSecpMsg = append(sSecpMsg, msg)
+		}
+	}
+
+	blockMsg = append(blockMsg, types.BlockMessagesInfo{
+		BlsMessages:   sBlsMsg,
+		SecpkMessages: sSecpMsg,
+		Block:         ts,
+	})
+	//}
 
 	return blockMsg, nil
 }
 
 //MessagesForTipset return of message ( bls message + secp message) of tipset
-func (ms *MessageStore) MessagesForTipset(ts *types.TipSet) ([]types.ChainMsg, error) {
+func (ms *MessageStore) MessagesForTipset(ts *types.BlockHeader) ([]types.ChainMsg, error) {
 	bmsgs, err := ms.LoadTipSetMessage(context.TODO(), ts)
 	if err != nil {
 		return nil, err
@@ -538,9 +538,9 @@ func ComputeNextBaseFee(baseFee abi.TokenAmount, gasLimitUsed int64, noOfBlocks 
 }
 
 //todo move to a more suitable position
-func (ms *MessageStore) ComputeBaseFee(ctx context.Context, ts *types.TipSet, upgrade *config.ForkUpgradeConfig) (abi.TokenAmount, error) {
+func (ms *MessageStore) ComputeBaseFee(ctx context.Context, ts *types.BlockHeader, upgrade *config.ForkUpgradeConfig) (abi.TokenAmount, error) {
 	zero := abi.NewTokenAmount(0)
-	baseHeight := ts.Height()
+	baseHeight := ts.Height
 
 	if upgrade.UpgradeBreezeHeight >= 0 && baseHeight > upgrade.UpgradeBreezeHeight && baseHeight < upgrade.UpgradeBreezeHeight+upgrade.BreezeGasTampingDuration {
 		return abi.NewTokenAmount(100), nil
@@ -551,31 +551,31 @@ func (ms *MessageStore) ComputeBaseFee(ctx context.Context, ts *types.TipSet, up
 
 	seen := make(map[cid.Cid]struct{})
 
-	for _, b := range ts.Blocks() {
-		secpMsgs, blsMsgs, err := ms.LoadMetaMessages(ctx, b.Messages)
-		if err != nil {
-			return zero, errors.Wrapf(err, "error getting messages for: %s", b.Cid())
-		}
-
-		for _, m := range blsMsgs {
-			c := m.Cid()
-			if _, ok := seen[c]; !ok {
-				totalLimit += m.GasLimit
-				seen[c] = struct{}{}
-			}
-		}
-		for _, m := range secpMsgs {
-			c := m.Cid()
-			if _, ok := seen[c]; !ok {
-				totalLimit += m.Message.GasLimit
-				seen[c] = struct{}{}
-			}
-		}
+	//for _, b := range ts.Blocks() {
+	secpMsgs, blsMsgs, err := ms.LoadMetaMessages(ctx, ts.Messages)
+	if err != nil {
+		return zero, errors.Wrapf(err, "error getting messages for: %s", ts.Cid())
 	}
 
-	parentBaseFee := ts.Blocks()[0].ParentBaseFee
+	for _, m := range blsMsgs {
+		c := m.Cid()
+		if _, ok := seen[c]; !ok {
+			totalLimit += m.GasLimit
+			seen[c] = struct{}{}
+		}
+	}
+	for _, m := range secpMsgs {
+		c := m.Cid()
+		if _, ok := seen[c]; !ok {
+			totalLimit += m.Message.GasLimit
+			seen[c] = struct{}{}
+		}
+	}
+	//}
 
-	return ComputeNextBaseFee(parentBaseFee, totalLimit, len(ts.Blocks()), baseHeight, upgrade), nil
+	parentBaseFee := ts.ParentBaseFee
+
+	return ComputeNextBaseFee(parentBaseFee, totalLimit, 1, baseHeight, upgrade), nil
 }
 
 func GetReceiptRoot(receipts []types.MessageReceipt) (cid.Cid, error) {

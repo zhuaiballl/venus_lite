@@ -25,11 +25,11 @@ import (
 type Protocol interface {
 	// RunStateTransition returns the state root CID resulting from applying the input ts to the
 	// prior `stateID`.  It returns an error if the transition is invalid.
-	RunStateTransition(ctx context.Context, ts *types.TipSet, parentStateRoot cid.Cid) (root cid.Cid, receipt cid.Cid, err error)
+	RunStateTransition(ctx context.Context, ts *types.BlockHeader, parentStateRoot cid.Cid) (root cid.Cid, receipt cid.Cid, err error)
 
 	// Call compute message result of specify message
-	Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.TipSet) (*vm.Ret, error)
+	Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.BlockHeader) (*vm.Ret, error)
 
 	// CallWithGas compute message result of specify message base on messages in mpool
-	CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *types.TipSet) (*vm.Ret, error)
+	CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *types.BlockHeader) (*vm.Ret, error)
 }

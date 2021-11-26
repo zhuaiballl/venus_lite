@@ -24,18 +24,19 @@ var (
 )
 
 type Provider interface {
-	ChainHead() (*types.TipSet, error)
+	ChainHead() (*types.BlockHeader, error)
 	ChainTipSet(types.TipSetKey) (*types.TipSet, error)
-	SubscribeHeadChanges(func(rev, app []*types.TipSet) error) *types.TipSet
-	PutMessage(m types.ChainMsg) (cid.Cid, error)
+	SubscribeHeadChanges(func(rev, app *types.BlockHeader) error) *types.BlockHeader
+	PutMessage(types.ChainMsg) (cid.Cid, error)
 	PubSubPublish(string, []byte) error
-	GetActorAfter(address.Address, *types.TipSet) (*types.Actor, error)
-	StateAccountKeyAtFinality(context.Context, address.Address, *types.TipSet) (address.Address, error)
-	StateAccountKey(context.Context, address.Address, *types.TipSet) (address.Address, error)
-	MessagesForBlock(block2 *types.BlockHeader) ([]*types.UnsignedMessage, []*types.SignedMessage, error)
-	MessagesForTipset(*types.TipSet) ([]types.ChainMsg, error)
-	LoadTipSet(tsk types.TipSetKey) (*types.TipSet, error)
-	ChainComputeBaseFee(ctx context.Context, ts *types.TipSet) (tbig.Int, error)
+	GetActorAfter(address.Address, *types.BlockHeader) (*types.Actor, error)
+	StateAccountKeyAtFinality(context.Context, address.Address, *types.BlockHeader) (address.Address, error)
+	StateAccountKey(context.Context, address.Address, *types.BlockHeader) (address.Address, error)
+	MessagesForBlock(*types.BlockHeader) ([]*types.UnsignedMessage, []*types.SignedMessage, error)
+	MessagesForTipset(*types.BlockHeader) ([]types.ChainMsg, error)
+	LoadTipSet(types.TipSetKey) (*types.TipSet, error)
+	LoadBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
+	ChainComputeBaseFee(context.Context, *types.BlockHeader) (tbig.Int, error)
 	IsLite() bool
 }
 
@@ -67,7 +68,7 @@ func (mpp *mpoolProvider) IsLite() bool {
 	return mpp.lite != nil
 }
 
-func (mpp *mpoolProvider) SubscribeHeadChanges(cb func(rev, app []*types.TipSet) error) *types.TipSet {
+func (mpp *mpoolProvider) SubscribeHeadChanges(cb func(rev, app *types.BlockHeader) error) *types.BlockHeader {
 	mpp.sm.SubscribeHeadChanges(
 		chain.WrapHeadChangeCoalescer(
 			cb,
@@ -78,7 +79,7 @@ func (mpp *mpoolProvider) SubscribeHeadChanges(cb func(rev, app []*types.TipSet)
 	return mpp.sm.GetHead()
 }
 
-func (mpp *mpoolProvider) ChainHead() (*types.TipSet, error) {
+func (mpp *mpoolProvider) ChainHead() (*types.BlockHeader, error) {
 	return mpp.sm.GetHead(), nil
 }
 
@@ -94,8 +95,8 @@ func (mpp *mpoolProvider) PubSubPublish(k string, v []byte) error {
 	return mpp.ps.Publish(k, v) //nolint
 }
 
-func (mpp *mpoolProvider) GetActorAfter(addr address.Address, ts *types.TipSet) (*types.Actor, error) {
-	if mpp.IsLite() {
+func (mpp *mpoolProvider) GetActorAfter(addr address.Address, bh *types.BlockHeader) (*types.Actor, error) {
+	/*if mpp.IsLite() {
 		n, err := mpp.lite.GetNonce(context.TODO(), addr, ts.Key())
 		if err != nil {
 			return nil, xerrors.Errorf("getting nonce over lite: %w", err)
@@ -106,9 +107,9 @@ func (mpp *mpoolProvider) GetActorAfter(addr address.Address, ts *types.TipSet) 
 		}
 		a.Nonce = n
 		return a, nil
-	}
+	}*/
 
-	st, err := mpp.sm.GetTipSetState(context.TODO(), ts)
+	st, err := mpp.sm.GetTipSetState(context.TODO(), bh)
 	if err != nil {
 		return nil, xerrors.Errorf("computing tipset state for GetActor: %v", err)
 	}
@@ -121,10 +122,10 @@ func (mpp *mpoolProvider) GetActorAfter(addr address.Address, ts *types.TipSet) 
 	return act, err
 }
 
-func (mpp *mpoolProvider) StateAccountKeyAtFinality(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error) {
+func (mpp *mpoolProvider) StateAccountKeyAtFinality(ctx context.Context, addr address.Address, ts *types.BlockHeader) (address.Address, error) {
 	var err error
-	if ts.Height() > policy.ChainFinality {
-		ts, err = mpp.sm.GetTipSetByHeight(ctx, ts, ts.Height()-policy.ChainFinality, true)
+	if ts.Height > policy.ChainFinality {
+		ts, err = mpp.sm.GetTipSetByHeight(ctx, ts, ts.Height-policy.ChainFinality, true)
 		if err != nil {
 			return address.Undef, xerrors.Errorf("failed to load lookback tipset: %w", err)
 		}
@@ -132,7 +133,7 @@ func (mpp *mpoolProvider) StateAccountKeyAtFinality(ctx context.Context, addr ad
 
 	root, err := mpp.sm.GetTipSetStateRoot(ts)
 	if err != nil {
-		return address.Undef, xerrors.Errorf("failed to get state root for %s", ts.Key().String())
+		return address.Undef, xerrors.Errorf("failed to get state root for %s", ts.Cid().String())
 	}
 
 	store := mpp.sm.ReadOnlyStateStore()
@@ -141,10 +142,10 @@ func (mpp *mpoolProvider) StateAccountKeyAtFinality(ctx context.Context, addr ad
 	return viewer.ResolveToKeyAddr(ctx, addr)
 }
 
-func (mpp *mpoolProvider) StateAccountKey(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error) {
+func (mpp *mpoolProvider) StateAccountKey(ctx context.Context, addr address.Address, ts *types.BlockHeader) (address.Address, error) {
 	root, err := mpp.sm.GetTipSetStateRoot(ts)
 	if err != nil {
-		return address.Undef, xerrors.Errorf("failed to get state root for %s", ts.Key().String())
+		return address.Undef, xerrors.Errorf("failed to get state root for %s", ts.Cid().String())
 	}
 
 	store := mpp.sm.ReadOnlyStateStore()
@@ -158,15 +159,21 @@ func (mpp *mpoolProvider) MessagesForBlock(h *types.BlockHeader) ([]*types.Unsig
 	return blsMsgs, secpMsgs, err
 }
 
-func (mpp *mpoolProvider) MessagesForTipset(ts *types.TipSet) ([]types.ChainMsg, error) {
+func (mpp *mpoolProvider) MessagesForTipset(ts *types.BlockHeader) ([]types.ChainMsg, error) {
 	return mpp.cms.MessagesForTipset(ts)
 }
 
+//not implement in store.go
 func (mpp *mpoolProvider) LoadTipSet(tsk types.TipSetKey) (*types.TipSet, error) {
 	return mpp.sm.GetTipSet(tsk)
 }
 
-func (mpp *mpoolProvider) ChainComputeBaseFee(ctx context.Context, ts *types.TipSet) (tbig.Int, error) {
+func (mpp *mpoolProvider) LoadBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error) {
+	return mpp.sm.GetBlock(ctx, blockID)
+}
+
+//TODO:what does the function want to do?
+func (mpp *mpoolProvider) ChainComputeBaseFee(ctx context.Context, ts *types.BlockHeader) (tbig.Int, error) {
 	baseFee, err := mpp.cms.ComputeBaseFee(ctx, ts, mpp.config.ForkUpgradeParam)
 	if err != nil {
 		return tbig.NewInt(0), xerrors.Errorf("computing base fee at %s: %v", ts, err)

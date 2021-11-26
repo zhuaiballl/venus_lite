@@ -14,8 +14,8 @@ type AccountView interface {
 }
 
 type tipSignerView interface {
-	GetHead() *types.TipSet
-	ResolveToKeyAddr(ctx context.Context, ts *types.TipSet, address address.Address) (address.Address, error)
+	GetHead() *types.BlockHeader
+	ResolveToKeyAddr(ctx context.Context, ts *types.BlockHeader, address address.Address) (address.Address, error)
 }
 
 // Signer looks up non-signing addresses before signing

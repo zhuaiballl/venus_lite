@@ -3,6 +3,7 @@ package messagepool
 import (
 	"context"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"math"
 	"math/rand"
 	"sort"
@@ -48,8 +49,8 @@ func NewGasPriceCache() *GasPriceCache {
 	}
 }
 
-func (g *GasPriceCache) GetTSGasStats(provider Provider, ts *types.TipSet) ([]GasMeta, error) {
-	i, has := g.c.Get(ts.Key())
+func (g *GasPriceCache) GetTSGasStats(provider Provider, ts *types.BlockHeader) ([]GasMeta, error) {
+	i, has := g.c.Get(ts.Cid())
 	if has {
 		return i.([]GasMeta), nil
 	}
@@ -66,7 +67,7 @@ func (g *GasPriceCache) GetTSGasStats(provider Provider, ts *types.TipSet) ([]Ga
 		})
 	}
 
-	g.c.Add(ts.Key(), prices)
+	g.c.Add(ts.Cid(), prices)
 
 	return prices, nil
 }
@@ -82,7 +83,7 @@ func (mp *MessagePool) GasEstimateFeeCap(
 		return types.NewGasFeeCap(0), err
 	}
 
-	parentBaseFee := ts.Blocks()[0].ParentBaseFee
+	parentBaseFee := ts.ParentBaseFee
 	increaseFactor := math.Pow(1.+1./float64(constants.BaseFeeMaxChangeDenom), float64(maxqueueblks))
 
 	feeInFuture := types.BigMul(parentBaseFee, types.NewInt(uint64(increaseFactor*(1<<8))))
@@ -142,16 +143,16 @@ func (mp *MessagePool) GasEstimateGasPremium(
 	}
 
 	for i := uint64(0); i < nblocksincl*2; i++ {
-		if ts.Height() == 0 {
+		if ts.Height == 0 {
 			break // genesis
 		}
 
-		pts, err := mp.api.LoadTipSet(ts.Parents())
+		pts, err := mp.api.LoadBlock(ctx, ts.Parent)
 		if err != nil {
 			return types.BigInt{}, err
 		}
 
-		blocks += len(pts.Blocks())
+		blocks += 1
 		meta, err := cache.GetTSGasStats(mp.api, pts)
 		if err != nil {
 			return types.BigInt{}, err
@@ -183,15 +184,15 @@ func (mp *MessagePool) GasEstimateGasPremium(
 	return premium, nil
 }
 
-func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.UnsignedMessage, tsk types.TipSetKey) (int64, error) {
-	if tsk.IsEmpty() {
+func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.UnsignedMessage, tsk cid.Cid) (int64, error) {
+	if tsk == cid.Undef {
 		ts, err := mp.api.ChainHead()
 		if err != nil {
 			return -1, xerrors.Errorf("getting head: %v", err)
 		}
-		tsk = ts.Key()
+		tsk = ts.Cid()
 	}
-	currTS, err := mp.api.ChainTipSet(tsk)
+	currBH, err := mp.api.LoadBlock(ctx, tsk)
 	if err != nil {
 		return -1, xerrors.Errorf("getting tipset: %w", err)
 	}
@@ -201,7 +202,7 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 	msg.GasFeeCap = big.NewInt(int64(constants.MinimumBaseFee) + 1)
 	msg.GasPremium = big.NewInt(1)
 
-	fromA, err := mp.api.StateAccountKey(ctx, msgIn.From, currTS)
+	fromA, err := mp.api.StateAccountKey(ctx, msgIn.From, currBH)
 	if err != nil {
 		return -1, xerrors.Errorf("getting key address: %w", err)
 	}
@@ -218,7 +219,7 @@ func (mp *MessagePool) GasEstimateGasLimit(ctx context.Context, msgIn *types.Uns
 	return mp.evalMessageGasLimit(ctx, msgIn, priorMsgs, ts)
 }
 
-func (mp *MessagePool) evalMessageGasLimit(ctx context.Context, msgIn *types.Message, priorMsgs []types.ChainMsg, ts *types.TipSet) (int64, error) {
+func (mp *MessagePool) evalMessageGasLimit(ctx context.Context, msgIn *types.Message, priorMsgs []types.ChainMsg, ts *types.BlockHeader) (int64, error) {
 	msg := *msgIn
 	msg.GasLimit = constants.BlockGasLimit
 	msg.GasFeeCap = big.NewInt(int64(constants.MinimumBaseFee) + 1)
@@ -233,7 +234,7 @@ func (mp *MessagePool) evalMessageGasLimit(ctx context.Context, msgIn *types.Mes
 			break
 		}
 
-		ts, err = mp.api.ChainTipSet(ts.Parents())
+		ts, err = mp.api.LoadBlock(ctx, ts.Parent)
 		if err != nil {
 			return -1, xerrors.Errorf("getting parent tipset: %v", err)
 		}

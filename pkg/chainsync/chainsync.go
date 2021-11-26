@@ -33,7 +33,7 @@ type Manager struct {
 	dispatcher *dispatcher.Dispatcher
 }
 
-// NewManager creates a new chain sync manager.
+//Manager creates a new chain sync manager.
 func NewManager(fv syncer.StateProcessor,
 	hv *consensus.BlockValidator,
 	cs syncer.ChainSelector,

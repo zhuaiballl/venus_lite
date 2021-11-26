@@ -26,11 +26,12 @@ type MsgLookup struct {
 
 // Abstracts over a store of blockchain state.
 type waiterChainReader interface {
-	GetHead() *types.TipSet
+	GetHead() *types.BlockHeader
 	GetTipSet(types.TipSetKey) (*types.TipSet, error)
-	LookupID(context.Context, *types.TipSet, address.Address) (address.Address, error)
-	GetActorAt(context.Context, *types.TipSet, address.Address) (*types.Actor, error)
-	GetTipSetReceiptsRoot(*types.TipSet) (cid.Cid, error)
+	GetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
+	LookupID(context.Context, *types.BlockHeader, address.Address) (address.Address, error)
+	GetActorAt(context.Context, *types.BlockHeader, address.Address) (*types.Actor, error)
+	GetTipSetReceiptsRoot(*types.BlockHeader) (cid.Cid, error)
 	SubHeadChanges(context.Context) chan []*HeadChange
 }
 
@@ -64,7 +65,7 @@ func NewWaiter(chainStore waiterChainReader, messages MessageProvider, bs bstore
 }
 
 // Find searches the blockchain history (but doesn't wait).
-func (w *Waiter) Find(ctx context.Context, msg types.ChainMsg, lookback abi.ChainEpoch, ts *types.TipSet, allowReplaced bool) (*ChainMessage, bool, error) {
+func (w *Waiter) Find(ctx context.Context, msg types.ChainMsg, lookback abi.ChainEpoch, ts *types.BlockHeader, allowReplaced bool) (*ChainMessage, bool, error) {
 	if ts == nil {
 		ts = w.chainReader.GetHead()
 	}
@@ -107,8 +108,8 @@ func (w *Waiter) Wait(ctx context.Context, msg types.ChainMsg, confidence uint64
 // block and receipt, when it is found. Returns the found message/block or nil
 // if now block with the given CID exists in the chain.
 // The lookback parameter is the number of tipsets in the past this method will check before giving up.
-func (w *Waiter) findMessage(ctx context.Context, from *types.TipSet, m types.ChainMsg, lookback abi.ChainEpoch, allowReplaced bool) (*ChainMessage, bool, error) {
-	limitHeight := from.Height() - lookback
+func (w *Waiter) findMessage(ctx context.Context, from *types.BlockHeader, m types.ChainMsg, lookback abi.ChainEpoch, allowReplaced bool) (*ChainMessage, bool, error) {
+	limitHeight := from.Height - lookback
 	noLimit := lookback == constants.LookbackNoLimit
 
 	cur := from
@@ -127,7 +128,7 @@ func (w *Waiter) findMessage(ctx context.Context, from *types.TipSet, m types.Ch
 	for {
 		// If we've reached the genesis block, or we've reached the limit of
 		// how far back to look
-		if cur.Height() == 0 || !noLimit && cur.Height() <= limitHeight {
+		if cur.Height == 0 || !noLimit && cur.Height <= limitHeight {
 			// it ain't here!
 			return nil, false, nil
 		}
@@ -144,12 +145,12 @@ func (w *Waiter) findMessage(ctx context.Context, from *types.TipSet, m types.Ch
 			return nil, false, nil
 		}
 
-		pts, err := w.chainReader.GetTipSet(cur.Parents())
+		pts, err := w.chainReader.GetBlock(ctx, cur.Parent)
 		if err != nil {
 			return nil, false, xerrors.Errorf("failed to load tipset during msg wait searchback: %w", err)
 		}
 
-		grandParent, err := w.chainReader.GetTipSet(pts.Parents())
+		grandParent, err := w.chainReader.GetBlock(ctx, pts.Parent)
 		if err != nil {
 			return nil, false, xerrors.Errorf("failed to load tipset during msg wait searchback: %w", err)
 		}
@@ -220,9 +221,9 @@ func (w *Waiter) waitForMessage(ctx context.Context, ch <-chan []*HeadChange, ms
 		}
 	}()
 
-	var candidateTS *types.TipSet
+	var candidateTS *types.BlockHeader
 	var candidateRcp *ChainMessage
-	heightOfHead := currentHead.Height()
+	heightOfHead := currentHead.Height
 	reverts := map[string]bool{}
 
 	for {
@@ -239,10 +240,10 @@ func (w *Waiter) waitForMessage(ctx context.Context, ch <-chan []*HeadChange, ms
 						candidateRcp = nil
 					}
 					if backSearchWait != nil {
-						reverts[val.Val.Key().String()] = true
+						reverts[val.Val.Cid().String()] = true
 					}
 				case HCApply:
-					if candidateTS != nil && val.Val.Height() >= candidateTS.Height()+abi.ChainEpoch(confidence) {
+					if candidateTS != nil && val.Val.Height >= candidateTS.Height+abi.ChainEpoch(confidence) {
 						return candidateRcp, true, nil
 					}
 
@@ -257,7 +258,7 @@ func (w *Waiter) waitForMessage(ctx context.Context, ch <-chan []*HeadChange, ms
 						candidateTS = val.Val
 						candidateRcp = r
 					}
-					heightOfHead = val.Val.Height()
+					heightOfHead = val.Val.Height
 				}
 			}
 		case <-backSearchWait:
@@ -269,7 +270,8 @@ func (w *Waiter) waitForMessage(ctx context.Context, ch <-chan []*HeadChange, ms
 				}
 
 				// wait for confidence interval
-				candidateTS = backRcp.TS
+				//TODO:??????? I need to know the meaning of chainmessage's values
+				candidateTS = backRcp.Block
 				candidateRcp = backRcp
 			}
 			reverts = nil
@@ -280,13 +282,13 @@ func (w *Waiter) waitForMessage(ctx context.Context, ch <-chan []*HeadChange, ms
 	}
 }
 
-func (w *Waiter) receiptForTipset(ctx context.Context, ts *types.TipSet, msg types.ChainMsg, allowReplaced bool) (*ChainMessage, bool, error) {
+func (w *Waiter) receiptForTipset(ctx context.Context, ts *types.BlockHeader, msg types.ChainMsg, allowReplaced bool) (*ChainMessage, bool, error) {
 	// The genesis block
-	if ts.Height() == 0 {
+	if ts.Height == 0 {
 		return nil, false, nil
 	}
 
-	pts, err := w.chainReader.GetTipSet(ts.Parents())
+	pts, err := w.chainReader.GetBlock(ctx, ts.Parent)
 	if err != nil {
 		return nil, false, err
 	}
@@ -312,7 +314,7 @@ func (w *Waiter) receiptForTipset(ctx context.Context, ts *types.TipSet, msg typ
 						if err != nil {
 							return nil, false, errors.Wrap(err, "error retrieving receipt from tipset")
 						}
-						return &ChainMessage{ts, msg, bms.Block, recpt}, true, nil
+						return &ChainMessage{nil, msg, bms.Block, recpt}, true, nil
 					}
 
 					// this should be that message
@@ -326,7 +328,7 @@ func (w *Waiter) receiptForTipset(ctx context.Context, ts *types.TipSet, msg typ
 	return nil, false, nil
 }
 
-func (w *Waiter) receiptByIndex(ctx context.Context, ts *types.TipSet, targetCid cid.Cid, blockMsgs []types.BlockMessagesInfo) (*types.MessageReceipt, error) {
+func (w *Waiter) receiptByIndex(ctx context.Context, ts *types.BlockHeader, targetCid cid.Cid, blockMsgs []types.BlockMessagesInfo) (*types.MessageReceipt, error) {
 	receiptCid, err := w.chainReader.GetTipSetReceiptsRoot(ts)
 	if err != nil {
 		return nil, err

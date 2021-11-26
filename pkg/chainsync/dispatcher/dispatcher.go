@@ -24,7 +24,7 @@ const DefaultWorkQueueSize = 15
 
 // dispatchSyncer is the interface of the logic syncing incoming chains
 type dispatchSyncer interface {
-	Head() *types2.TipSet
+	Head() *types2.BlockHeader
 	HandleNewTipSet(context.Context, *types.Target) error
 }
 
@@ -143,7 +143,7 @@ func (d *Dispatcher) processIncoming(ctx context.Context) {
 			// Sort new targets by putting on work queue.
 			if d.workTracker.Add(target) {
 				log.Infof("received height %d Blocks: %d  %s current work len %d  incoming len: %d",
-					target.Head.Height(), target.Head.Len(), target.Head.Key(), d.workTracker.Len(), len(d.incoming))
+					target.Head.Height, 1, target.Head.Cid().String(), d.workTracker.Len(), len(d.incoming))
 			}
 		}
 	}
@@ -197,7 +197,7 @@ func (d *Dispatcher) syncWorker(ctx context.Context) {
 							err := d.syncer.HandleNewTipSet(ctx, syncTarget)
 							d.workTracker.Remove(syncTarget)
 							if err != nil {
-								log.Infof("failed sync of %v at %d  %s", syncTarget.Head.Key(), syncTarget.Head.Height(), err)
+								log.Infof("failed sync of %v at %d  %s", syncTarget.Head.Cid().String(), syncTarget.Head.Height, err)
 							}
 							d.registeredCb(syncTarget, err)
 							d.conCurrent.Add(-1)

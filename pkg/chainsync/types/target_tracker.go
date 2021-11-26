@@ -9,7 +9,6 @@ import (
 
 	fbig "github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/venus_lite/pkg/types"
-	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 )
 
@@ -19,8 +18,8 @@ var log = logging.Logger("chainsync.target")
 // syncing job against given inputs.
 type Target struct {
 	State   SyncStateStage
-	Base    *types.TipSet
-	Current *types.TipSet
+	Base    *types.BlockHeader
+	Current *types.BlockHeader
 	Start   time.Time
 	End     time.Time
 	Err     error
@@ -30,17 +29,17 @@ type Target struct {
 //IsNeighbor the target t is neighbor or not
 //the same height, the same weight, the same parent is neighbor target. the can merge
 func (target *Target) IsNeighbor(t *Target) bool {
-	if target.Head.Height() != t.Head.Height() {
+	if target.Head.Height != t.Head.Height {
 		return false
 	}
 
-	weightIn := t.Head.ParentWeight()
-	targetWeight := target.Head.ParentWeight()
+	weightIn := t.Head.ParentWeight
+	targetWeight := target.Head.ParentWeight
 	if !targetWeight.Equals(weightIn) {
 		return false
 	}
 
-	if !target.Head.Parents().Equals(t.Head.Parents()) {
+	if !target.Head.Parent.Equals(t.Head.Parent) {
 		return false
 	}
 	return true
@@ -48,16 +47,16 @@ func (target *Target) IsNeighbor(t *Target) bool {
 
 //HasChild is another is a child target of current.
 //if the t' blocks in a subset of current target ,the t is a child of current target
-func (target *Target) HasChild(t *Target) bool {
+/*func (target *Target) HasChild(t *Target) bool {
 	return target.Head.Key().ContainsAll(t.Head.Key())
-}
+}*/
 
 //Key return identity of target . key=weight+height+parent
 func (target *Target) Key() string {
-	weightIn := target.Head.ParentWeight()
+	weightIn := target.Head.ParentWeight
 	return weightIn.String() +
-		strconv.FormatInt(int64(target.Head.Height()), 10) +
-		target.Head.Parents().String()
+		strconv.FormatInt(int64(target.Head.Height), 10) +
+		target.Head.Parent.String()
 
 }
 
@@ -107,7 +106,7 @@ func (tq *TargetTracker) Add(t *Target) bool {
 	tq.lk.Lock()
 	defer tq.lk.Unlock()
 	//do not sync less weight
-	if t.Head.At(0).ParentWeight.LessThan(tq.lowWeight) {
+	if t.Head.ParentWeight.LessThan(tq.lowWeight) {
 		return false
 	}
 
@@ -120,16 +119,16 @@ func (tq *TargetTracker) Add(t *Target) bool {
 	var replaceIndex int
 	var replaceTarget *Target
 	//try to replace a idea child target
-	for i := len(tq.q) - 1; i > -1; i-- {
+	/*for i := len(tq.q) - 1; i > -1; i-- {
 		if t.HasChild(tq.q[i]) && tq.q[i].State == StageIdle {
 			replaceTarget = tq.q[i]
 			replaceIndex = i
 			log.Infof("%s replace a child target at %d", t.Head.String(), i)
 			break
 		}
-	}
+	}*/
 
-	if replaceTarget == nil {
+	/*if replaceTarget == nil {
 		//replace a least weight idle
 		for i := len(tq.q) - 1; i > -1; i-- {
 			if tq.q[i].State == StageIdle {
@@ -138,6 +137,14 @@ func (tq *TargetTracker) Add(t *Target) bool {
 				log.Infof("%s replace a idle target at %d", t.Head.String(), i)
 				break
 			}
+		}
+	}*/
+	for i := len(tq.q) - 1; i > -1; i-- {
+		if tq.q[i].State == StageIdle {
+			replaceTarget = tq.q[i]
+			replaceIndex = i
+			log.Infof("%s replace a idle target at %d", t.Head.String(), i)
+			break
 		}
 	}
 
@@ -158,7 +165,7 @@ func (tq *TargetTracker) Add(t *Target) bool {
 	tq.targetSet[t.ChainInfo.Head.String()] = t
 	sortTarget(tq.q)
 	//update lowweight
-	tq.lowWeight = tq.q[len(tq.q)-1].Head.At(0).ParentWeight
+	tq.lowWeight = tq.q[len(tq.q)-1].Head.ParentWeight
 	return true
 }
 
@@ -168,7 +175,7 @@ func sortTarget(target TargetBuckets) {
 	groups := make(map[string][]*Target)
 	var keys []fbig.Int
 	for _, t := range target {
-		weight := t.Head.ParentWeight()
+		weight := t.Head.ParentWeight
 		if _, ok := groups[weight.String()]; ok {
 			groups[weight.String()] = append(groups[weight.String()], t)
 		} else {
@@ -181,15 +188,15 @@ func sortTarget(target TargetBuckets) {
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i].GreaterThan(keys[j])
 	})
-
-	//sort target in group by block number
-	for _, key := range keys {
-		inGroup := groups[key.String()]
-		sort.Slice(inGroup, func(i, j int) bool {
-			return inGroup[i].Head.Len() > inGroup[j].Head.Len()
-		})
-	}
-
+	/*
+		//sort target in group by block number
+		for _, key := range keys {
+			inGroup := groups[key.String()]
+			sort.Slice(inGroup, func(i, j int) bool {
+				return inGroup[i].Head.Len() > inGroup[j].Head.Len()
+			})
+		}
+	*/
 	//update target buckets
 	count := 0
 	for _, key := range keys {
@@ -207,16 +214,15 @@ func (tq *TargetTracker) widen(t *Target) (*Target, bool) {
 		return t, true
 	}
 
-	var err error
 	// If already in queue drop quickly
 	for _, val := range tq.targetSet {
-		if val.Head.Key().ContainsAll(t.Head.Key()) {
+		if val.Head.Cid().Equals(t.Head.Cid()) {
 			return nil, false
 		}
 	}
 
 	//collect neighbor block in queue include history to get block with same weight and height
-	sameWeightBlks := make(map[cid.Cid]*types.BlockHeader)
+	/*sameWeightBlks := make(map[cid.Cid]*types.BlockHeader)
 	for _, val := range tq.targetSet {
 		if val.IsNeighbor(t) {
 			for _, blk := range val.Head.Blocks() {
@@ -244,7 +250,7 @@ func (tq *TargetTracker) widen(t *Target) (*Target, bool) {
 	if err != nil {
 		return nil, false
 	}
-	t.Head = newHead
+	t.Head = newHead*/
 	return t, true
 }
 
@@ -326,8 +332,8 @@ func (rq TargetBuckets) Len() int { return len(rq) }
 
 func (rq TargetBuckets) Less(i, j int) bool {
 	// We want Pop to give us the weight priority so we use greater than
-	weightI := rq[i].Head.ParentWeight()
-	weightJ := rq[j].Head.ParentWeight()
+	weightI := rq[i].Head.ParentWeight
+	weightJ := rq[j].Head.ParentWeight
 	return weightI.GreaterThan(weightJ)
 }
 

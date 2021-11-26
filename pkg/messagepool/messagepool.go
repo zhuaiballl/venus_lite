@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
+	//"math"
 	stdbig "math/big"
 	"os"
 	"sort"
@@ -31,7 +31,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 
-	"github.com/filecoin-project/venus_lite/pkg/chain"
+	//"github.com/filecoin-project/venus_lite/pkg/chain"
 	"github.com/filecoin-project/venus_lite/pkg/config"
 	"github.com/filecoin-project/venus_lite/pkg/constants"
 	crypto2 "github.com/filecoin-project/venus_lite/pkg/crypto"
@@ -131,12 +131,12 @@ func init() {
 }
 
 type gasPredictor interface {
-	CallWithGas(context.Context, *types.UnsignedMessage, []types.ChainMsg, *types.TipSet) (*vm.Ret, error)
+	CallWithGas(context.Context, *types.UnsignedMessage, []types.ChainMsg, *types.BlockHeader) (*vm.Ret, error)
 }
 
 type actorProvider interface {
 	// GetActorAt returns the actor state defined by the chain up to some tipset
-	GetActorAt(context.Context, *types.TipSet, address.Address) (*types.Actor, error)
+	GetActorAt(context.Context, *types.BlockHeader, address.Address) (*types.Actor, error)
 }
 
 type MessagePool struct {
@@ -163,9 +163,9 @@ type MessagePool struct {
 
 	curTSLk sync.Mutex // DO NOT LOCK INSIDE lk
 	curTS   *types.TipSet
-
-	cfgLk sync.Mutex
-	cfg   *MpoolConfig
+	curBH   *types.BlockHeader
+	cfgLk   sync.Mutex
+	cfg     *MpoolConfig
 
 	api Provider
 
@@ -451,7 +451,7 @@ func New(api Provider,
 	ctx, cancel := context.WithCancel(context.TODO())
 
 	// load the current tipset and subscribe to head changes _before_ loading local messages
-	mp.curTS = api.SubscribeHeadChanges(func(rev, app []*types.TipSet) error {
+	mp.curBH = api.SubscribeHeadChanges(func(rev, app *types.BlockHeader) error {
 		err := mp.HeadChange(ctx, rev, app)
 		if err != nil {
 			log.Errorf("mpool head notif handler error: %+v", err)
@@ -489,7 +489,7 @@ func (mp *MessagePool) resolveToKey(ctx context.Context, addr address.Address) (
 	}
 
 	// resolve the address
-	ka, err := mp.api.StateAccountKeyAtFinality(ctx, addr, mp.curTS)
+	ka, err := mp.api.StateAccountKeyAtFinality(ctx, addr, mp.curBH)
 	if err != nil {
 		return address.Undef, err
 	}
@@ -711,8 +711,8 @@ func (mp *MessagePool) addLocal(ctx context.Context, m *types.SignedMessage) err
 // sufficiently.
 // For non local messages, if the message cannot be included in the next 20 blocks it returns
 // a (soft) validation error.
-func (mp *MessagePool) verifyMsgBeforeAdd(m *types.SignedMessage, curTS *types.TipSet, local bool) (bool, error) {
-	epoch := curTS.Height()
+func (mp *MessagePool) verifyMsgBeforeAdd(m *types.SignedMessage, curBH *types.BlockHeader, local bool) (bool, error) {
+	epoch := curBH.Height
 	minGas := mp.gasPriceSchedule.PricelistByEpoch(epoch).OnChainMessage(m.ChainLength())
 
 	if err := m.VMMessage().ValidForBlockInclusion(minGas.Total(), constants.NewestNetworkVersion); err != nil {
@@ -729,15 +729,14 @@ func (mp *MessagePool) verifyMsgBeforeAdd(m *types.SignedMessage, curTS *types.T
 	publish := local
 
 	var baseFee big.Int
-	if len(curTS.Blocks()) > 0 {
-		baseFee = curTS.Blocks()[0].ParentBaseFee
-	} else {
+	baseFee = curBH.ParentBaseFee
+	/*else {
 		var err error
 		baseFee, err = mp.api.ChainComputeBaseFee(context.TODO(), curTS)
 		if err != nil {
 			return false, xerrors.Errorf("computing basefee: %v", err)
 		}
-	}
+	}*/
 
 	baseFeeLowerBound := getBaseFeeLowerBound(baseFee, baseFeeLowerBoundFactorConservative)
 	if m.Message.GasFeeCap.LessThan(baseFeeLowerBound) {
@@ -767,7 +766,7 @@ func (mp *MessagePool) Push(ctx context.Context, m *types.SignedMessage) (cid.Ci
 	}()
 
 	mp.curTSLk.Lock()
-	publish, err := mp.addTS(ctx, m, mp.curTS, true, false)
+	publish, err := mp.addTS(ctx, m, mp.curBH, true, false)
 	if err != nil {
 		mp.curTSLk.Unlock()
 		return cid.Undef, err
@@ -836,7 +835,7 @@ func (mp *MessagePool) Add(ctx context.Context, m *types.SignedMessage) error {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
-	_, err = mp.addTS(ctx, m, mp.curTS, false, false)
+	_, err = mp.addTS(ctx, m, mp.curBH, false, false)
 	return err
 }
 
@@ -879,8 +878,8 @@ func (mp *MessagePool) VerifyMsgSig(m *types.SignedMessage) error {
 	return nil
 }
 
-func (mp *MessagePool) checkBalance(ctx context.Context, m *types.SignedMessage, curTS *types.TipSet) error {
-	balance, err := mp.getStateBalance(ctx, m.Message.From, curTS)
+func (mp *MessagePool) checkBalance(ctx context.Context, m *types.SignedMessage, curBH *types.BlockHeader) error {
+	balance, err := mp.getStateBalance(ctx, m.Message.From, curBH)
 	if err != nil {
 		return xerrors.Errorf("failed to check sender balance: %s: %v", err, ErrSoftValidationFailure)
 	}
@@ -912,8 +911,8 @@ func (mp *MessagePool) checkBalance(ctx context.Context, m *types.SignedMessage,
 	return nil
 }
 
-func (mp *MessagePool) addTS(ctx context.Context, m *types.SignedMessage, curTS *types.TipSet, local, untrusted bool) (bool, error) {
-	snonce, err := mp.getStateNonce(ctx, m.Message.From, curTS)
+func (mp *MessagePool) addTS(ctx context.Context, m *types.SignedMessage, curBH *types.BlockHeader, local, untrusted bool) (bool, error) {
+	snonce, err := mp.getStateNonce(ctx, m.Message.From, curBH)
 	if err != nil {
 		return false, xerrors.Errorf("failed to look up actor state nonce: %s: %v", err, ErrSoftValidationFailure)
 	}
@@ -925,12 +924,12 @@ func (mp *MessagePool) addTS(ctx context.Context, m *types.SignedMessage, curTS 
 	mp.lk.Lock()
 	defer mp.lk.Unlock()
 
-	publish, err := mp.verifyMsgBeforeAdd(m, curTS, local)
+	publish, err := mp.verifyMsgBeforeAdd(m, curBH, local)
 	if err != nil {
 		return false, err
 	}
 
-	if err := mp.checkBalance(ctx, m, curTS); err != nil {
+	if err := mp.checkBalance(ctx, m, curBH); err != nil {
 		return false, err
 	}
 
@@ -955,13 +954,13 @@ func (mp *MessagePool) addLoaded(ctx context.Context, m *types.SignedMessage) er
 		return err
 	}
 
-	curTS := mp.curTS
+	curBH := mp.curBH
 
-	if curTS == nil {
+	if curBH == nil {
 		return xerrors.Errorf("current tipset not loaded")
 	}
 
-	snonce, err := mp.getStateNonce(ctx, m.Message.From, curTS)
+	snonce, err := mp.getStateNonce(ctx, m.Message.From, curBH)
 	if err != nil {
 		return xerrors.Errorf("failed to look up actor state nonce: %s: %v", err, ErrSoftValidationFailure)
 	}
@@ -970,12 +969,12 @@ func (mp *MessagePool) addLoaded(ctx context.Context, m *types.SignedMessage) er
 		return xerrors.Errorf("minimum expected nonce is %d: %w", snonce, ErrNonceTooLow)
 	}
 
-	_, err = mp.verifyMsgBeforeAdd(m, curTS, true)
+	_, err = mp.verifyMsgBeforeAdd(m, curBH, true)
 	if err != nil {
 		return err
 	}
 
-	if err := mp.checkBalance(ctx, m, curTS); err != nil {
+	if err := mp.checkBalance(ctx, m, curBH); err != nil {
 		return err
 	}
 
@@ -1013,7 +1012,7 @@ func (mp *MessagePool) addLocked(ctx context.Context, m *types.SignedMessage, st
 	}
 
 	if !ok {
-		nonce, err := mp.getStateNonce(ctx, m.Message.From, mp.curTS)
+		nonce, err := mp.getStateNonce(ctx, m.Message.From, mp.curBH)
 		if err != nil {
 			return xerrors.Errorf("failed to get initial actor nonce: %w", err)
 		}
@@ -1064,18 +1063,18 @@ func (mp *MessagePool) GetNonce(ctx context.Context, addr address.Address, _ typ
 	mp.lk.Lock()
 	defer mp.lk.Unlock()
 
-	return mp.getNonceLocked(ctx, addr, mp.curTS)
+	return mp.getNonceLocked(ctx, addr, mp.curBH)
 }
 
 // GetActor should not be used. It is only here to satisfy interface mess caused by lite node handling
 func (mp *MessagePool) GetActor(_ context.Context, addr address.Address, _ types.TipSetKey) (*types.Actor, error) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
-	return mp.api.GetActorAfter(addr, mp.curTS)
+	return mp.api.GetActorAfter(addr, mp.curBH)
 }
 
-func (mp *MessagePool) getNonceLocked(ctx context.Context, addr address.Address, curTS *types.TipSet) (uint64, error) {
-	stateNonce, err := mp.getStateNonce(ctx, addr, curTS) // sanity check
+func (mp *MessagePool) getNonceLocked(ctx context.Context, addr address.Address, curBH *types.BlockHeader) (uint64, error) {
+	stateNonce, err := mp.getStateNonce(ctx, addr, curBH) // sanity check
 	if err != nil {
 		return 0, err
 	}
@@ -1099,8 +1098,8 @@ func (mp *MessagePool) getNonceLocked(ctx context.Context, addr address.Address,
 	return stateNonce, nil
 }
 
-func (mp *MessagePool) getStateNonce(ctx context.Context, addr address.Address, curTS *types.TipSet) (uint64, error) {
-	act, err := mp.api.GetActorAfter(addr, curTS)
+func (mp *MessagePool) getStateNonce(ctx context.Context, addr address.Address, curBH *types.BlockHeader) (uint64, error) {
+	act, err := mp.api.GetActorAfter(addr, curBH)
 	if err != nil {
 		return 0, err
 	}
@@ -1108,8 +1107,8 @@ func (mp *MessagePool) getStateNonce(ctx context.Context, addr address.Address, 
 	return act.Nonce, nil
 }
 
-func (mp *MessagePool) getStateBalance(ctx context.Context, addr address.Address, ts *types.TipSet) (big.Int, error) {
-	act, err := mp.api.GetActorAfter(addr, ts)
+func (mp *MessagePool) getStateBalance(ctx context.Context, addr address.Address, bh *types.BlockHeader) (big.Int, error) {
+	act, err := mp.api.GetActorAfter(addr, bh)
 	if err != nil {
 		return big.Zero(), err
 	}
@@ -1135,7 +1134,7 @@ func (mp *MessagePool) PushUntrusted(ctx context.Context, m *types.SignedMessage
 	}()
 
 	mp.curTSLk.Lock()
-	publish, err := mp.addTS(ctx, m, mp.curTS, false, true)
+	publish, err := mp.addTS(ctx, m, mp.curBH, false, true)
 	if err != nil {
 		mp.curTSLk.Unlock()
 		return cid.Undef, err
@@ -1203,7 +1202,7 @@ func (mp *MessagePool) remove(ctx context.Context, from address.Address, nonce u
 	}
 }
 
-func (mp *MessagePool) Pending(ctx context.Context) ([]*types.SignedMessage, *types.TipSet) {
+func (mp *MessagePool) Pending(ctx context.Context) ([]*types.SignedMessage, *types.BlockHeader) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
@@ -1213,22 +1212,22 @@ func (mp *MessagePool) Pending(ctx context.Context) ([]*types.SignedMessage, *ty
 	return mp.allPending(ctx)
 }
 
-func (mp *MessagePool) allPending(ctx context.Context) ([]*types.SignedMessage, *types.TipSet) {
+func (mp *MessagePool) allPending(ctx context.Context) ([]*types.SignedMessage, *types.BlockHeader) {
 	out := make([]*types.SignedMessage, 0)
 	mp.forEachPending(func(a address.Address, mset *msgSet) {
 		out = append(out, mset.toSlice()...)
 	})
 
-	return out, mp.curTS
+	return out, mp.curBH
 }
 
-func (mp *MessagePool) PendingFor(ctx context.Context, a address.Address) ([]*types.SignedMessage, *types.TipSet) {
+func (mp *MessagePool) PendingFor(ctx context.Context, a address.Address) ([]*types.SignedMessage, *types.BlockHeader) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
 	mp.lk.Lock()
 	defer mp.lk.Unlock()
-	return mp.pendingFor(ctx, a), mp.curTS
+	return mp.pendingFor(ctx, a), mp.curBH
 }
 
 func (mp *MessagePool) pendingFor(ctx context.Context, a address.Address) []*types.SignedMessage {
@@ -1245,7 +1244,7 @@ func (mp *MessagePool) pendingFor(ctx context.Context, a address.Address) []*typ
 	return mset.toSlice()
 }
 
-func (mp *MessagePool) HeadChange(ctx context.Context, revert []*types.TipSet, apply []*types.TipSet) error {
+func (mp *MessagePool) HeadChange(ctx context.Context, revert *types.BlockHeader, apply *types.BlockHeader) error {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
@@ -1287,7 +1286,7 @@ func (mp *MessagePool) HeadChange(ctx context.Context, revert []*types.TipSet, a
 
 	var merr error
 
-	for _, ts := range revert {
+	/*for _, ts := range revert {
 		tsKey := ts.Parents()
 		pts, err := mp.api.LoadTipSet(tsKey)
 		if err != nil {
@@ -1308,9 +1307,27 @@ func (mp *MessagePool) HeadChange(ctx context.Context, revert []*types.TipSet, a
 		for _, msg := range msgs {
 			add(msg)
 		}
+	}*/
+	tsKey := revert.Parent
+	pts, err := mp.api.LoadBlock(ctx, tsKey)
+	if err != nil {
+		log.Errorf("error loading reverted tipset parent: %s", err)
+		merr = multierror.Append(merr, err)
 	}
 
-	for _, ts := range apply {
+	mp.curBH = pts
+
+	msgs, err := mp.MessagesForBlocks([]*types.BlockHeader{pts})
+	if err != nil {
+		log.Errorf("error retrieving messages for reverted block: %s", err)
+		merr = multierror.Append(merr, err)
+	}
+
+	for _, msg := range msgs {
+		add(msg)
+	}
+
+	/*for _, ts := range apply {
 		mp.curTS = ts
 
 		for _, b := range ts.Blocks() {
@@ -1332,6 +1349,24 @@ func (mp *MessagePool) HeadChange(ctx context.Context, revert []*types.TipSet, a
 				maybeRepub(msg.Cid())
 			}
 		}
+	}*/
+	mp.curBH = apply
+
+	bmsgs, smsgs, err := mp.api.MessagesForBlock(apply)
+	if err != nil {
+		xerr := xerrors.Errorf("failed to get messages for apply block %s(height %d) (msgroot = %s): %v", apply.Cid(), apply.Height, apply.Messages, err)
+		log.Errorf("error retrieving messages for block: %s", xerr)
+		merr = multierror.Append(merr, xerr)
+	}
+
+	for _, msg := range smsgs {
+		rm(msg.Message.From, msg.Message.Nonce)
+		maybeRepub(msg.Cid())
+	}
+
+	for _, msg := range bmsgs {
+		rm(msg.From, msg.Nonce)
+		maybeRepub(msg.Cid())
 	}
 
 	if repubTrigger {
@@ -1348,8 +1383,8 @@ func (mp *MessagePool) HeadChange(ctx context.Context, revert []*types.TipSet, a
 			}
 		}
 	}
-
-	if len(revert) > 0 && futureDebug {
+	//TODO:as futureDebug=false
+	/*if revert!=nil && futureDebug {
 		mp.lk.Lock()
 		msgs, ts := mp.allPending(ctx)
 		mp.lk.Unlock()
@@ -1416,74 +1451,76 @@ func (mp *MessagePool) HeadChange(ctx context.Context, revert []*types.TipSet, a
 				)
 			}
 		}
-	}
+	}*/
 
 	return merr
 }
 
+//TODO:this function is not used when init node or start node
 func (mp *MessagePool) runHeadChange(from *types.TipSet, to *types.TipSet, rmsgs map[address.Address]map[uint64]*types.SignedMessage) error {
-	add := func(m *types.SignedMessage) {
-		s, ok := rmsgs[m.Message.From]
-		if !ok {
-			s = make(map[uint64]*types.SignedMessage)
-			rmsgs[m.Message.From] = s
+	/*	add := func(m *types.SignedMessage) {
+			s, ok := rmsgs[m.Message.From]
+			if !ok {
+				s = make(map[uint64]*types.SignedMessage)
+				rmsgs[m.Message.From] = s
+			}
+			s[m.Message.Nonce] = m
 		}
-		s[m.Message.Nonce] = m
-	}
-	rm := func(from address.Address, nonce uint64) {
-		s, ok := rmsgs[from]
-		if !ok {
-			return
+		rm := func(from address.Address, nonce uint64) {
+			s, ok := rmsgs[from]
+			if !ok {
+				return
+			}
+
+			if _, ok := s[nonce]; ok {
+				delete(s, nonce)
+				return
+			}
+
 		}
 
-		if _, ok := s[nonce]; ok {
-			delete(s, nonce)
-			return
-		}
-
-	}
-
-	revert, apply, err := chain.ReorgOps(mp.api.LoadTipSet, from, to)
-	if err != nil {
-		return xerrors.Errorf("failed to compute reorg ops for mpool pending messages: %v", err)
-	}
-
-	var merr error
-
-	for _, ts := range revert {
-		msgs, err := mp.MessagesForBlocks(ts.Blocks())
+		revert, apply, err := chain.ReorgOps(mp.api.LoadTipSet, from, to)
 		if err != nil {
-			log.Errorf("error retrieving messages for reverted block: %s", err)
-			merr = multierror.Append(merr, err)
-			continue
+			return xerrors.Errorf("failed to compute reorg ops for mpool pending messages: %v", err)
 		}
 
-		for _, msg := range msgs {
-			add(msg)
-		}
-	}
+		var merr error
 
-	for _, ts := range apply {
-		for _, b := range ts.Blocks() {
-			bmsgs, smsgs, err := mp.api.MessagesForBlock(b)
+		for _, ts := range revert {
+			msgs, err := mp.MessagesForBlocks(ts.Blocks())
 			if err != nil {
-				xerr := xerrors.Errorf("failed to get messages for apply block %s(height %d) (msgroot = %s): %v", b.Cid(), b.Height, b.Messages, err)
-				log.Errorf("error retrieving messages for block: %s", xerr)
-				merr = multierror.Append(merr, xerr)
+				log.Errorf("error retrieving messages for reverted block: %s", err)
+				merr = multierror.Append(merr, err)
 				continue
 			}
 
-			for _, msg := range smsgs {
-				rm(msg.Message.From, msg.Message.Nonce)
-			}
-
-			for _, msg := range bmsgs {
-				rm(msg.From, msg.Nonce)
+			for _, msg := range msgs {
+				add(msg)
 			}
 		}
-	}
 
-	return merr
+		for _, ts := range apply {
+			for _, b := range ts.Blocks() {
+				bmsgs, smsgs, err := mp.api.MessagesForBlock(b)
+				if err != nil {
+					xerr := xerrors.Errorf("failed to get messages for apply block %s(height %d) (msgroot = %s): %v", b.Cid(), b.Height, b.Messages, err)
+					log.Errorf("error retrieving messages for block: %s", xerr)
+					merr = multierror.Append(merr, xerr)
+					continue
+				}
+
+				for _, msg := range smsgs {
+					rm(msg.Message.From, msg.Message.Nonce)
+				}
+
+				for _, msg := range bmsgs {
+					rm(msg.From, msg.Nonce)
+				}
+			}
+		}
+
+		return merr*/
+	return nil
 }
 
 type statBucket struct {

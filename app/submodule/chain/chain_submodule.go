@@ -18,7 +18,6 @@ import (
 	"github.com/filecoin-project/venus_lite/pkg/consensusfault"
 	"github.com/filecoin-project/venus_lite/pkg/fork"
 	"github.com/filecoin-project/venus_lite/pkg/repo"
-	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/filecoin-project/venus_lite/pkg/util/ffiwrapper"
 	"github.com/filecoin-project/venus_lite/pkg/vmsupport"
 )
@@ -31,7 +30,8 @@ type ChainSubmodule struct { //nolint
 	Fork         fork.IFork
 	SystemCall   vm.SyscallsImpl
 
-	CheckPoint types.TipSetKey
+	//CheckPoint types.TipSetKey
+	CheckPoint cid.Cid
 	Drand      beacon.Schedule
 
 	config chainConfig

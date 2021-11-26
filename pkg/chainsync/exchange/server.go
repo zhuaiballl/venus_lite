@@ -21,7 +21,9 @@ import (
 var exchangeServerLog = logging.Logger("exchange.server")
 
 type chainReader interface {
-	GetTipSet(types.TipSetKey) (*types.TipSet, error)
+	//GetTipSet(types.TipSetKey) (*types.TipSet, error)
+	GetBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error)
+	GetGenesisCid() cid.Cid
 }
 
 type messageStore interface {
@@ -179,45 +181,84 @@ func (s *server) serviceRequest(ctx context.Context, req *validatedRequest) (*Re
 func collectChainSegment(cr chainReader, mr messageStore, req *validatedRequest) ([]*BSTipSet, error) {
 	var bstips []*BSTipSet
 
-	cur := req.head
+	cids := req.head.Cids()
+	cid := cids[0]
 	for {
 		var bst BSTipSet
-		ts, err := cr.GetTipSet(cur)
+		var ctx context.Context
+		bh, err := cr.GetBlock(ctx, cid)
 		if err != nil {
-			return nil, xerrors.Errorf("failed loading tipset %s: %w", cur, err)
+			return nil, xerrors.Errorf("failed loading blockheader %s: %w", cid.String(), err)
 		}
-
 		if req.options.IncludeHeaders {
-			bst.Blocks = ts.Blocks()
+			bst.Blocks = append(bst.Blocks, bh)
 		}
-
 		if req.options.IncludeMessages {
-			bmsgs, bmincl, smsgs, smincl, err := GatherMessages(cr, mr, ts)
+			bmsgs, bmincl, smsgs, smincl, err := GatherMessages(cr, mr, bh)
 			if err != nil {
 				return nil, xerrors.Errorf("gather messages failed: %w", err)
 			}
 
 			// FIXME: Pass the response to `gatherMessages()` and set all this there.
+			//XXXIncludes is not used.
 			bst.Messages = &CompactedMessages{}
 			bst.Messages.Bls = bmsgs
 			bst.Messages.BlsIncludes = bmincl
 			bst.Messages.Secpk = smsgs
 			bst.Messages.SecpkIncludes = smincl
 		}
-
 		bstips = append(bstips, &bst)
 
-		// If we collected the length requested or if we reached the
-		// start (genesis), then stop.
-		if uint64(len(bstips)) >= req.length || ts.Height() == 0 {
-			return bstips, nil
+		// If we collected the length requested
+		// then stop,we just collect one block each time
+		if uint64(len(bstips)) >= req.length || bh.Cid().Equals(cr.GetGenesisCid()) {
+			break
 		}
-
-		cur = ts.Parents()
+		cid = bh.Parent
 	}
+	return bstips, nil
 }
 
-func GatherMessages(cr chainReader, mr messageStore, ts *types.TipSet) ([]*types.UnsignedMessage, [][]uint64, []*types.SignedMessage, [][]uint64, error) {
+func GatherMessages(cr chainReader, mr messageStore, block *types.BlockHeader) ([]*types.UnsignedMessage, [][]uint64, []*types.SignedMessage, [][]uint64, error) {
+	blsmsgmap := make(map[cid.Cid]uint64)
+	secpkmsgmap := make(map[cid.Cid]uint64)
+	var secpkincl, blsincl [][]uint64
+
+	var blscids, secpkcids []cid.Cid
+	bc, sc, err := mr.ReadMsgMetaCids(context.TODO(), block.Messages)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	for _, m := range bc {
+		i, ok := blsmsgmap[m]
+		if !ok {
+			i = uint64(len(blscids))
+			blscids = append(blscids, m)
+			blsmsgmap[m] = i
+		}
+	}
+	for _, m := range sc {
+		i, ok := secpkmsgmap[m]
+		if !ok {
+			i = uint64(len(secpkcids))
+			secpkcids = append(secpkcids, m)
+			secpkmsgmap[m] = i
+		}
+	}
+	blsmsgs, err := mr.LoadUnsignedMessagesFromCids(blscids)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	secpkmsgs, err := mr.LoadSignedMessagesFromCids(secpkcids)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return blsmsgs, blsincl, secpkmsgs, secpkincl, nil
+}
+
+/*func GatherMessages(cr chainReader, mr messageStore, ts *types.TipSet) ([]*types.UnsignedMessage, [][]uint64, []*types.SignedMessage, [][]uint64, error) {
 	blsmsgmap := make(map[cid.Cid]uint64)
 	secpkmsgmap := make(map[cid.Cid]uint64)
 	var secpkincl, blsincl [][]uint64
@@ -268,4 +309,4 @@ func GatherMessages(cr chainReader, mr messageStore, ts *types.TipSet) ([]*types
 	}
 
 	return blsmsgs, blsincl, secpkmsgs, secpkincl, nil
-}
+}*/

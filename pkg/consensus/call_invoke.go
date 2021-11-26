@@ -23,7 +23,7 @@ import (
 )
 
 //CallWithGas used to estimate message gaslimit, for each incoming message ,should execute after priorMsg in mpool
-func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *types.TipSet) (*vm.Ret, error) {
+func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, priorMsgs []types.ChainMsg, ts *types.BlockHeader) (*vm.Ret, error) {
 	var (
 		err       error
 		stateRoot cid.Cid
@@ -37,8 +37,8 @@ func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, 
 		// run the fork logic in `sm.TipSetState`. We need the _current_
 		// height to have no fork, because we'll run it inside this
 		// function before executing the given message.
-		for ts.Height() > 0 && (c.fork.HasExpensiveFork(ctx, ts.Height()) || c.fork.HasExpensiveFork(ctx, ts.Height()-1)) {
-			ts, err = c.chainState.GetTipSet(ts.Parents())
+		for ts.Height > 0 && (c.fork.HasExpensiveFork(ctx, ts.Height) || c.fork.HasExpensiveFork(ctx, ts.Height-1)) {
+			ts, err = c.chainState.GetBlock(ctx, ts.Parent)
 			if err != nil {
 				return nil, xerrors.Errorf("failed to find a non-forking epoch: %v", err)
 			}
@@ -46,7 +46,7 @@ func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, 
 	}
 
 	// When we're not at the genesis block, make sure we don't have an expensive migration.
-	if ts.Height() > 0 && (c.fork.HasExpensiveFork(ctx, ts.Height()) || c.fork.HasExpensiveFork(ctx, ts.Height()-1)) {
+	if ts.Height > 0 && (c.fork.HasExpensiveFork(ctx, ts.Height) || c.fork.HasExpensiveFork(ctx, ts.Height-1)) {
 		return nil, fork.ErrExpensiveFork
 	}
 
@@ -64,9 +64,9 @@ func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, 
 			return cs.FilCirculating, nil
 		},
 		NtwkVersionGetter: c.fork.GetNtwkVersion,
-		Rnd:               NewHeadRandomness(c.rnd, ts.Key()),
-		BaseFee:           ts.At(0).ParentBaseFee,
-		Epoch:             ts.Height(),
+		Rnd:               NewHeadRandomness(c.rnd, ts.Cid()),
+		BaseFee:           ts.ParentBaseFee,
+		Epoch:             ts.Height,
 		GasPriceSchedule:  c.gasPirceSchedule,
 		PRoot:             stateRoot,
 		Bsstore:           c.bstore,
@@ -118,7 +118,7 @@ func (c *Expected) CallWithGas(ctx context.Context, msg *types.UnsignedMessage, 
 }
 
 //Call used for api invoke to compute a msg base on specify tipset, if the tipset is null, use latest tipset in db
-func (c *Expected) Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.TipSet) (*vm.Ret, error) {
+func (c *Expected) Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.BlockHeader) (*vm.Ret, error) {
 	ctx, span := trace.StartSpan(ctx, "statemanager.Call")
 	defer span.End()
 	chainReader := c.chainState
@@ -129,21 +129,21 @@ func (c *Expected) Call(ctx context.Context, msg *types.UnsignedMessage, ts *typ
 		ts = chainReader.GetHead()
 
 		// Search back till we find a height with no fork, or we reach the beginning.
-		for ts.Height() > 0 && c.fork.HasExpensiveFork(ctx, ts.Height()-1) {
+		for ts.Height > 0 && c.fork.HasExpensiveFork(ctx, ts.Height-1) {
 			var err error
-			ts, err = chainReader.GetTipSet(ts.Parents())
+			ts, err = chainReader.GetBlock(ctx, ts.Parent)
 			if err != nil {
 				return nil, xerrors.Errorf("failed to find a non-forking epoch: %v", err)
 			}
 		}
 	}
 
-	bstate := ts.At(0).ParentStateRoot
-	pts, err := c.chainState.GetTipSet(ts.Parents())
+	bstate := ts.ParentStateRoot
+	pts, err := c.chainState.GetBlock(ctx, ts.Parent)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load parent tipset: %v", err)
 	}
-	pheight := pts.Height()
+	pheight := pts.Height
 
 	// If we have to run an expensive migration, and we're not at genesis,
 	// return an error because the migration will take too long.
@@ -196,12 +196,12 @@ func (c *Expected) Call(ctx context.Context, msg *types.UnsignedMessage, ts *typ
 			return dertail.FilCirculating, nil
 		},
 		NtwkVersionGetter: c.fork.GetNtwkVersion,
-		Rnd:               NewHeadRandomness(c.rnd, ts.Key()),
-		BaseFee:           ts.At(0).ParentBaseFee,
+		Rnd:               NewHeadRandomness(c.rnd, ts.Cid()),
+		BaseFee:           ts.ParentBaseFee,
 		Epoch:             pheight + 1,
 		GasPriceSchedule:  c.gasPirceSchedule,
 		Fork:              c.fork,
-		PRoot:             ts.At(0).ParentStateRoot,
+		PRoot:             ts.ParentStateRoot,
 		Bsstore:           c.bstore,
 		SysCallsImpl:      c.syscallsImpl,
 	}
