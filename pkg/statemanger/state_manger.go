@@ -18,7 +18,7 @@ import (
 type IStateManager interface {
 	ResolveToKeyAddress(ctx context.Context, addr address.Address, ts *types.BlockHeader) (address.Address, error)
 	GetPaychState(ctx context.Context, addr address.Address, ts *types.BlockHeader) (*types.Actor, paych.State, error)
-	Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.TipSet) (*types.InvocResult, error)
+	Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.BlockHeader) (*types.InvocResult, error)
 	GetMarketState(ctx context.Context, ts *types.BlockHeader) (market.State, error)
 }
 
@@ -52,7 +52,7 @@ func (o *stmgr) ResolveToKeyAddress(ctx context.Context, addr address.Address, t
 	return view.ResolveToKeyAddr(ctx, addr)
 }
 
-func (o *stmgr) Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.TipSet) (*types.InvocResult, error) {
+func (o *stmgr) Call(ctx context.Context, msg *types.UnsignedMessage, ts *types.BlockHeader) (*types.InvocResult, error) {
 	timeStart := time.Now()
 	ret, err := o.cp.Call(ctx, msg, ts)
 	if err != nil {
