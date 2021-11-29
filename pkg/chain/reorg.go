@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+//TODO:THIS FILE IS NOT USED IN OTHER FILES,ALSO THE CHAIN STRUCTURE NEED NOT TO BE REORGANIZED
+
 // IsReorg determines if choosing the end of the newChain as the new head
 // would cause a "reorg" given the current head is at curHead.
 // A reorg occurs when the old head is not a member of the new chain AND the
