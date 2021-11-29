@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/network"
 	"github.com/filecoin-project/venus_lite/pkg/state"
 	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
 	"github.com/filecoin-project/venus_lite/pkg/util"
 	"golang.org/x/xerrors"
 	"runtime/debug"
@@ -119,7 +121,7 @@ type Store struct {
 	headEvents *pubsub.PubSub
 
 	// Tracks tipsets by height/parentset for use by expected consensus.
-	tipIndex *TipStateCache
+	//tipIndex *TipStateCache
 
 	circulatingSupplyCalculator ICirculatingSupplyCalcualtor
 
@@ -152,7 +154,7 @@ func NewStore(chainDs repo.Datastore,
 	//todo cycle reference , may think a better idea
 	//store.tipIndex = NewTipStateCache(store)
 	//store.chainIndex = NewChainIndex(store.GetTipSet)
-	store.chainIndex = NewChainIndex(nil, store.GetBlock)
+	store.chainIndex = NewChainIndex(store.GetBlock)
 	store.circulatingSupplyCalculator = circulatiingSupplyCalculator
 
 	val, err := store.ds.Get(CheckPoint)
@@ -462,6 +464,7 @@ func (store *Store) GetActorAt(ctx context.Context, ts *types.BlockHeader, addr 
 // GetTipSetByHeight looks back for a tipset at the specified epoch.
 // If there are no blocks at the specified epoch, a tipset at an earlier epoch
 // will be returned.
+
 func (store *Store) GetTipSetByHeight(ctx context.Context, ts *types.BlockHeader, h abi.ChainEpoch, prev bool) (*types.BlockHeader, error) {
 	if ts == nil {
 		ts = store.head
@@ -475,12 +478,12 @@ func (store *Store) GetTipSetByHeight(ctx context.Context, ts *types.BlockHeader
 		return ts, nil
 	}
 
-	/*lbts, err := store.chainIndex.GetTipSetByHeight(ctx, ts, h)
+	lbts, err := store.chainIndex.GetTipSetByHeight(ctx, ts, h)
 	if err != nil {
 		return nil, err
 	}
 
-	if lbts.Height() < h {
+	if lbts.Height < h {
 		log.Warnf("chain index returned the wrong tipset at height %d, using slow retrieval", h)
 		lbts, err = store.chainIndex.GetTipsetByHeightWithoutCache(ts, h)
 		if err != nil {
@@ -488,12 +491,13 @@ func (store *Store) GetTipSetByHeight(ctx context.Context, ts *types.BlockHeader
 		}
 	}
 
-	if lbts.Height() == h || !prev {
+	if lbts.Height == h || !prev {
 		return lbts, nil
 	}
 
-	return store.GetTipSet(lbts.Parents())*/
-	lbts := ts
+	return store.GetBlock(ctx, lbts.Parent)
+
+	/*lbts := ts
 	for {
 		if h >= lbts.Height {
 			break
@@ -508,7 +512,7 @@ func (store *Store) GetTipSetByHeight(ctx context.Context, ts *types.BlockHeader
 	}
 	//else h>lbts.Height
 	log.Warnf("in chain this is impossible.")
-	return lbts, nil
+	return lbts, nil*/
 }
 
 // SubHeadChanges returns channel with chain head updates.
@@ -551,4 +555,45 @@ func (store *Store) SubHeadChanges(ctx context.Context) chan []*HeadChange {
 		}
 	}()
 	return out
+}
+
+// GetLookbackTipSetForRound get loop back tipset and state root
+func (store *Store) GetLookbackTipSetForRound(ctx context.Context, ts *types.BlockHeader, round abi.ChainEpoch, version network.Version) (*types.BlockHeader, cid.Cid, error) {
+	var lbr abi.ChainEpoch
+
+	lb := policy.GetWinningPoStSectorSetLookback(version)
+	if round > lb {
+		lbr = round - lb
+	}
+
+	// more null blocks than our lookback
+	h := ts.Height
+	if lbr >= h {
+		// This should never happen at this point, but may happen before
+		// network version 3 (where the lookback was only 10 blocks).
+		st, err := store.GetTipSetStateRoot(ts)
+		if err != nil {
+			return nil, cid.Undef, err
+		}
+		return ts, st, nil
+	}
+
+	// Get the tipset after the lookback tipset, or the next non-null one.
+	nextTS, err := store.GetTipSetByHeight(ctx, ts, lbr+1, false)
+	if err != nil {
+		return nil, cid.Undef, xerrors.Errorf("failed to get lookback blockheader+1: %v", err)
+	}
+
+	nextTh := nextTS.Height
+	if lbr > nextTh {
+		return nil, cid.Undef, xerrors.Errorf("failed to find non-null blockheader %s (%d) which is known to exist, found %s (%d)", ts.Cid(), h, nextTS.Cid(), nextTh)
+	}
+
+	pKey := nextTS.Parent
+	lbts, err := store.GetBlock(ctx, pKey)
+	if err != nil {
+		return nil, cid.Undef, xerrors.Errorf("failed to resolve lookback tipset: %v", err)
+	}
+
+	return lbts, nextTS.ParentStateRoot, nil
 }
