@@ -1,6 +1,7 @@
 package chain
 
-import (
+//should not be used
+/*import (
 	"fmt"
 	"sync"
 	"time"
@@ -183,4 +184,4 @@ func (ti *TipStateCache) HasSiblingState(ts *types.TipSet) bool {
 // makeKey returns a unique string for every parent set key and height input
 func makeKey(pKey string, h abi.ChainEpoch) string {
 	return fmt.Sprintf("p-%s h-%d", pKey, h)
-}
+}*/
