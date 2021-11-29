@@ -217,7 +217,7 @@ func (mp *MessagePoolSubmodule) waitForSync(epochs int, subscribe func()) {
 
 	// early check, are we synced at start up?
 	ts := mp.chain.ChainReader.GetHead()
-	timestamp := ts.MinTimestamp()
+	timestamp := ts.Timestamp
 	timestampTime := time.Unix(int64(timestamp), 0)
 	if constants.Clock.Since(timestampTime) < nearsync {
 		subscribe()
@@ -225,18 +225,18 @@ func (mp *MessagePoolSubmodule) waitForSync(epochs int, subscribe func()) {
 	}
 
 	// we are not synced, subscribe to head changes and wait for sync
-	mp.chain.ChainReader.SubscribeHeadChanges(func(rev, app []*types.TipSet) error {
-		if len(app) == 0 {
+	mp.chain.ChainReader.SubscribeHeadChanges(func(rev, app *types.BlockHeader) error {
+		if app == nil {
 			return nil
 		}
 
-		latest := app[0].MinTimestamp()
-		for _, ts := range app[1:] {
+		latest := app.Timestamp
+		/*for _, ts := range app[1:] {
 			timestamp := ts.MinTimestamp()
 			if timestamp > latest {
 				latest = timestamp
 			}
-		}
+		}*/
 
 		latestTime := time.Unix(int64(latest), 0)
 		if constants.Clock.Since(latestTime) < nearsync {

@@ -7,14 +7,12 @@ import (
 	"fmt"
 	"go.opencensus.io/trace"
 	"os"
-	"strings"
 	"time"
 
 	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	cbg "github.com/whyrusleeping/cbor-gen"
 
-	"github.com/Gurpartap/async"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
@@ -36,7 +34,6 @@ import (
 	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/power"
 	bstore "github.com/filecoin-project/venus_lite/pkg/util/blockstoreutil"
 	"github.com/filecoin-project/venus_lite/pkg/vm/gas"
-	"github.com/hashicorp/go-multierror"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/ipfs/go-cid"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
@@ -367,7 +364,7 @@ func (bv *BlockValidator) validateBlockMsg(ctx context.Context, blk *types.Block
 
 func (bv *BlockValidator) isChainNearSynced() bool {
 	ts := bv.chainState.GetHead()
-	timestamp := ts.MinTimestamp()
+	timestamp := ts.Timestamp
 	timestampTime := time.Unix(int64(timestamp), 0)
 	return constants.Clock.Since(timestampTime) < 6*time.Hour
 }
@@ -441,7 +438,7 @@ func (bv *BlockValidator) checkPowerAndGetWorkerKey(ctx context.Context, bh *typ
 	// tipset - 1 for historical reasons. DO NOT use the lookback state
 	// returned by GetLookbackTipSetForRound.
 
-	eligible, err := bv.MinerEligibleToMine(ctx, bh.Miner, baseTS.At(0).ParentStateRoot, baseTS.Height(), lbts)
+	eligible, err := bv.MinerEligibleToMine(ctx, bh.Miner, baseTS.ParentStateRoot, baseTS.Height, lbts)
 	if err != nil {
 		log.Warnf("failed to determine if incoming block's miner has minimum power: %s", err)
 		return address.Undef, ErrSoftFailure
@@ -500,20 +497,20 @@ func (bv *BlockValidator) beaconBaseEntry(ctx context.Context, blk *types.BlockH
 		return blk.BeaconEntries[len(blk.BeaconEntries)-1], nil
 	}
 
-	parent, err := bv.chainState.GetTipSet(blk.Parents)
+	parent, err := bv.chainState.GetBlock(ctx, blk.Parent)
 	if err != nil {
 		return nil, err
 	}
 	return chain.FindLatestDRAND(ctx, parent, bv.chainState)
 }
 
-func (bv *BlockValidator) ValidateBlockWinner(ctx context.Context, waddr address.Address, lbTS *types.TipSet, lbRoot cid.Cid, baseTS *types.TipSet, baseRoot cid.Cid,
+func (bv *BlockValidator) ValidateBlockWinner(ctx context.Context, waddr address.Address, lbTS *types.BlockHeader, lbRoot cid.Cid, baseTS *types.BlockHeader, baseRoot cid.Cid,
 	blk *types.BlockHeader, prevEntry *types.BeaconEntry) error {
 	if blk.ElectionProof.WinCount < 1 {
 		return xerrors.Errorf("block is not claiming to be a winner")
 	}
 
-	baseHeight := baseTS.Height()
+	baseHeight := baseTS.Height
 	eligible, err := bv.MinerEligibleToMine(ctx, blk.Miner, baseRoot, baseHeight, lbTS)
 	if err != nil {
 		return xerrors.Errorf("determining if miner has min power failed: %v", err)
@@ -564,7 +561,7 @@ func (bv *BlockValidator) ValidateBlockWinner(ctx context.Context, waddr address
 	return nil
 }
 
-func (bv *BlockValidator) MinerEligibleToMine(ctx context.Context, addr address.Address, parentStateRoot cid.Cid, parentHeight abi.ChainEpoch, lookbackTS *types.TipSet) (bool, error) {
+func (bv *BlockValidator) MinerEligibleToMine(ctx context.Context, addr address.Address, parentStateRoot cid.Cid, parentHeight abi.ChainEpoch, lookbackTS *types.BlockHeader) (bool, error) {
 	hmp, err := bv.minerHasMinPower(ctx, addr, lookbackTS)
 
 	// TODO: We're blurring the lines between a "runtime network version" and a "Lotus upgrade epoch", is that unavoidable?
@@ -644,9 +641,9 @@ func (bv *BlockValidator) MinerEligibleToMine(ctx context.Context, addr address.
 	return true, nil
 }
 
-func (bv *BlockValidator) minerHasMinPower(ctx context.Context, addr address.Address, ts *types.TipSet) (bool, error) {
+func (bv *BlockValidator) minerHasMinPower(ctx context.Context, addr address.Address, ts *types.BlockHeader) (bool, error) {
 	vms := cbor.NewCborStore(bv.bstore)
-	sm, err := tree.LoadState(ctx, vms, ts.Blocks()[0].ParentStateRoot)
+	sm, err := tree.LoadState(ctx, vms, ts.ParentStateRoot)
 	if err != nil {
 		return false, xerrors.Errorf("loading state: %v", err)
 	}
@@ -735,7 +732,7 @@ func (bv *BlockValidator) VerifyWinningPoStProof(ctx context.Context, nv network
 }
 
 // TODO: We should extract this somewhere else and make the message pool and miner use the same logic
-func (bv *BlockValidator) checkBlockMessages(ctx context.Context, sigValidator *appstate.SignatureValidator, blk *types.BlockHeader, baseTS *types.TipSet) (err error) {
+func (bv *BlockValidator) checkBlockMessages(ctx context.Context, sigValidator *appstate.SignatureValidator, blk *types.BlockHeader, baseTS *types.BlockHeader) (err error) {
 	blksecpMsgs, blkblsMsgs, err := bv.messageStore.LoadMetaMessages(ctx, blk.Messages)
 	if err != nil {
 		return xerrors.Errorf("failed loading message list %s for block %s %v", blk.Messages, blk.Cid(), err)
@@ -762,7 +759,7 @@ func (bv *BlockValidator) checkBlockMessages(ctx context.Context, sigValidator *
 		return xerrors.Errorf("loading state: %v", err)
 	}
 
-	baseHeight := baseTS.Height()
+	baseHeight := baseTS.Height
 	pl := bv.gasPirceSchedule.PricelistByEpoch(baseHeight)
 	var sumGasLimit int64
 	checkMsg := func(msg types.ChainMsg) error {

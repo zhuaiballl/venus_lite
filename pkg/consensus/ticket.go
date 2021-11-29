@@ -37,7 +37,7 @@ func NewTicketMachine(tipsetLoader tipsetLoader) *TicketMachine {
 
 // MakeTicket creates a new ticket from a Chain and target epoch by running a verifiable
 // randomness function on the prior ticket.
-func (tm TicketMachine) MakeTicket(ctx context.Context, base types.TipSetKey, epoch abi.ChainEpoch, miner address.Address, entry *types.BeaconEntry, newPeriod bool, worker address.Address, signer types.Signer) (types.Ticket, error) {
+func (tm TicketMachine) MakeTicket(ctx context.Context, base cid.Cid, epoch abi.ChainEpoch, miner address.Address, entry *types.BeaconEntry, newPeriod bool, worker address.Address, signer types.Signer) (types.Ticket, error) {
 	randomness, err := tm.ticketVRFRandomness(ctx, base, entry, newPeriod, miner, epoch)
 	if err != nil {
 		return types.Ticket{}, errors.Wrap(err, "failed to generate ticket randomness")
@@ -52,7 +52,7 @@ func (tm TicketMachine) MakeTicket(ctx context.Context, base types.TipSetKey, ep
 }
 
 // IsValidTicket verifies that the ticket's proof of randomness is valid with respect to its parent.
-func (tm TicketMachine) IsValidTicket(ctx context.Context, base types.TipSetKey, entry *types.BeaconEntry, bSmokeHeight bool,
+func (tm TicketMachine) IsValidTicket(ctx context.Context, base cid.Cid, entry *types.BeaconEntry, bSmokeHeight bool,
 	epoch abi.ChainEpoch, miner address.Address, workerSigner address.Address, ticket types.Ticket) error {
 	randomness, err := tm.ticketVRFRandomness(ctx, base, entry, bSmokeHeight, miner, epoch)
 	if err != nil {
@@ -65,7 +65,7 @@ func (tm TicketMachine) IsValidTicket(ctx context.Context, base types.TipSetKey,
 	}, workerSigner, randomness)
 }
 
-func (tm TicketMachine) ticketVRFRandomness(ctx context.Context, base types.TipSetKey, entry *types.BeaconEntry, bSmokeHeight bool, miner address.Address, epoch abi.ChainEpoch) (abi.Randomness, error) {
+func (tm TicketMachine) ticketVRFRandomness(ctx context.Context, base cid.Cid, entry *types.BeaconEntry, bSmokeHeight bool, miner address.Address, epoch abi.ChainEpoch) (abi.Randomness, error) {
 	entropyBuf := new(bytes.Buffer)
 	err := miner.MarshalCBOR(entropyBuf)
 	if err != nil {
@@ -73,11 +73,11 @@ func (tm TicketMachine) ticketVRFRandomness(ctx context.Context, base types.TipS
 	}
 
 	if bSmokeHeight { // todo
-		ts, err := tm.tipsetLoader.GetTipSet(base)
+		ts, err := tm.tipsetLoader.GetBlock(ctx, base)
 		if err != nil {
 			return nil, err
 		}
-		_, err = entropyBuf.Write(ts.MinTicket().VRFProof)
+		_, err = entropyBuf.Write(ts.Ticket.VRFProof)
 		if err != nil {
 			return nil, err
 		}

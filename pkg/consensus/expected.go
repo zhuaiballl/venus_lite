@@ -3,13 +3,13 @@ package consensus
 import "C"
 import (
 	"context"
+	"github.com/filecoin-project/go-state-types/network"
 	"time"
 
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/network"
 	"github.com/filecoin-project/venus_lite/pkg/config"
 	"github.com/ipfs/go-cid"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
@@ -44,13 +44,13 @@ const AllowableClockDriftSecs = uint64(1)
 // A Processor processes all the messages in a block or tip set.
 type Processor interface {
 	// ProcessTipSet processes all messages in a tip set.
-	ProcessTipSet(context.Context, *types.TipSet, *types.TipSet, []types.BlockMessagesInfo, vm.VmOption) (cid.Cid, []types.MessageReceipt, error)
+	ProcessTipSet(context.Context, *types.BlockHeader, *types.BlockHeader, []types.BlockMessagesInfo, vm.VmOption) (cid.Cid, []types.MessageReceipt, error)
 	ProcessImplicitMessage(context.Context, *types.UnsignedMessage, vm.VmOption) (*vm.Ret, error)
 }
 
 // TicketValidator validates that an input ticket is valid.
 type TicketValidator interface {
-	IsValidTicket(ctx context.Context, base types.TipSetKey, entry *types.BeaconEntry, newPeriod bool, epoch abi.ChainEpoch, miner address.Address, workerSigner address.Address, ticket types.Ticket) error
+	IsValidTicket(ctx context.Context, base cid.Cid, entry *types.BeaconEntry, newPeriod bool, epoch abi.ChainEpoch, miner address.Address, workerSigner address.Address, ticket types.Ticket) error
 }
 
 // Todo Delete view just use state.Viewer
@@ -81,15 +81,16 @@ type StateViewer interface {
 }
 
 type chainReader interface {
-	GetBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error)
+	GetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
 	GetHead() *types.BlockHeader
+	GetTipSet(types.TipSetKey) (*types.TipSet, error)
 	GetTipSetStateRoot(*types.BlockHeader) (cid.Cid, error)
 	//GetTipSetReceiptsRoot(*types.TipSet) (cid.Cid, error)
 	GetGenesisBlock(context.Context) (*types.BlockHeader, error)
 	//GetLatestBeaconEntry(*types.TipSet) (*types.BeaconEntry, error)
 	//GetTipSetByHeight(context.Context, *types.TipSet, abi.ChainEpoch, bool) (*types.TipSet, error)
 	GetCirculatingSupplyDetailed(context.Context, abi.ChainEpoch, tree.Tree) (chain.CirculatingSupply, error)
-	//GetLookbackTipSetForRound(ctx context.Context, ts *types.TipSet, round abi.ChainEpoch, version network.Version) (*types.TipSet, cid.Cid, error)
+	GetLookbackTipSetForRound(ctx context.Context, ts *types.BlockHeader, round abi.ChainEpoch, version network.Version) (*types.BlockHeader, cid.Cid, error)
 }
 
 // Expected implements expected consensus.

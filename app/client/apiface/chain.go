@@ -64,9 +64,9 @@ type IChainInfo interface {
 	// Rule[perm:read]
 	ChainGetRandomnessFromTickets(ctx context.Context, tsk cid.Cid, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
 	// Rule[perm:read]
-	StateGetRandomnessFromTickets(ctx context.Context, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte, tsk types.TipSetKey) (abi.Randomness, error)
+	StateGetRandomnessFromTickets(ctx context.Context, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte, tsk cid.Cid) (abi.Randomness, error)
 	// Rule[perm:read]
-	StateGetRandomnessFromBeacon(ctx context.Context, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte, tsk types.TipSetKey) (abi.Randomness, error)
+	StateGetRandomnessFromBeacon(ctx context.Context, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte, tsk cid.Cid) (abi.Randomness, error)
 	// Rule[perm:read]
 	ChainGetBlock(ctx context.Context, id cid.Cid) (*types.BlockHeader, error)
 	// Rule[perm:read]

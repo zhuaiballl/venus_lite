@@ -105,6 +105,7 @@ func (chain *ChainSubmodule) Stop(ctx context.Context) {
 	chain.ChainReader.Stop()
 }
 
+//TODO:all the api need to be changed because of the use of tipset and tipsetkey
 //API chain module api implement
 func (chain *ChainSubmodule) API() apiface.IChain {
 	return &chainAPI{
@@ -116,6 +117,7 @@ func (chain *ChainSubmodule) API() apiface.IChain {
 	}
 }
 
+//TODO:all the api need to be changed because of the use of tipset and tipsetkey
 func (chain *ChainSubmodule) V0API() v0api.IChain {
 	return &chainv0api.WrapperV1IChain{IChain: chain.API()}
 }

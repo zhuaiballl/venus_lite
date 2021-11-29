@@ -11,12 +11,13 @@ import (
 
 // TipSetProvider provides tipsets for traversal.
 type TipSetProvider interface {
-	GetTipSet(tsKey types.TipSetKey) (*types.TipSet, error)
+	GetTipSet(types.TipSetKey) (*types.TipSet, error)
+	GetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
 }
 
 // IterAncestors returns an iterator over tipset ancestors, yielding first the start tipset and
 // then its parent tipsets until (and including) the genesis tipset.
-func IterAncestors(ctx context.Context, store TipSetProvider, start *types.TipSet) *TipsetIterator {
+func IterAncestors(ctx context.Context, store TipSetProvider, start *types.BlockHeader) *TipsetIterator {
 	return &TipsetIterator{ctx, store, start}
 }
 
@@ -24,17 +25,17 @@ func IterAncestors(ctx context.Context, store TipSetProvider, start *types.TipSe
 type TipsetIterator struct {
 	ctx   context.Context
 	store TipSetProvider
-	value *types.TipSet
+	value *types.BlockHeader
 }
 
 // Value returns the iterator's current value, if not Complete().
-func (it *TipsetIterator) Value() *types.TipSet {
+func (it *TipsetIterator) Value() *types.BlockHeader {
 	return it.value
 }
 
 // Complete tests whether the iterator is exhausted.
 func (it *TipsetIterator) Complete() bool {
-	return !it.value.Defined()
+	return !(it.value == nil)
 }
 
 // Next advances the iterator to the next value.
@@ -43,12 +44,12 @@ func (it *TipsetIterator) Next() error {
 	case <-it.ctx.Done():
 		return it.ctx.Err()
 	default:
-		if it.value.Height() == 0 {
-			it.value = &types.TipSet{}
+		if it.value.Height == 0 {
+			it.value = &types.BlockHeader{}
 		} else {
 			var err error
-			parentKey := it.value.Parents()
-			it.value, err = it.store.GetTipSet(parentKey)
+			parentKey := it.value.Parent
+			it.value, err = it.store.GetBlock(it.ctx, parentKey)
 			return err
 		}
 		return nil
@@ -57,7 +58,7 @@ func (it *TipsetIterator) Next() error {
 
 // BlockProvider provides blocks.
 type BlockProvider interface {
-	GetBlock(ctx context.Context, cid cid.Cid) (*types.BlockHeader, error)
+	GetBlock(context.Context, cid.Cid) (*types.BlockHeader, error)
 }
 
 // LoadTipSetBlocks loads all the blocks for a tipset from the store.
@@ -81,6 +82,7 @@ type tipsetFromBlockProvider struct {
 // TipSetProviderFromBlocks builds a tipset provider backed by a block provider.
 // Blocks will be loaded with the provided context, since GetTipSet does not accept a
 // context parameter. This can and should be removed when GetTipSet does take a context.
+//TODO:this function is not used!
 func TipSetProviderFromBlocks(ctx context.Context, blocks BlockProvider) TipSetProvider {
 	return &tipsetFromBlockProvider{ctx, blocks}
 }
@@ -90,10 +92,14 @@ func (p *tipsetFromBlockProvider) GetTipSet(tsKey types.TipSetKey) (*types.TipSe
 	return LoadTipSetBlocks(p.ctx, p.blocks, tsKey)
 }
 
+func (p *tipsetFromBlockProvider) GetBlock(ctx context.Context, c cid.Cid) (*types.BlockHeader, error) {
+	panic("implement me")
+}
+
 // CollectTipsToCommonAncestor traverses chains from two tipsets (called old and new) until their common
 // ancestor, collecting all tipsets that are in one chain but not the other.
 // The resulting lists of tipsets are ordered by decreasing height.
-func CollectTipsToCommonAncestor(ctx context.Context, store TipSetProvider, oldHead, newHead *types.TipSet) (oldTips, newTips []*types.TipSet, err error) {
+func CollectTipsToCommonAncestor(ctx context.Context, store TipSetProvider, oldHead, newHead *types.BlockHeader) (oldTips, newTips []*types.BlockHeader, err error) {
 	oldIter := IterAncestors(ctx, store, oldHead)
 	newIter := IterAncestors(ctx, store, newHead)
 
@@ -101,7 +107,7 @@ func CollectTipsToCommonAncestor(ctx context.Context, store TipSetProvider, oldH
 	if err != nil {
 		return
 	}
-	commonHeight := commonAncestor.Height()
+	commonHeight := commonAncestor.Height
 
 	// Refresh iterators modified by FindCommonAncestors
 	oldIter = IterAncestors(ctx, store, oldHead)
@@ -123,13 +129,13 @@ var ErrNoCommonAncestor = errors.New("no common ancestor")
 // FindCommonAncestor returns the common ancestor of the two tipsets pointed to
 // by the input iterators.  If they share no common ancestor ErrNoCommonAncestor
 // will be returned.
-func FindCommonAncestor(leftIter, rightIter *TipsetIterator) (*types.TipSet, error) {
+func FindCommonAncestor(leftIter, rightIter *TipsetIterator) (*types.BlockHeader, error) {
 	for !rightIter.Complete() && !leftIter.Complete() {
 		left := leftIter.Value()
 		right := rightIter.Value()
 
-		leftHeight := left.Height()
-		rightHeight := right.Height()
+		leftHeight := left.Height
+		rightHeight := right.Height
 
 		// Found common ancestor.
 		if left.Equals(right) {
@@ -156,15 +162,15 @@ func FindCommonAncestor(leftIter, rightIter *TipsetIterator) (*types.TipSet, err
 
 // CollectTipSetsOfHeightAtLeast collects all tipsets with a height greater
 // than or equal to minHeight from the input tipset.
-func CollectTipSetsOfHeightAtLeast(ctx context.Context, iterator *TipsetIterator, minHeight abi.ChainEpoch) ([]*types.TipSet, error) {
-	var ret []*types.TipSet
+func CollectTipSetsOfHeightAtLeast(ctx context.Context, iterator *TipsetIterator, minHeight abi.ChainEpoch) ([]*types.BlockHeader, error) {
+	var ret []*types.BlockHeader
 	var err error
 	var h abi.ChainEpoch
 	for ; !iterator.Complete(); err = iterator.Next() {
 		if err != nil {
 			return nil, err
 		}
-		h = iterator.Value().Height()
+		h = iterator.Value().Height
 		if h < minHeight {
 			return ret, nil
 		}
@@ -174,7 +180,7 @@ func CollectTipSetsOfHeightAtLeast(ctx context.Context, iterator *TipsetIterator
 }
 
 // FindLatestDRAND returns the latest DRAND entry in the chain beginning at start
-func FindLatestDRAND(ctx context.Context, start *types.TipSet, reader TipSetProvider) (*types.BeaconEntry, error) {
+func FindLatestDRAND(ctx context.Context, start *types.BlockHeader, reader TipSetProvider) (*types.BeaconEntry, error) {
 	iterator := IterAncestors(ctx, reader, start)
 	var err error
 	for ; !iterator.Complete(); err = iterator.Next() {
@@ -185,7 +191,7 @@ func FindLatestDRAND(ctx context.Context, start *types.TipSet, reader TipSetProv
 		// DRAND entries must be the same for all blocks on the tipset as
 		// an invariant of the tipset provider
 
-		entries := ts.At(0).BeaconEntries
+		entries := ts.BeaconEntries
 		if len(entries) > 0 {
 			return entries[len(entries)-1], nil
 		}

@@ -228,7 +228,7 @@ func (ms *MessageStore) StoreMessages(ctx context.Context, secpMessages []*types
 }
 
 //load message from tipset NOTICE skip message with the same nonce
-func (ms *MessageStore) LoadTipSetMessages(ctx context.Context, ts *types.TipSet) ([][]*types.SignedMessage, [][]*types.UnsignedMessage, error) {
+/*func (ms *MessageStore) LoadTipSetMessages(ctx context.Context, ts *types.TipSet) ([][]*types.SignedMessage, [][]*types.UnsignedMessage, error) {
 	var secpMessages [][]*types.SignedMessage
 	var blsMessages [][]*types.UnsignedMessage
 
@@ -300,7 +300,7 @@ func (ms *MessageStore) LoadTipSetMessages(ctx context.Context, ts *types.TipSet
 	}
 
 	return secpMessages, blsMessages, nil
-}
+}*/
 
 // LoadReceipts loads the signed messages in the collection with cid c from ipld
 // storage and returns the slice implied by the collection

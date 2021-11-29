@@ -198,7 +198,7 @@ func (vm *VM) normalizeAddress(addr address.Address) (address.Address, bool) {
 }
 
 // ApplyTipSetMessages implements interpreter.VMInterpreter
-func (vm *VM) ApplyTipSetMessages(blocks []types.BlockMessagesInfo, ts *types.TipSet, parentEpoch, epoch abi.ChainEpoch, cb ExecCallBack) (cid.Cid, []types.MessageReceipt, error) {
+func (vm *VM) ApplyTipSetMessages(blocks []types.BlockMessagesInfo, ts *types.BlockHeader, parentEpoch, epoch abi.ChainEpoch, cb ExecCallBack) (cid.Cid, []types.MessageReceipt, error) {
 	toProcessTipset := time.Now()
 	var receipts []types.MessageReceipt
 	pstate, _ := vm.State.Flush(vm.context)
