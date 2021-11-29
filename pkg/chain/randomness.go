@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"github.com/filecoin-project/venus_lite/pkg/beacon"
+	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 	"math/rand"
 
@@ -91,7 +92,8 @@ type RandomnessSource interface {
 
 type TipSetByHeight interface {
 	GetTipSet(key types.TipSetKey) (*types.TipSet, error)
-	GetTipSetByHeight(ctx context.Context, ts *types.TipSet, h abi.ChainEpoch, prev bool) (*types.TipSet, error)
+	GetBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error)
+	GetTipSetByHeight(ctx context.Context, ts *types.BlockHeader, h abi.ChainEpoch, prev bool) (*types.BlockHeader, error)
 }
 
 var _ RandomnessSource = (*ChainRandomnessSource)(nil)
@@ -99,21 +101,21 @@ var _ RandomnessSource = (*ChainRandomnessSource)(nil)
 // A randomness source that seeds computations with a sample drawn from a chain epoch.
 type ChainRandomnessSource struct { //nolint
 	reader TipSetByHeight
-	head   types.TipSetKey
+	head   cid.Cid
 	beacon beacon.Schedule
 }
 
-func NewChainRandomnessSource(reader TipSetByHeight, head types.TipSetKey, beacon beacon.Schedule) RandomnessSource {
+func NewChainRandomnessSource(reader TipSetByHeight, head cid.Cid, beacon beacon.Schedule) RandomnessSource {
 	return &ChainRandomnessSource{reader: reader, head: head, beacon: beacon}
 }
 
-func (c *ChainRandomnessSource) GetBeaconRandomnessTipset(ctx context.Context, randEpoch abi.ChainEpoch, lookback bool) (*types.TipSet, error) {
-	ts, err := c.reader.GetTipSet(c.head)
+func (c *ChainRandomnessSource) GetBeaconRandomnessTipset(ctx context.Context, randEpoch abi.ChainEpoch, lookback bool) (*types.BlockHeader, error) {
+	ts, err := c.reader.GetBlock(ctx, c.head)
 	if err != nil {
 		return nil, err
 	}
 
-	if randEpoch > ts.Height() {
+	if randEpoch > ts.Height {
 		return nil, xerrors.Errorf("cannot draw randomness from the future")
 	}
 
@@ -137,13 +139,13 @@ func (c *ChainRandomnessSource) GetBeaconRandomnessTipset(ctx context.Context, r
 // should blend in some distinguishing value (such as the epoch itself) into a hash of this ticket.
 func (c *ChainRandomnessSource) GetChainRandomness(ctx context.Context, epoch abi.ChainEpoch, lookback bool) (types.Ticket, error) {
 	var ticket types.Ticket
-	if !c.head.IsEmpty() {
-		start, err := c.reader.GetTipSet(c.head)
+	if c.head != cid.Undef {
+		start, err := c.reader.GetBlock(ctx, c.head)
 		if err != nil {
 			return types.Ticket{}, err
 		}
 
-		if epoch > start.Height() {
+		if epoch > start.Height {
 			return types.Ticket{}, xerrors.Errorf("cannot draw randomness from the future")
 		}
 
@@ -159,7 +161,7 @@ func (c *ChainRandomnessSource) GetChainRandomness(ctx context.Context, epoch ab
 		if err != nil {
 			return types.Ticket{}, err
 		}
-		ticket = tip.MinTicket()
+		ticket = tip.Ticket
 	} else {
 		return types.Ticket{}, xerrors.Errorf("cannot get ticket for empty tipset")
 	}
@@ -247,14 +249,14 @@ func (c *ChainRandomnessSource) extractBeaconEntryForEpoch(ctx context.Context, 
 	round := c.beacon.BeaconForEpoch(filecoinEpoch).MaxBeaconRoundForEpoch(filecoinEpoch)
 
 	for i := 0; i < 20; i++ {
-		cbe := randTS.Blocks()[0].BeaconEntries
+		cbe := randTS.BeaconEntries
 		for _, v := range cbe {
 			if v.Round == round {
 				return v, nil
 			}
 		}
 
-		next, err := c.reader.GetTipSet(randTS.Parents())
+		next, err := c.reader.GetBlock(ctx, randTS.Parent)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to load parents when searching back for beacon entry: %w", err)
 		}

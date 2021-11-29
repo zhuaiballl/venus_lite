@@ -127,79 +127,79 @@ func (c *HeadChangeCoalescer) background(minDelay, maxDelay, mergeInterval time.
 	}
 }
 
-func (c *HeadChangeCoalescer) coalesce(revert, apply []*types.TipSet) {
+func (c *HeadChangeCoalescer) coalesce(revert, apply *types.BlockHeader) {
 	// newly reverted tipsets cancel out with pending applys.
 	// similarly, newly applied tipsets cancel out with pending reverts.
 
 	// pending tipsets
-	pendRevert := make(map[string]struct{}, len(c.revert))
-	for _, ts := range c.revert {
-		pendRevert[ts.Key().String()] = struct{}{}
-	}
+	pendRevert := make(map[string]struct{}, 1)
+	//for _, ts := range c.revert {
+	pendRevert[c.revert.Cid().String()] = struct{}{}
+	//}
 
-	pendApply := make(map[string]struct{}, len(c.apply))
-	for _, ts := range c.apply {
-		pendApply[ts.Key().String()] = struct{}{}
-	}
+	pendApply := make(map[string]struct{}, 1)
+	//for _, ts := range c.apply {
+	pendApply[c.apply.Cid().String()] = struct{}{}
+	//}
 
 	// incoming tipsets
-	reverting := make(map[string]struct{}, len(revert))
-	for _, ts := range revert {
-		reverting[ts.Key().String()] = struct{}{}
-	}
+	reverting := make(map[string]struct{}, 1)
+	//for _, ts := range revert {
+	reverting[revert.Cid().String()] = struct{}{}
+	//}
 
-	applying := make(map[string]struct{}, len(apply))
-	for _, ts := range apply {
-		applying[ts.Key().String()] = struct{}{}
-	}
+	applying := make(map[string]struct{}, 1)
+	//for _, ts := range apply {
+	applying[apply.Cid().String()] = struct{}{}
+	//}
 
 	// coalesced revert set
 	// - pending reverts are cancelled by incoming applys
 	// - incoming reverts are cancelled by pending applys
-	newRevert := make([]*types.TipSet, 0, len(c.revert)+len(revert))
-	for _, ts := range c.revert {
-		_, cancel := applying[ts.Key().String()]
-		if cancel {
-			continue
-		}
-
-		newRevert = append(newRevert, ts)
+	newRevert := make([]*types.BlockHeader, 0, 2)
+	//for _, ts := range c.revert {
+	_, cancel := applying[c.revert.Cid().String()]
+	if cancel {
+		//continue
 	}
 
-	for _, ts := range revert {
-		_, cancel := pendApply[ts.Key().String()]
-		if cancel {
-			continue
-		}
+	newRevert = append(newRevert, c.revert)
+	//}
 
-		newRevert = append(newRevert, ts)
+	//for _, ts := range revert {
+	_, cancel = pendApply[revert.Cid().String()]
+	if cancel {
+		//continue
 	}
+
+	newRevert = append(newRevert, revert)
+	//}
 
 	// coalesced apply set
 	// - pending applys are cancelled by incoming reverts
 	// - incoming applys are cancelled by pending reverts
-	newApply := make([]*types.TipSet, 0, len(c.apply)+len(apply))
-	for _, ts := range c.apply {
-		_, cancel := reverting[ts.Key().String()]
-		if cancel {
-			continue
-		}
-
-		newApply = append(newApply, ts)
+	newApply := make([]*types.BlockHeader, 0, 2)
+	//for _, ts := range c.apply {
+	_, cancel = reverting[c.apply.Cid().String()]
+	if cancel {
+		//continue
 	}
 
-	for _, ts := range apply {
-		_, cancel := pendRevert[ts.Key().String()]
-		if cancel {
-			continue
-		}
+	newApply = append(newApply, c.apply)
+	//}
 
-		newApply = append(newApply, ts)
+	//for _, ts := range apply {
+	_, cancel = pendRevert[apply.Cid().String()]
+	if cancel {
+		//continue
 	}
+
+	newApply = append(newApply, apply)
+	//}
 
 	// commit the coalesced sets
-	c.revert = newRevert
-	c.apply = newApply
+	c.revert = newRevert[0]
+	c.apply = newApply[0]
 }
 
 func (c *HeadChangeCoalescer) dispatch() {
