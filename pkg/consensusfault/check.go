@@ -93,7 +93,7 @@ func (s *ConsensusFaultChecker) VerifyConsensusFault(ctx context.Context, h1, h2
 	// Time-offset mining fault: two blocks with the same parent but different epochs.
 	// The height check is redundant at time of writing, but included for robustness to future changes to this method.
 	// The blocks have a common ancestor by definition (the parent).
-	if b1.Parents.Equals(b2.Parents) && b1.Height != b2.Height {
+	if b1.Parent.Equals(b2.Parent) && b1.Height != b2.Height {
 		fault = &runtime5.ConsensusFault{
 			Target: b1.Miner,
 			Epoch:  b2.Height,
@@ -109,7 +109,7 @@ func (s *ConsensusFaultChecker) VerifyConsensusFault(ctx context.Context, h1, h2
 		if innerErr != nil {
 			return nil, errors.Wrapf(innerErr, "failed to decode extra")
 		}
-		if b1.Height == b3.Height && b3.Parents.Equals(b1.Parents) && !b2.Parents.Has(b1.Cid()) && b2.Parents.Has(b3.Cid()) {
+		if b1.Height == b3.Height && b3.Parent.Equals(b1.Parent) && !b2.Parent.Equals(b1.Parent) && b2.Parent.Equals(b3.Parent) {
 			fault = &runtime5.ConsensusFault{
 				Target: b1.Miner,
 				Epoch:  b2.Height,
