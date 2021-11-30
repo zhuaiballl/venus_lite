@@ -11,6 +11,7 @@ import (
 	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
 	"github.com/filecoin-project/venus_lite/pkg/util"
 	"golang.org/x/xerrors"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -169,6 +170,10 @@ func NewStore(chainDs repo.Datastore,
 
 	store.reorgCh = store.reorgWorker(context.TODO())
 	return store
+}
+
+func (store *Store) Blockstore() blockstore.Blockstore { // nolint
+	return store.bsstore
 }
 
 //load the blockchain from the known head from disk
@@ -513,6 +518,36 @@ func (store *Store) GetTipSetByHeight(ctx context.Context, ts *types.BlockHeader
 	//else h>lbts.Height
 	log.Warnf("in chain this is impossible.")
 	return lbts, nil*/
+}
+
+//GetLatestBeaconEntry get latest beacon from the height. there're no beacon values in the block, try to
+//get beacon in the parents tipset. the max find depth is 20.
+func (store *Store) GetLatestBeaconEntry(ts *types.BlockHeader) (*types.BeaconEntry, error) {
+	cur := ts
+	for i := 0; i < 20; i++ {
+		cbe := cur.BeaconEntries
+		if len(cbe) > 0 {
+			return cbe[len(cbe)-1], nil
+		}
+
+		if cur.Height == 0 {
+			return nil, xerrors.Errorf("made it back to genesis block without finding beacon entry")
+		}
+
+		next, err := store.GetBlock(nil, cur.Parent)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to load parents when searching back for latest beacon entry: %w", err)
+		}
+		cur = next
+	}
+
+	if os.Getenv("VENUS_IGNORE_DRAND") == "_yes_" {
+		return &types.BeaconEntry{
+			Data: []byte{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9},
+		}, nil
+	}
+
+	return nil, xerrors.Errorf("found NO beacon entries in the 20 blocks prior to given tipset")
 }
 
 // SubHeadChanges returns channel with chain head updates.
