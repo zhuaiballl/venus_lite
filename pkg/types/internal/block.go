@@ -7,7 +7,6 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	fbig "github.com/filecoin-project/go-state-types/big"
-	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -26,19 +25,19 @@ type BlockHeader struct {
 	Ticket Ticket `json:"ticket"`
 
 	// ElectionProof is the vrf proof giving this newBlock's miner authoring rights
-	ElectionProof *ElectionProof `json:"electionProof"`
+	//ElectionProof *ElectionProof `json:"electionProof"`
 
 	// BeaconEntries contain the verifiable oracle randomness used to elect
 	// this newBlock's author leader
 	BeaconEntries []*BeaconEntry `json:"beaconEntries"`
 
 	// WinPoStProof are the winning post proofs
-	WinPoStProof []proof2.PoStProof `json:"winPoStProof"`
+	//WinPoStProof []proof2.PoStProof `json:"winPoStProof"`
 
 	// Parents is the set of parents this newBlock was based on. Typically one,
 	// but can be several in the case where there were multiple winning ticket-
 	// holders for an epoch.
-	Parents TipSetKey `json:"parents"`
+	//Parents TipSetKey `json:"parents"`
 
 	// ParentWeight is the aggregate chain weight of the parent set.
 	ParentWeight fbig.Int `json:"parentWeight"`
@@ -170,21 +169,21 @@ func (b *BlockHeader) Equals(other *BlockHeader) bool {
 // signature creation and verification
 func (b *BlockHeader) SignatureData() []byte {
 	tmp := &BlockHeader{
-		Miner:                 b.Miner,
-		Ticket:                b.Ticket,
-		ElectionProof:         b.ElectionProof,
-		Parents:               b.Parents,
+		Miner:  b.Miner,
+		Ticket: b.Ticket,
+		//ElectionProof:         b.ElectionProof,
+		//Parents:               b.Parents,
 		ParentWeight:          b.ParentWeight,
 		Height:                b.Height,
 		Messages:              b.Messages,
 		ParentStateRoot:       b.ParentStateRoot,
 		ParentMessageReceipts: b.ParentMessageReceipts,
-		WinPoStProof:          b.WinPoStProof,
-		BeaconEntries:         b.BeaconEntries,
-		Timestamp:             b.Timestamp,
-		BLSAggregate:          b.BLSAggregate,
-		ForkSignaling:         b.ForkSignaling,
-		ParentBaseFee:         b.ParentBaseFee,
+		//WinPoStProof:          b.WinPoStProof,
+		BeaconEntries: b.BeaconEntries,
+		Timestamp:     b.Timestamp,
+		BLSAggregate:  b.BLSAggregate,
+		ForkSignaling: b.ForkSignaling,
+		ParentBaseFee: b.ParentBaseFee,
 		// BlockSig omitted
 	}
 
@@ -217,9 +216,9 @@ func (b *BlockHeader) ToStorageBlock() (blocks.Block, error) {
 }
 
 // LastTicket get ticket in block
-func (b *BlockHeader) LastTicket() *Ticket {
+/*func (b *BlockHeader) LastTicket() *Ticket {
 	return &b.Ticket
-}
+}*/
 
 // SetValidated set block signature is valid after checkout blocksig
 func (b *BlockHeader) SetValidated() {

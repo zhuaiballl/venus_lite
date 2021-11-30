@@ -10,7 +10,7 @@ import (
 	abi "github.com/filecoin-project/go-state-types/abi"
 	crypto "github.com/filecoin-project/go-state-types/crypto"
 	exitcode "github.com/filecoin-project/go-state-types/exitcode"
-	proof "github.com/filecoin-project/specs-actors/actors/runtime/proof"
+	//proof "github.com/filecoin-project/specs-actors/actors/runtime/proof"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
@@ -753,9 +753,9 @@ func (t *BlockHeader) MarshalCBOR(w io.Writer) error {
 	}
 
 	// t.ElectionProof (internal.ElectionProof) (struct)
-	if err := t.ElectionProof.MarshalCBOR(w); err != nil {
-		return err
-	}
+	//if err := t.ElectionProof.MarshalCBOR(w); err != nil {
+	//return err
+	//}
 
 	// t.BeaconEntries ([]*internal.BeaconEntry) (slice)
 	if len(t.BeaconEntries) > cbg.MaxLength {
@@ -772,23 +772,23 @@ func (t *BlockHeader) MarshalCBOR(w io.Writer) error {
 	}
 
 	// t.WinPoStProof ([]proof.PoStProof) (slice)
-	if len(t.WinPoStProof) > cbg.MaxLength {
-		return xerrors.Errorf("Slice value in field t.WinPoStProof was too long")
-	}
+	//if len(t.WinPoStProof) > cbg.MaxLength {
+	//return xerrors.Errorf("Slice value in field t.WinPoStProof was too long")
+	//}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajArray, uint64(len(t.WinPoStProof))); err != nil {
-		return err
-	}
-	for _, v := range t.WinPoStProof {
-		if err := v.MarshalCBOR(w); err != nil {
-			return err
-		}
-	}
+	//if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajArray, uint64(len(t.WinPoStProof))); err != nil {
+	//return err
+	//}
+	//for _, v := range t.WinPoStProof {
+	//if err := v.MarshalCBOR(w); err != nil {
+	//return err
+	//}
+	//}
 
 	// t.Parents (internal.TipSetKey) (struct)
-	if err := t.Parents.MarshalCBOR(w); err != nil {
-		return err
-	}
+	//if err := t.Parents.MarshalCBOR(w); err != nil {
+	//return err
+	//}
 
 	// t.ParentWeight (big.Int) (struct)
 	if err := t.ParentWeight.MarshalCBOR(w); err != nil {
@@ -850,36 +850,34 @@ func (t *BlockHeader) MarshalCBOR(w io.Writer) error {
 	if err := t.ParentBaseFee.MarshalCBOR(w); err != nil {
 		return err
 	}
-	/*
-	   //this is add code
-	   	// t.PrveBlockHeaderHashes([]uint8) (slice)
-	   	if len(t.PrveBlockHeaderHashes) > cbg.ByteArrayMaxLen {
-	   		return xerrors.Errorf("Byte array in field t.PrevBlockHeaderHashes was too long")
-	   	}   //bytearraymaxlength is 2<<20
+	//this is add code
+	// t.PrveBlockHeaderHashes([]uint8) (slice)
+	if len(t.PrveBlockHeaderHashes) > cbg.ByteArrayMaxLen {
+		return xerrors.Errorf("Byte array in field t.PrevBlockHeaderHashes was too long")
+	} //bytearraymaxlength is 2<<20
 
-	   	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.PrveBlockHeaderHashes))); err != nil {
-	   		return err
-	   	}
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.PrveBlockHeaderHashes))); err != nil {
+		return err
+	}
 
-	   	// t.Hash([]uint8) (slice)
-	   	if len(t.Hash) > cbg.ByteArrayMaxLen {
-	   		return xerrors.Errorf("Byte array in field t.Hash was too long")
-	   	}   //bytearraymaxlength is 2<<20
+	// t.Hash([]uint8) (slice)
+	if len(t.Hash) > cbg.ByteArrayMaxLen {
+		return xerrors.Errorf("Byte array in field t.Hash was too long")
+	} //bytearraymaxlength is 2<<20
 
-	   	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.Hash))); err != nil {
-	   		return err
-	   	}
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.Hash))); err != nil {
+		return err
+	}
 
-	   	//t.nonce (uint64) (uint64)
-	   	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
-	   		return err
-	   	}
+	//t.nonce (uint64) (uint64)
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
+		return err
+	}
 
-	   	//t.parent (cid.Cid) (struct)
-	   	if err := cbg.WriteCidBuf(scratch, w, t.Parent); err != nil {
-	   		return xerrors.Errorf("failed to write cid field t.Parent: %w", err)
-	   	}
-	*/
+	//t.parent (cid.Cid) (struct)
+	if err := cbg.WriteCidBuf(scratch, w, t.Parent); err != nil {
+		return xerrors.Errorf("failed to write cid field t.Parent: %w", err)
+	}
 	return nil
 }
 
@@ -910,6 +908,7 @@ func (t *BlockHeader) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
+
 	// t.Ticket (internal.Ticket) (struct)
 
 	{
@@ -919,27 +918,8 @@ func (t *BlockHeader) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.ElectionProof (internal.ElectionProof) (struct)
 
-	{
-
-		b, err := br.ReadByte()
-		if err != nil {
-			return err
-		}
-		if b != cbg.CborNull[0] {
-			if err := br.UnreadByte(); err != nil {
-				return err
-			}
-			t.ElectionProof = new(ElectionProof)
-			if err := t.ElectionProof.UnmarshalCBOR(br); err != nil {
-				return xerrors.Errorf("unmarshaling t.ElectionProof pointer: %w", err)
-			}
-		}
-
-	}
 	// t.BeaconEntries ([]*internal.BeaconEntry) (slice)
-
 	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
 	if err != nil {
 		return err
@@ -969,42 +949,42 @@ func (t *BlockHeader) UnmarshalCBOR(r io.Reader) error {
 
 	// t.WinPoStProof ([]proof.PoStProof) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
-	if err != nil {
-		return err
-	}
+	//maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	//if err != nil {
+	//return err
+	//}
 
-	if extra > cbg.MaxLength {
-		return fmt.Errorf("t.WinPoStProof: array too large (%d)", extra)
-	}
+	//if extra > cbg.MaxLength {
+	//return fmt.Errorf("t.WinPoStProof: array too large (%d)", extra)
+	//}
 
-	if maj != cbg.MajArray {
-		return fmt.Errorf("expected cbor array")
-	}
+	//if maj != cbg.MajArray {
+	//return fmt.Errorf("expected cbor array")
+	//}
 
-	if extra > 0 {
-		t.WinPoStProof = make([]proof.PoStProof, extra)
-	}
+	//if extra > 0 {
+	//t.WinPoStProof = make([]proof.PoStProof, extra)
+	//}
 
-	for i := 0; i < int(extra); i++ {
+	//for i := 0; i < int(extra); i++ {
 
-		var v proof.PoStProof
-		if err := v.UnmarshalCBOR(br); err != nil {
-			return err
-		}
+	//var v proof.PoStProof
+	//if err := v.UnmarshalCBOR(br); err != nil {
+	//return err
+	//}
 
-		t.WinPoStProof[i] = v
-	}
+	//t.WinPoStProof[i] = v
+	//}
 
 	// t.Parents (internal.TipSetKey) (struct)
 
-	{
+	//{
 
-		if err := t.Parents.UnmarshalCBOR(br); err != nil {
-			return xerrors.Errorf("unmarshaling t.Parents: %w", err)
-		}
+	//if err := t.Parents.UnmarshalCBOR(br); err != nil {
+	//return xerrors.Errorf("unmarshaling t.Parents: %w", err)
+	//}
 
-	}
+	//}
 	// t.ParentWeight (big.Int) (struct)
 
 	{
@@ -1150,86 +1130,86 @@ func (t *BlockHeader) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	/*
-	   //this is add code
-	   	//t.PrevBlockHeaderHashes
 
-	   	{
-	   		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
-	   		if err==io.EOF {
-	   			fmt.Println("having read EOF when unmarshaling t.PrevBlockHeaderHashes")
-	   			//do nothing
-	   		}else if err != nil && err!=io.EOF {
-	   			return err
-	   		}else {
-	   			if extra > cbg.ByteArrayMaxLen {
-	   				return fmt.Errorf("t.Data: byte array too large (%d)", extra)
-	   			}
-	   			if maj != cbg.MajByteString {
-	   				return fmt.Errorf("expected byte array")
-	   			}
+	//this is add code
+	//t.PrevBlockHeaderHashes
 
-	   			if extra > 0 {
-	   				t.PrveBlockHeaderHashes = make([]uint8, extra)
-	   			}
-	   		}
-	   	}
+	{
+		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		if err == io.EOF {
+			fmt.Println("having read EOF when unmarshaling t.PrevBlockHeaderHashes")
+			//do nothing
+		} else if err != nil && err != io.EOF {
+			return err
+		} else {
+			if extra > cbg.ByteArrayMaxLen {
+				return fmt.Errorf("t.Data: byte array too large (%d)", extra)
+			}
+			if maj != cbg.MajByteString {
+				return fmt.Errorf("expected byte array")
+			}
 
-	   	//t.Hash
+			if extra > 0 {
+				t.PrveBlockHeaderHashes = make([]uint8, extra)
+			}
+		}
+	}
 
-	   	{
-	   		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
-	   		if err==io.EOF {
-	   			fmt.Println("having read EOF when unmarshaling t.Hash")
-	   			//do nothing
-	   		}else if err != nil && err!=io.EOF {
-	   			return err
-	   		}else {
-	   			if extra > cbg.ByteArrayMaxLen {
-	   				return fmt.Errorf("t.Data: byte array too large (%d)", extra)
-	   			}
-	   			if maj != cbg.MajByteString {
-	   				return fmt.Errorf("expected byte array")
-	   			}
+	//t.Hash
 
-	   			if extra > 0 {
-	   				t.Hash = make([]uint8, extra)
-	   			}
-	   		}
-	   	}
+	{
+		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		if err == io.EOF {
+			fmt.Println("having read EOF when unmarshaling t.Hash")
+			//do nothing
+		} else if err != nil && err != io.EOF {
+			return err
+		} else {
+			if extra > cbg.ByteArrayMaxLen {
+				return fmt.Errorf("t.Data: byte array too large (%d)", extra)
+			}
+			if maj != cbg.MajByteString {
+				return fmt.Errorf("expected byte array")
+			}
 
-	   	//t.nonce
+			if extra > 0 {
+				t.Hash = make([]uint8, extra)
+			}
+		}
+	}
 
-	   	{
-	   		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
-	   		if err==io.EOF {
-	   			fmt.Println("having read EOF when unmarshaling t.Nonce")
-	   			//do nothing
-	   		}else if err != nil && err!=io.EOF {
-	   			return err
-	   		}else {
-	   			if maj != cbg.MajUnsignedInt {
-	   				return fmt.Errorf("wrong type for uint64 field")
-	   			}
-	   			t.Nonce = uint64(extra)
-	   		}
-	   	}
-	       //why "err=EOF" when apply this code to venus? Because when unmarshaling, in the real filecoin, the block header only marshal to the ParentBaseFee,
-	   	//so when we read this, it will have err=EOF
+	//t.nonce
 
-	   	// t.Messages (cid.Cid) (struct)
+	{
+		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		if err == io.EOF {
+			fmt.Println("having read EOF when unmarshaling t.Nonce")
+			//do nothing
+		} else if err != nil && err != io.EOF {
+			return err
+		} else {
+			if maj != cbg.MajUnsignedInt {
+				return fmt.Errorf("wrong type for uint64 field")
+			}
+			t.Nonce = uint64(extra)
+		}
+	}
+	//why "err=EOF" when apply this code to venus? Because when unmarshaling, in the real filecoin, the block header only marshal to the ParentBaseFee,
+	//so when we read this, it will have err=EOF
 
-	   	{
+	// t.Messages (cid.Cid) (struct)
 
-	   		c, err := cbg.ReadCid(br)
-	   		if err != nil {
-	   			return xerrors.Errorf("failed to read cid field t.Parent: %w", err)
-	   		}
+	{
 
-	   		t.Parent = c
+		c, err := cbg.ReadCid(br)
+		if err != nil {
+			return xerrors.Errorf("failed to read cid field t.Parent: %w", err)
+		}
 
-	   	}
-	*/
+		t.Parent = c
+
+	}
+
 	return nil
 }
 
