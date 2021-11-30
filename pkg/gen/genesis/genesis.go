@@ -64,6 +64,8 @@ import (
 	"github.com/filecoin-project/venus_lite/pkg/vm"
 )
 
+//TODO:This file is important when start the venus daemon when create the local dev network.For now,I just make it correct in syntax.
+
 const AccountStart = 100
 const MinerStart = 1000
 const MaxAccounts = MinerStart - AccountStart
@@ -609,7 +611,7 @@ func MakeGenesisBlock(ctx context.Context, rep repo.Repo, bs bstore.Blockstore, 
 	genesisticket := types.Ticket{
 		VRFProof: tickBuf,
 	}
-
+	//TODO: obviously, when delete the proof in EC,the cid must be changed,so the code need to be recheck.
 	filecoinGenesisCid, err := cid.Decode("bafyreiaqpwbbyjo4a42saasj36kkrpv4tsherf2e7bvezkert2a7dhonoi")
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode filecoin genesis block CID: %w", err)
@@ -633,9 +635,9 @@ func MakeGenesisBlock(ctx context.Context, rep repo.Repo, bs bstore.Blockstore, 
 	}
 
 	b := &types.BlockHeader{
-		Miner:                 system.Address,
-		Ticket:                genesisticket,
-		Parents:               types.NewTipSetKey(filecoinGenesisCid),
+		Miner:  system.Address,
+		Ticket: genesisticket,
+		//Parents:               types.NewTipSetKey(filecoinGenesisCid),
 		Height:                0,
 		ParentWeight:          types.NewInt(0),
 		ParentStateRoot:       stateroot,
@@ -644,7 +646,7 @@ func MakeGenesisBlock(ctx context.Context, rep repo.Repo, bs bstore.Blockstore, 
 		BLSAggregate:          nil,
 		BlockSig:              nil,
 		Timestamp:             template.Timestamp,
-		ElectionProof:         new(types.ElectionProof),
+		//ElectionProof:         new(types.ElectionProof),
 		BeaconEntries: []*types.BeaconEntry{
 			{
 				Round: 0,
