@@ -63,9 +63,9 @@ func (c *ChainSelector) Weight(ctx context.Context, ts *types.TipSet) (fbig.Int,
 	// (wFunction(totalPowerAtTipset(ts)) * sum(ts.blocks[].ElectionProof.WinCount) * wRatio_num * 2^8) / (e * wRatio_den)
 
 	totalJ := int64(0)
-	for _, b := range ts.Blocks() {
+	/*for _, b := range ts.Blocks() {
 		totalJ += b.ElectionProof.WinCount
-	}
+	}*/
 
 	eWeight := big.NewInt(log2P * constants.WRatioNum)
 	eWeight = eWeight.Lsh(eWeight, 8)
