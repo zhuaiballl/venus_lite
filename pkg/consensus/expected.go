@@ -85,9 +85,9 @@ type chainReader interface {
 	GetHead() *types.BlockHeader
 	GetTipSet(types.TipSetKey) (*types.TipSet, error)
 	GetTipSetStateRoot(*types.BlockHeader) (cid.Cid, error)
-	//GetTipSetReceiptsRoot(*types.TipSet) (cid.Cid, error)
+	GetTipSetReceiptsRoot(*types.BlockHeader) (cid.Cid, error)
 	GetGenesisBlock(context.Context) (*types.BlockHeader, error)
-	//GetLatestBeaconEntry(*types.TipSet) (*types.BeaconEntry, error)
+	GetLatestBeaconEntry(*types.BlockHeader) (*types.BeaconEntry, error)
 	//GetTipSetByHeight(context.Context, *types.TipSet, abi.ChainEpoch, bool) (*types.TipSet, error)
 	GetCirculatingSupplyDetailed(context.Context, abi.ChainEpoch, tree.Tree) (chain.CirculatingSupply, error)
 	GetLookbackTipSetForRound(ctx context.Context, ts *types.BlockHeader, round abi.ChainEpoch, version network.Version) (*types.BlockHeader, cid.Cid, error)
