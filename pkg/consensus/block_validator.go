@@ -1,12 +1,14 @@
 package consensus
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Gurpartap/async"
+	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/trace"
 	"os"
+	"strings"
 	"time"
 
 	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
@@ -16,9 +18,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	acrypto "github.com/filecoin-project/go-state-types/crypto"
 	"github.com/filecoin-project/go-state-types/network"
-	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 	"github.com/filecoin-project/venus_lite/pkg/beacon"
 	"github.com/filecoin-project/venus_lite/pkg/chain"
 	"github.com/filecoin-project/venus_lite/pkg/config"
@@ -314,9 +314,162 @@ func (bv *BlockValidator) ValidateFullBlock(ctx context.Context, blk *types.Bloc
 
 //TODO: check every data in the block is vaild
 func (bv *BlockValidator) validateBlock(ctx context.Context, blk *types.BlockHeader) error {
+	parent, err := bv.chainState.GetBlock(ctx, blk.Parent)
+	if err != nil {
+		return xerrors.Errorf("load parent tipset failed %w", err)
+	}
+	parentWeight := parent.Height
+	parentReceiptRoot, err := bv.chainState.GetTipSetReceiptsRoot(parent)
+	if err != nil {
+		return xerrors.Errorf("get parent tipset state failed %w", err)
+	}
+	// confirm block state root matches parent state root
+	rootAfterCalc, err := bv.chainState.GetTipSetStateRoot(parent)
+	if err != nil {
+		return xerrors.Errorf("get parent tipset state failed %w", err)
+	}
+	if !rootAfterCalc.Equals(blk.ParentStateRoot) {
+		return xerrors.Errorf("%w (%s != %s)", ErrStateRootMismatch, rootAfterCalc, blk.ParentStateRoot)
+	}
+
+	if err := blockSanityChecks(blk); err != nil {
+		return xerrors.Errorf("incoming header failed basic sanity checks: %w", err)
+	}
+
+	baseHeight := parent.Height
+	nulls := blk.Height - (baseHeight + 1)
+	if tgtTS := parent.Timestamp + bv.config.BlockDelay*uint64(nulls+1); blk.Timestamp != tgtTS {
+		return xerrors.Errorf("block has wrong timestamp: %d != %d", blk.Timestamp, tgtTS)
+	}
+
+	now := uint64(time.Now().Unix())
+	if blk.Timestamp > now+AllowableClockDriftSecs {
+		return xerrors.Errorf("block was from the future (now=%d, blk=%d): %v", now, blk.Timestamp, ErrTemporal)
+	}
+	if blk.Timestamp > now {
+		logExpect.Warn("Got block from the future, but within threshold", blk.Timestamp, time.Now().Unix())
+	}
+
+	// get parent beacon
+	prevBeacon, err := bv.chainState.GetLatestBeaconEntry(parent)
+	if err != nil {
+		return xerrors.Errorf("failed to get latest beacon entry: %w", err)
+	}
+
+	// confirm block receipts match parent receipts
+	if !parentReceiptRoot.Equals(blk.ParentMessageReceipts) {
+		return ErrReceiptRootMismatch
+	}
+	//TODO:make height and weight the same(in chain structure)
+	if int64(parentWeight) != blk.ParentWeight.Int64() {
+		return xerrors.Errorf("block %s has invalid parent weight %d expected %d", blk.Cid().String(), blk.ParentWeight, parentWeight)
+	}
+
+	// get worker address
+	version := bv.fork.GetNtwkVersion(ctx, blk.Height)
+	_, lbStateRoot, err := bv.chainState.GetLookbackTipSetForRound(ctx, parent, blk.Height, version)
+	if err != nil {
+		return xerrors.Errorf("failed to get lookback tipset for block: %w", err)
+	}
+
+	powerStateView := bv.state.PowerStateView(lbStateRoot)
+	workerAddr, err := powerStateView.GetMinerWorkerRaw(ctx, blk.Miner)
+	if err != nil {
+		return xerrors.Errorf("query worker address failed: %w", err)
+	}
+
+	minerCheck := async.Err(func() error {
+		if err := bv.minerIsValid(ctx, blk.Miner, blk.ParentStateRoot); err != nil {
+			return xerrors.Errorf("minerIsValid failed: %w", err)
+		}
+		return nil
+	})
+
+	baseFeeCheck := async.Err(func() error {
+		baseFee, err := bv.messageStore.ComputeBaseFee(ctx, parent, bv.config.ForkUpgradeParam)
+		if err != nil {
+			return xerrors.Errorf("computing base fee: %w", err)
+		}
+
+		if big.Cmp(baseFee, blk.ParentBaseFee) != 0 {
+			return xerrors.Errorf("base fee doesn't match: %s (header) != %s (computed)", blk.ParentBaseFee, baseFee)
+		}
+		return nil
+	})
+
+	blockSigCheck := async.Err(func() error {
+		// Validate block signature
+		return crypto.Verify(blk.BlockSig, workerAddr, blk.SignatureData())
+	})
+
+	beaconValuesCheck := async.Err(func() error {
+		parentHeight := parent.Height
+		if err = bv.ValidateBlockBeacon(blk, parentHeight, prevBeacon); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	tktsCheck := async.Err(func() error {
+		beaconBase, err := bv.beaconBaseEntry(ctx, blk)
+		if err != nil {
+			return xerrors.Errorf("failed to get election entry %w", err)
+		}
+
+		sampleEpoch := blk.Height - constants.TicketRandomnessLookback
+		bSmokeHeight := blk.Height > bv.config.ForkUpgradeParam.UpgradeSmokeHeight
+		if err := bv.tv.IsValidTicket(ctx, blk.Parent, beaconBase, bSmokeHeight, sampleEpoch, blk.Miner, workerAddr, blk.Ticket); err != nil {
+			return xerrors.Errorf("invalid ticket: %s in block %s %w", blk.Ticket.String(), blk.Cid(), err)
+		}
+		return nil
+	})
+
+	msgsCheck := async.Err(func() error {
+		keyStateView := bv.state.PowerStateView(blk.ParentStateRoot)
+		sigValidator := appstate.NewSignatureValidator(keyStateView)
+		if err := bv.checkBlockMessages(ctx, sigValidator, blk, parent); err != nil {
+			return xerrors.Errorf("block had invalid messages: %w", err)
+		}
+		return nil
+	})
+
+	await := []async.ErrorFuture{
+		minerCheck,
+		tktsCheck,
+		blockSigCheck,
+		beaconValuesCheck,
+		baseFeeCheck,
+		msgsCheck,
+	}
+
+	var merr error
+	for _, fut := range await {
+		if err := fut.AwaitContext(ctx); err != nil {
+			merr = multierror.Append(merr, err)
+		}
+	}
+
+	if merr != nil {
+		mulErr := merr.(*multierror.Error)
+		mulErr.ErrorFormat = func(es []error) string {
+			if len(es) == 1 {
+				return fmt.Sprintf("1 error occurred:\n\t* %+v\n\n", es[0])
+			}
+
+			points := make([]string, len(es))
+			for i, err := range es {
+				points[i] = fmt.Sprintf("* %+v", err)
+			}
+
+			return fmt.Sprintf(
+				"%d errors occurred:\n\t%s\n\n",
+				len(es), strings.Join(points, "\n\t"))
+		}
+		return mulErr
+	}
 	pow := NewProofOfWork(blk)
-	err := pow.validate()
-	if err == false {
+	isvil := pow.validate()
+	if isvil == false {
 		return xerrors.Errorf("block has wrong proof of work!")
 	}
 	return nil
@@ -354,10 +507,10 @@ func (bv *BlockValidator) validateBlockMsg(ctx context.Context, blk *types.Block
 		return pubsub.ValidationReject
 	}
 
-	if blk.Header.ElectionProof.WinCount < 1 {
+	/*if blk.Header.ElectionProof.WinCount < 1 {
 		logExpect.Errorf("block is not claiming to be winning")
 		return pubsub.ValidationReject
-	}
+	}*/
 
 	return pubsub.ValidationAccept
 }
@@ -504,7 +657,7 @@ func (bv *BlockValidator) beaconBaseEntry(ctx context.Context, blk *types.BlockH
 	return chain.FindLatestDRAND(ctx, parent, bv.chainState)
 }
 
-func (bv *BlockValidator) ValidateBlockWinner(ctx context.Context, waddr address.Address, lbTS *types.BlockHeader, lbRoot cid.Cid, baseTS *types.BlockHeader, baseRoot cid.Cid,
+/*func (bv *BlockValidator) ValidateBlockWinner(ctx context.Context, waddr address.Address, lbTS *types.BlockHeader, lbRoot cid.Cid, baseTS *types.BlockHeader, baseRoot cid.Cid,
 	blk *types.BlockHeader, prevEntry *types.BeaconEntry) error {
 	if blk.ElectionProof.WinCount < 1 {
 		return xerrors.Errorf("block is not claiming to be a winner")
@@ -559,7 +712,7 @@ func (bv *BlockValidator) ValidateBlockWinner(ctx context.Context, waddr address
 	}
 
 	return nil
-}
+}*/
 
 func (bv *BlockValidator) MinerEligibleToMine(ctx context.Context, addr address.Address, parentStateRoot cid.Cid, parentHeight abi.ChainEpoch, lookbackTS *types.BlockHeader) (bool, error) {
 	hmp, err := bv.minerHasMinPower(ctx, addr, lookbackTS)
@@ -665,7 +818,7 @@ func (bv *BlockValidator) minerHasMinPower(ctx context.Context, addr address.Add
 	return ps.MinerNominalPowerMeetsConsensusMinimum(addr)
 }
 
-func (bv *BlockValidator) VerifyWinningPoStProof(ctx context.Context, nv network.Version, blk *types.BlockHeader, prevBeacon *types.BeaconEntry, lbst cid.Cid) error {
+/*func (bv *BlockValidator) VerifyWinningPoStProof(ctx context.Context, nv network.Version, blk *types.BlockHeader, prevBeacon *types.BeaconEntry, lbst cid.Cid) error {
 	if constants.InsecurePoStValidation {
 		if len(blk.WinPoStProof) == 0 {
 			return xerrors.Errorf("[INSECURE-POST-VALIDATION] No winning post proof given")
@@ -729,7 +882,7 @@ func (bv *BlockValidator) VerifyWinningPoStProof(ctx context.Context, nv network
 	}
 
 	return nil
-}
+}*/
 
 // TODO: We should extract this somewhere else and make the message pool and miner use the same logic
 func (bv *BlockValidator) checkBlockMessages(ctx context.Context, sigValidator *appstate.SignatureValidator, blk *types.BlockHeader, baseTS *types.BlockHeader) (err error) {
@@ -912,9 +1065,9 @@ func (bv *BlockValidator) ValidateMsgMeta(fblk *types.FullBlock) error {
 }
 
 func blockSanityChecks(b *types.BlockHeader) error {
-	if b.ElectionProof == nil {
-		return xerrors.Errorf("block cannot have nil election proof")
-	}
+	//if b.ElectionProof == nil {
+	//return xerrors.Errorf("block cannot have nil election proof")
+	//}
 
 	if b.BlockSig == nil {
 		return xerrors.Errorf("block had nil signature")
