@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"github.com/filecoin-project/venus_lite/pkg/chain"
 	"github.com/filecoin-project/venus_lite/pkg/config"
-	"github.com/filecoin-project/venus_lite/pkg/types"
-
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	cbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/pkg/errors"
@@ -23,7 +21,7 @@ func Init(ctx context.Context, r repo.Repo, bs bstore.Blockstore, cst cbor.IpldS
 	if err != nil {
 		return nil, err
 	}
-	genTipSet, err := types.NewTipSet(genesis)
+	//genTipSet, err := types.NewTipSet(genesis)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate genesis block")
 	}
@@ -32,12 +30,12 @@ func Init(ctx context.Context, r repo.Repo, bs bstore.Blockstore, cst cbor.IpldS
 	chainStore := chain.NewStore(r.ChainDatastore(), bs, genesis.Cid(), chain.NewCirculatingSupplyCalculator(bs, genesis.Cid(), config.DefaultForkUpgradeParam))
 
 	// Persist the genesis tipset to the repo.
-	genTsas := &chain.TipSetMetadata{
+	/*genTsas := &chain.TipSetMetadata{
 		TipSet:          genTipSet,
 		TipSetStateRoot: genesis.ParentStateRoot,
 		TipSetReceipts:  genesis.ParentMessageReceipts,
-	}
-	if err = chainStore.PutTipSetMetadata(ctx, genTsas); err != nil {
+	}*/
+	if _, err = chainStore.PutObject(ctx, genesis); err != nil {
 		return nil, errors.Wrap(err, "failed to put genesis block in chain store")
 	}
 	if err = chainStore.SetHead(ctx, genesis); err != nil {
