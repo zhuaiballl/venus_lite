@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"sync"
+	"time"
 
 	syncTypes "github.com/filecoin-project/venus_lite/pkg/chainsync/types"
 	cbor "github.com/ipfs/go-ipld-cbor"
@@ -79,7 +80,7 @@ type ChainReaderWriter interface {
 	GetHead() *types.BlockHeader
 	GetBlock(ctx context.Context, blockID cid.Cid) (*types.BlockHeader, error)
 	//GetTipSet(types.TipSetKey) (*types.TipSet, error)
-	//GetTipSetStateRoot(*types.TipSet) (cid.Cid, error)
+	GetTipSetStateRoot(header *types.BlockHeader) (cid.Cid, error)
 	//GetTipSetReceiptsRoot(*types.TipSet) (cid.Cid, error)
 	//HasTipSetAndState(context.Context, *types.TipSet) bool
 	//PutTipSetMetadata(context.Context, *chain.TipSetMetadata) error
@@ -184,7 +185,7 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent *types.BlockHeader, ne
 	defer stopwatch.Stop(ctx)
 
 	// Lookup parent state and receipt root. It is guaranteed by the syncer that it is in the chainStore.
-	//parentStateRoot, err := syncer.chainStore.GetTipSetStateRoot(parent)
+	parentStateRoot, err := syncer.chainStore.GetTipSetStateRoot(parent)
 	/*if err != nil {
 		return xerrors.Errorf("get parent tipset state failed %w", err)
 	}*/
@@ -203,15 +204,15 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent *types.BlockHeader, ne
 	}
 	// Run a state transition to validate the tipset and compute
 	// a new state to add to the bsstore.
-	/*toProcessTime := time.Now()
+	toProcessTime := time.Now()
 	root, receiptCid, err := syncer.stateProcessor.RunStateTransition(ctx, next, parentStateRoot)
 	if err != nil {
-		return xerrors.Errorf("calc current tipset %s state failed %w", next.Key().String(), err)
+		return xerrors.Errorf("calc current tipset %s state failed %w", next.Cid().String(), err)
 	}
 
-	logSyncer.Infow("Process TipSet ", "Height:", next.Height(), "Blocks", next.Len(), " Root:", root, " receiptcid ", receiptCid, " time: ", time.Since(toProcessTime).Milliseconds())
+	logSyncer.Infow("Process BlockHeader ", "Height:", next.Height, " Root:", root, " receiptcid ", receiptCid, " time: ", time.Since(toProcessTime).Milliseconds())
 
-	err = syncer.chainStore.PutTipSetMetadata(ctx, &chain.TipSetMetadata{
+	/*err = syncer.chainStore.PutTipSetMetadata(ctx, &chain.TipSetMetadata{
 		TipSet:          next,
 		TipSetStateRoot: root,
 		TipSetReceipts:  receiptCid,
@@ -219,7 +220,10 @@ func (syncer *Syncer) syncOne(ctx context.Context, parent *types.BlockHeader, ne
 	if err != nil {
 		return err
 	}*/
-	syncer.chainStore.PutObject(ctx, next)
+	_, err = syncer.chainStore.PutObject(ctx, next)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -617,7 +621,7 @@ func (syncer *Syncer) processTipSetSegment(ctx context.Context, target *syncType
 			// have access to the chain. If syncOne fails for non-consensus reasons,
 			// there is no assumption that the running node's data is valid at all,
 			// so we don't really lose anything with this simplification.
-			//syncer.badTipSets.AddChain(segTipset[i:])
+			syncer.badTipSets.AddChain(segHeaders[i:])
 			return nil, errors.Wrapf(err, "failed to sync blocks %s, number %d of %d in chain", bh.Cid().String(), i, len(segHeaders))
 		}
 		parent = bh
