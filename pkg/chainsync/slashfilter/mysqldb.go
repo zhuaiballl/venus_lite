@@ -88,7 +88,7 @@ func (f *MysqlSlashFilter) checkSameHeightFault(bh *types.BlockHeader) error {
 //checkSameParentFault check whether the miner mined block on the same parent
 func (f *MysqlSlashFilter) checkSameParentFault(bh *types.BlockHeader) error {
 	var bk MinedBlock
-	err := f._db.Model(&MinedBlock{}).Take(&bk, "miner=? and parent_key=?", bh.Miner.String(), bh.Parents.String()).Error
+	err := f._db.Model(&MinedBlock{}).Take(&bk, "miner=? and parent_key=?", bh.Miner.String(), bh.Parent.String()).Error
 	if err == gorm.ErrRecordNotFound {
 		return nil
 	}
@@ -130,11 +130,11 @@ func (f *MysqlSlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.Cha
 			}
 
 			var found bool
-			for _, c := range bh.Parents.Cids() {
-				if c.Equals(parent) {
-					found = true
-				}
+			//for _, c := range bh.Parent {
+			if bh.Parent.Equals(parent) {
+				found = true
 			}
+			//}
 
 			if !found {
 				return xerrors.Errorf("produced block would trigger 'parent-grinding fault' consensus fault; miner: %s; bh: %s, expected parent: %s", bh.Miner, bh.Cid(), parent)
@@ -148,7 +148,7 @@ func (f *MysqlSlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.Cha
 
 	return f._db.Save(&MinedBlock{
 		ParentEpoch: int64(parentEpoch),
-		ParentKey:   bh.Parents.String(),
+		ParentKey:   bh.Parent.String(),
 		Epoch:       int64(bh.Height),
 		Miner:       bh.Miner.String(),
 		Cid:         bh.Cid().String(),

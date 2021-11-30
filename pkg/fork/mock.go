@@ -19,7 +19,7 @@ func NewMockFork() *MockFork {
 	return &MockFork{}
 }
 
-func (mockFork *MockFork) HandleStateForks(ctx context.Context, root cid.Cid, height abi.ChainEpoch, ts *types.TipSet) (cid.Cid, error) {
+func (mockFork *MockFork) HandleStateForks(ctx context.Context, root cid.Cid, height abi.ChainEpoch, ts *types.BlockHeader) (cid.Cid, error) {
 	return root, nil
 }
 
