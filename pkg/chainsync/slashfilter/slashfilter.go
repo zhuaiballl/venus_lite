@@ -42,7 +42,7 @@ func (f *LocalSlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.Cha
 		}
 	}
 
-	parentsKey := ds.NewKey(fmt.Sprintf("/%s/%s", bh.Miner, bh.Parents.String()))
+	parentsKey := ds.NewKey(fmt.Sprintf("/%s/%s", bh.Miner, bh.Parent.String()))
 	{
 		// time-offset mining faults (2 blocks with the same parents)
 		if err := checkFault(f.byParents, parentsKey, bh, "time-offset mining faults"); err != nil {
@@ -73,11 +73,11 @@ func (f *LocalSlashFilter) MinedBlock(bh *types.BlockHeader, parentEpoch abi.Cha
 			}
 
 			var found bool
-			for _, c := range bh.Parents.Cids() {
-				if c.Equals(parent) {
-					found = true
-				}
+			//for _, c := range bh.Parents.Cids() {
+			if bh.Parent.Equals(parent) {
+				found = true
 			}
+			//}
 
 			if !found {
 				return xerrors.Errorf("produced block would trigger 'parent-grinding fault' consensus fault; miner: %s; bh: %s, expected parent: %s", bh.Miner, bh.Cid(), parent)
