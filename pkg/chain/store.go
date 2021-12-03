@@ -413,6 +413,40 @@ func (store *Store) reorgWorker(ctx context.Context) chan reorg {
 	return out
 }
 
+func ReorgOps(lts func(context.Context, cid.Cid) (*types.BlockHeader, error), a, b *types.BlockHeader) ([]*types.BlockHeader, []*types.BlockHeader, error) {
+	left := a
+	right := b
+
+	var leftChain, rightChain []*types.BlockHeader
+	for !left.Equals(right) {
+		lh := left.Height
+		rh := right.Height
+		if lh > rh {
+			leftChain = append(leftChain, left)
+			lKey := left.Parent
+			par, err := lts(nil, lKey)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			left = par
+		} else {
+			rightChain = append(rightChain, right)
+			rKey := right.Parent
+			par, err := lts(nil, rKey)
+			if err != nil {
+				log.Infof("failed to fetch right.Parents: %s", err)
+				return nil, nil, err
+			}
+
+			right = par
+		}
+	}
+
+	return leftChain, rightChain, nil
+
+}
+
 func (store *Store) GetTipSet(key types.TipSetKey) (*types.TipSet, error) {
 	panic("implement me")
 }
