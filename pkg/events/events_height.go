@@ -12,7 +12,7 @@ import (
 )
 
 type heightHandler struct {
-	ts     *types.TipSet
+	ts     *types.BlockHeader
 	height abi.ChainEpoch
 	called bool
 
@@ -25,7 +25,7 @@ type heightEvents struct {
 	gcConfidence abi.ChainEpoch
 
 	lk                        sync.Mutex
-	head                      *types.TipSet
+	head                      *types.BlockHeader
 	tsHeights, triggerHeights map[abi.ChainEpoch][]*heightHandler
 	lastGc                    abi.ChainEpoch //nolint:structcheck
 }
@@ -73,17 +73,17 @@ func (e *heightEvents) ChainAt(ctx context.Context, hnd HeightHandler, rev Rever
 	e.lk.Lock()
 	for {
 		head := e.head
-		if head.Height() >= h {
+		if head.Height >= h {
 			// Head is past the handler height. We at least need to stash the tipset to
 			// avoid doing this from the main event loop.
 			e.lk.Unlock()
 
-			var ts *types.TipSet
-			if head.Height() == h {
+			var ts *types.BlockHeader
+			if head.Height == h {
 				ts = head
 			} else {
 				var err error
-				ts, err = e.api.ChainGetTipSetAfterHeight(ctx, handler.height, head.Key())
+				ts, err = e.api.ChainGetTipSetAfterHeight(ctx, handler.height, head.Cid())
 				if err != nil {
 					return xerrors.Errorf("events.ChainAt: failed to get tipset: %s", err)
 				}
@@ -105,10 +105,10 @@ func (e *heightEvents) ChainAt(ctx context.Context, hnd HeightHandler, rev Rever
 			handler.ts = ts
 
 			// If we've reached confidence and haven't called, call.
-			if !handler.called && head.Height() >= triggerAt {
+			if !handler.called && head.Height >= triggerAt {
 				ctx, span := trace.StartSpan(ctx, "events.HeightApply")
 				span.AddAttributes(trace.BoolAttribute("immediate", true))
-				err := handler.handle(ctx, handler.ts, head.Height())
+				err := handler.handle(ctx, handler.ts, head.Height)
 				span.End()
 				if err != nil {
 					return err
@@ -117,7 +117,7 @@ func (e *heightEvents) ChainAt(ctx context.Context, hnd HeightHandler, rev Rever
 				handler.called = true
 
 				// If we've reached gcConfidence, return without saving anything.
-				if head.Height() >= h+e.gcConfidence {
+				if head.Height >= h+e.gcConfidence {
 					return nil
 				}
 			}
@@ -148,17 +148,17 @@ func (e *heightEvents) ChainAt(ctx context.Context, hnd HeightHandler, rev Rever
 }
 
 // Updates the head and garbage collects if we're 2x over our garbage collection confidence period.
-func (e *heightEventsObserver) updateHead(h *types.TipSet) {
+func (e *heightEventsObserver) updateHead(h *types.BlockHeader) {
 	e.lk.Lock()
 	defer e.lk.Unlock()
 	e.head = h
 
-	if e.head.Height() < e.lastGc+e.gcConfidence*2 {
+	if e.head.Height < e.lastGc+e.gcConfidence*2 {
 		return
 	}
-	e.lastGc = h.Height()
+	e.lastGc = h.Height
 
-	targetGcHeight := e.head.Height() - e.gcConfidence
+	targetGcHeight := e.head.Height - e.gcConfidence
 	for h := range e.tsHeights {
 		if h >= targetGcHeight {
 			continue
@@ -175,12 +175,12 @@ func (e *heightEventsObserver) updateHead(h *types.TipSet) {
 
 type heightEventsObserver heightEvents
 
-func (e *heightEventsObserver) Revert(ctx context.Context, from, to *types.TipSet) error {
+func (e *heightEventsObserver) Revert(ctx context.Context, from, to *types.BlockHeader) error {
 	// Update the head first so we don't accidental skip reverting a concurrent call to ChainAt.
 	e.updateHead(to)
 
 	// Call revert on all hights between the two tipsets, handling empty tipsets.
-	for h := from.Height(); h > to.Height(); h-- {
+	for h := from.Height; h > to.Height; h-- {
 		e.lk.Lock()
 		triggers := e.tsHeights[h]
 		e.lk.Unlock()
@@ -206,11 +206,11 @@ func (e *heightEventsObserver) Revert(ctx context.Context, from, to *types.TipSe
 	return nil
 }
 
-func (e *heightEventsObserver) Apply(ctx context.Context, from, to *types.TipSet) error {
+func (e *heightEventsObserver) Apply(ctx context.Context, from, to *types.BlockHeader) error {
 	// Update the head first so we don't accidental skip applying a concurrent call to ChainAt.
 	e.updateHead(to)
 
-	for h := from.Height() + 1; h <= to.Height(); h++ {
+	for h := from.Height + 1; h <= to.Height; h++ {
 		e.lk.Lock()
 		triggers := e.triggerHeights[h]
 		tipsets := e.tsHeights[h]
@@ -235,7 +235,7 @@ func (e *heightEventsObserver) Apply(ctx context.Context, from, to *types.TipSet
 			span.End()
 
 			if err != nil {
-				log.Errorf("chain trigger (@H %d, called @ %d) failed: %+v", h, to.Height(), err)
+				log.Errorf("chain trigger (@H %d, called @ %d) failed: %+v", h, to.Height, err)
 			}
 
 			handler.called = true

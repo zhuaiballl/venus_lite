@@ -24,7 +24,7 @@ type observer struct {
 	ready chan struct{}
 
 	lk        sync.Mutex
-	head      *types.TipSet
+	head      *types.BlockHeader
 	maxHeight abi.ChainEpoch
 	observers []TipSetObserver
 }
@@ -90,7 +90,7 @@ func (o *observer) listenHeadChangesOnce(ctx context.Context) error {
 	o.lk.Unlock()
 
 	if startHead != nil && !startHead.Equals(curHead) {
-		changes, err := o.api.ChainGetPath(ctx, startHead.Key(), curHead.Key())
+		changes, err := o.api.ChainGetPath(ctx, startHead.Cid(), curHead.Cid())
 		if err != nil {
 			return xerrors.Errorf("failed to get path from last applied tipset to head: %w", err)
 		}
@@ -109,7 +109,7 @@ func (o *observer) applyChanges(ctx context.Context, changes []*chain.HeadChange
 		return nil
 	}
 
-	var rev, app []*types.TipSet
+	var rev, app []*types.BlockHeader
 	for _, changes := range changes {
 		switch changes.Type {
 		case chain.HCRevert:
@@ -127,7 +127,7 @@ func (o *observer) applyChanges(ctx context.Context, changes []*chain.HeadChange
 	return nil
 }
 
-func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) error {
+func (o *observer) headChange(ctx context.Context, rev, app []*types.BlockHeader) error {
 	ctx, span := trace.StartSpan(ctx, "events.HeadChange")
 	span.AddAttributes(trace.Int64Attribute("reverts", int64(len(rev))))
 	span.AddAttributes(trace.Int64Attribute("applies", int64(len(app))))
@@ -137,7 +137,7 @@ func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) err
 	o.lk.Unlock()
 
 	defer func() {
-		span.AddAttributes(trace.Int64Attribute("endHeight", int64(head.Height())))
+		span.AddAttributes(trace.Int64Attribute("endHeight", int64(head.Height)))
 		span.End()
 	}()
 
@@ -147,10 +147,10 @@ func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) err
 		if !from.Equals(head) {
 			return xerrors.Errorf(
 				"expected to revert %s (%d), reverting %s (%d)",
-				head.Key(), head.Height(), from.Key(), from.Height(),
+				head.Cid(), head.Height, from.Cid(), from.Height,
 			)
 		}
-		var to *types.TipSet
+		var to *types.BlockHeader
 		if i+1 < len(rev) {
 			// If we have more reverts, the next revert is the next head.
 			to = rev[i+1]
@@ -158,7 +158,7 @@ func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) err
 			// At the end of the revert sequenece, we need to lookup the joint tipset
 			// between the revert sequence and the apply sequence.
 			var err error
-			to, err = o.api.ChainGetTipSet(ctx, from.Parents())
+			to, err = o.api.ChainGetTipSet(ctx, from.Parent)
 			if err != nil {
 				// Well, this sucks. We'll bail and restart.
 				return xerrors.Errorf("failed to get tipset when reverting due to a SetHeead: %w", err)
@@ -177,22 +177,22 @@ func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) err
 
 		for _, obs := range observers {
 			if err := obs.Revert(ctx, from, to); err != nil {
-				log.Errorf("observer %T failed to apply tipset %s (%d) with: %s", obs, from.Key(), from.Height(), err)
+				log.Errorf("observer %T failed to apply tipset %s (%d) with: %s", obs, from.Cid(), from.Height, err)
 			}
 		}
 
-		if to.Height() < o.maxHeight-o.gcConfidence {
-			log.Errorf("reverted past finality, from %d to %d", o.maxHeight, to.Height())
+		if to.Height < o.maxHeight-o.gcConfidence {
+			log.Errorf("reverted past finality, from %d to %d", o.maxHeight, to.Height)
 		}
 
 		head = to
 	}
 
 	for _, to := range app {
-		if to.Parents() != head.Key() {
+		if to.Parent != head.Cid() {
 			return xerrors.Errorf(
 				"cannot apply %s (%d) with parents %s on top of %s (%d)",
-				to.Key(), to.Height(), to.Parents(), head.Key(), head.Height(),
+				to.Cid(), to.Height, to.Parent, head.Cid(), head.Height,
 			)
 		}
 
@@ -203,11 +203,11 @@ func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) err
 
 		for _, obs := range observers {
 			if err := obs.Apply(ctx, head, to); err != nil {
-				log.Errorf("observer %T failed to revert tipset %s (%d) with: %s", obs, to.Key(), to.Height(), err)
+				log.Errorf("observer %T failed to revert tipset %s (%d) with: %s", obs, to.Cid(), to.Height, err)
 			}
 		}
-		if to.Height() > o.maxHeight {
-			o.maxHeight = to.Height()
+		if to.Height > o.maxHeight {
+			o.maxHeight = to.Height
 		}
 
 		head = to
@@ -219,7 +219,7 @@ func (o *observer) headChange(ctx context.Context, rev, app []*types.TipSet) err
 // observe events starting at this tipset.
 //
 // Returns nil if the observer hasn't started yet (but still registers).
-func (o *observer) Observe(obs TipSetObserver) *types.TipSet {
+func (o *observer) Observe(obs TipSetObserver) *types.BlockHeader {
 	o.lk.Lock()
 	defer o.lk.Unlock()
 	o.observers = append(o.observers, obs)

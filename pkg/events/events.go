@@ -14,8 +14,8 @@ var log = logging.Logger("events")
 
 // HeightHandler `curH`-`ts.Height` = `confidence`
 type (
-	HeightHandler func(ctx context.Context, ts *types.TipSet, curH abi.ChainEpoch) error
-	RevertHandler func(ctx context.Context, ts *types.TipSet) error
+	HeightHandler func(ctx context.Context, ts *types.BlockHeader, curH abi.ChainEpoch) error
+	RevertHandler func(ctx context.Context, ts *types.BlockHeader) error
 )
 
 type Events struct {

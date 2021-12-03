@@ -76,7 +76,7 @@ func (mp *MessagePool) GasEstimateFeeCap(
 	ctx context.Context,
 	msg *types.UnsignedMessage,
 	maxqueueblks int64,
-	tsk types.TipSetKey,
+	tsk cid.Cid,
 ) (big.Int, error) {
 	ts, err := mp.api.ChainHead()
 	if err != nil {
@@ -127,7 +127,7 @@ func (mp *MessagePool) GasEstimateGasPremium(
 	nblocksincl uint64,
 	sender address.Address,
 	gaslimit int64,
-	_ types.TipSetKey,
+	_ cid.Cid,
 	cache *GasPriceCache,
 ) (big.Int, error) {
 	if nblocksincl == 0 {
@@ -247,7 +247,7 @@ func (mp *MessagePool) evalMessageGasLimit(ctx context.Context, msgIn *types.Mes
 	}
 
 	// Special case for PaymentChannel collect, which is deleting actor
-	pts, err := mp.api.ChainTipSet(ts.Parents())
+	pts, err := mp.api.ChainBlock(ctx, ts.Parent)
 	if err != nil {
 		_ = err
 		// somewhat ignore it as it can happen and we just want to detect
@@ -278,7 +278,7 @@ func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessag
 		return nil, xerrors.Errorf("estimate message is nil")
 	}
 	if estimateMessage.Msg.GasLimit == 0 {
-		gasLimit, err := mp.GasEstimateGasLimit(ctx, estimateMessage.Msg, types.TipSetKey{})
+		gasLimit, err := mp.GasEstimateGasLimit(ctx, estimateMessage.Msg, cid.Undef)
 		if err != nil {
 			return nil, xerrors.Errorf("estimating gas used: %w", err)
 		}
@@ -290,7 +290,7 @@ func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessag
 	}
 
 	if estimateMessage.Msg.GasPremium == types.EmptyInt || types.BigCmp(estimateMessage.Msg.GasPremium, types.NewInt(0)) == 0 {
-		gasPremium, err := mp.GasEstimateGasPremium(ctx, 10, estimateMessage.Msg.From, estimateMessage.Msg.GasLimit, types.TipSetKey{}, mp.PriceCache)
+		gasPremium, err := mp.GasEstimateGasPremium(ctx, 10, estimateMessage.Msg.From, estimateMessage.Msg.GasLimit, cid.Undef, mp.PriceCache)
 		if err != nil {
 			return nil, xerrors.Errorf("estimating gas price: %w", err)
 		}
@@ -298,7 +298,7 @@ func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessag
 	}
 
 	if estimateMessage.Msg.GasFeeCap == types.EmptyInt || types.BigCmp(estimateMessage.Msg.GasFeeCap, types.NewInt(0)) == 0 {
-		feeCap, err := mp.GasEstimateFeeCap(ctx, estimateMessage.Msg, 20, types.EmptyTSK)
+		feeCap, err := mp.GasEstimateFeeCap(ctx, estimateMessage.Msg, 20, cid.Undef)
 		if err != nil {
 			return nil, xerrors.Errorf("estimating fee cap: %w", err)
 		}
@@ -310,13 +310,13 @@ func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessag
 	return estimateMessage.Msg, nil
 }
 
-func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateMessages []*types.EstimateMessage, fromNonce uint64, tsk types.TipSetKey) ([]*types.EstimateResult, error) {
+func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateMessages []*types.EstimateMessage, fromNonce uint64, tsk cid.Cid) ([]*types.EstimateResult, error) {
 	if len(estimateMessages) == 0 {
 		return nil, xerrors.New("estimate messages are empty")
 	}
 
 	// ChainTipSet will determine if tsk is empty
-	currTS, err := mp.api.ChainTipSet(tsk)
+	currTS, err := mp.api.ChainBlock(ctx, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("getting tipset: %w", err)
 	}
@@ -350,7 +350,7 @@ func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateM
 		}
 
 		if estimateMsg.GasPremium == types.EmptyInt || types.BigCmp(estimateMsg.GasPremium, types.NewInt(0)) == 0 {
-			gasPremium, err := mp.GasEstimateGasPremium(ctx, 10, estimateMsg.From, estimateMsg.GasLimit, types.TipSetKey{}, mp.PriceCache)
+			gasPremium, err := mp.GasEstimateGasPremium(ctx, 10, estimateMsg.From, estimateMsg.GasLimit, cid.Undef, mp.PriceCache)
 			if err != nil {
 				estimateMsg.Nonce = 0
 				estimateResults = append(estimateResults, &types.EstimateResult{
@@ -363,7 +363,7 @@ func (mp *MessagePool) GasBatchEstimateMessageGas(ctx context.Context, estimateM
 		}
 
 		if estimateMsg.GasFeeCap == types.EmptyInt || types.BigCmp(estimateMsg.GasFeeCap, types.NewInt(0)) == 0 {
-			feeCap, err := mp.GasEstimateFeeCap(ctx, estimateMsg, 20, types.EmptyTSK)
+			feeCap, err := mp.GasEstimateFeeCap(ctx, estimateMsg, 20, cid.Undef)
 			if err != nil {
 				estimateMsg.Nonce = 0
 				estimateResults = append(estimateResults, &types.EstimateResult{

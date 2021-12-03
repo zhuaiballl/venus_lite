@@ -647,7 +647,7 @@ type fundManagerEnvironment struct {
 }
 
 func (env *fundManagerEnvironment) AvailableFunds(ctx context.Context, addr address.Address) (abi.TokenAmount, error) {
-	bal, err := env.api.StateMarketBalance(ctx, addr, types.EmptyTSK)
+	bal, err := env.api.StateMarketBalance(ctx, addr, cid.Undef)
 	if err != nil {
 		return abi.NewTokenAmount(0), err
 	}

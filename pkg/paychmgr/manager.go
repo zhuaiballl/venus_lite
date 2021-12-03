@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/filecoin-project/venus_lite/pkg/statemanger"
-	"github.com/filecoin-project/venus_lite/pkg/types"
 	"sync"
 
 	"github.com/filecoin-project/go-state-types/big"
@@ -322,7 +321,7 @@ func (pm *Manager) trackInboundChannel(ctx context.Context, ch address.Address) 
 
 	// Check that channel To address is in wallet
 	to := stateCi.Control // Inbound channel so To addr is Control (this node)
-	toKey, err := pm.pchapi.StateAccountKey(ctx, to, types.EmptyTSK)
+	toKey, err := pm.pchapi.StateAccountKey(ctx, to, cid.Undef)
 	if err != nil {
 		return nil, err
 	}

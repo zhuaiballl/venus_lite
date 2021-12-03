@@ -59,7 +59,7 @@ type HeartbeatService struct {
 	Config     *config.HeartbeatConfig
 
 	// A function that returns the heaviest tipset
-	HeadGetter func() (types.TipSet, error)
+	HeadGetter func() (*types.BlockHeader, error)
 
 	// A function that returns the miner's address
 	MinerAddressGetter func() address.Address
@@ -83,7 +83,7 @@ func defaultMinerAddressGetter() address.Address {
 }
 
 // NewHeartbeatService returns a HeartbeatService
-func NewHeartbeatService(h host.Host, genesisCID cid.Cid, hbc *config.HeartbeatConfig, hg func() (types.TipSet, error), options ...HeartbeatServiceOption) *HeartbeatService {
+func NewHeartbeatService(h host.Host, genesisCID cid.Cid, hbc *config.HeartbeatConfig, hg func() (*types.BlockHeader, error), options ...HeartbeatServiceOption) *HeartbeatService {
 	srv := &HeartbeatService{
 		Host:               h,
 		GenesisCID:         genesisCID,
@@ -205,8 +205,8 @@ func (hbs *HeartbeatService) Beat(ctx context.Context) Heartbeat {
 	if err != nil {
 		log.Errorf("unable to fetch chain head: %s", err)
 	}
-	tipset := ts.Key().String()
-	height := ts.Height()
+	tipset := ts.Cid().String()
+	height := ts.Height
 
 	addr := hbs.MinerAddressGetter()
 	return Heartbeat{

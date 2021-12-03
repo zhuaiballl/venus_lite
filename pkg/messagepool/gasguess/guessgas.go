@@ -16,7 +16,7 @@ import (
 	builtin2 "github.com/filecoin-project/specs-actors/v2/actors/builtin"
 )
 
-type ActorLookup func(context.Context, address.Address, types.TipSetKey) (*types.Actor, error)
+type ActorLookup func(context.Context, address.Address, cid.Cid) (*types.Actor, error)
 
 const failedGasGuessRatio = 0.5
 const failedGasGuessMax = 25_000_000
@@ -67,7 +67,7 @@ func failedGuess(msg *types.SignedMessage) int64 {
 	return guess
 }
 
-func GuessGasUsed(ctx context.Context, tsk types.TipSetKey, msg *types.SignedMessage, al ActorLookup) (int64, error) {
+func GuessGasUsed(ctx context.Context, tsk cid.Cid, msg *types.SignedMessage, al ActorLookup) (int64, error) {
 	// MethodSend is the same in all versions.
 	if msg.Message.Method == builtin.MethodSend {
 		switch msg.Message.From.Protocol() {

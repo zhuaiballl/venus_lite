@@ -104,16 +104,16 @@ func (mp *MessagePool) checkMessages(ctx context.Context, msgs []*types.Message,
 		return nil, nil
 	}
 	mp.curTSLk.Lock()
-	curTS := mp.curTS
+	curBH := mp.curBH
 	mp.curTSLk.Unlock()
 
-	epoch := curTS.Height()
+	epoch := curBH.Height
 
 	var baseFee big.Int
-	if len(curTS.Blocks()) > 0 {
-		baseFee = curTS.Blocks()[0].ParentBaseFee
+	if curBH != nil {
+		baseFee = curBH.ParentBaseFee
 	} else {
-		baseFee, err = mp.api.ChainComputeBaseFee(context.Background(), curTS)
+		baseFee, err = mp.api.ChainComputeBaseFee(context.Background(), curBH)
 		if err != nil {
 			return nil, xerrors.Errorf("error computing basefee: %w", err)
 		}
@@ -160,7 +160,7 @@ func (mp *MessagePool) checkMessages(ctx context.Context, msgs []*types.Message,
 			} else {
 				mp.lk.Unlock()
 
-				stateNonce, err := mp.getStateNonce(ctx, m.From, curTS)
+				stateNonce, err := mp.getStateNonce(ctx, m.From, curBH)
 				if err != nil {
 					check.OK = false
 					check.Err = fmt.Sprintf("error retrieving state nonce: %s", err.Error())
@@ -193,7 +193,7 @@ func (mp *MessagePool) checkMessages(ctx context.Context, msgs []*types.Message,
 
 		balance, ok := balances[m.From]
 		if !ok {
-			balance, err = mp.getStateBalance(ctx, m.From, curTS)
+			balance, err = mp.getStateBalance(ctx, m.From, curBH)
 			if err != nil {
 				check.OK = false
 				check.Err = fmt.Sprintf("error retrieving state balance: %s", err)

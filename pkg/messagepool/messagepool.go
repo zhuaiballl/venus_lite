@@ -31,7 +31,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/crypto"
 
-	//"github.com/filecoin-project/venus_lite/pkg/chain"
+	"github.com/filecoin-project/venus_lite/pkg/chain"
 	"github.com/filecoin-project/venus_lite/pkg/config"
 	"github.com/filecoin-project/venus_lite/pkg/constants"
 	crypto2 "github.com/filecoin-project/venus_lite/pkg/crypto"
@@ -1056,7 +1056,7 @@ func (mp *MessagePool) addLocked(ctx context.Context, m *types.SignedMessage, st
 	return nil
 }
 
-func (mp *MessagePool) GetNonce(ctx context.Context, addr address.Address, _ types.TipSetKey) (uint64, error) {
+func (mp *MessagePool) GetNonce(ctx context.Context, addr address.Address, _ cid.Cid) (uint64, error) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
@@ -1067,7 +1067,7 @@ func (mp *MessagePool) GetNonce(ctx context.Context, addr address.Address, _ typ
 }
 
 // GetActor should not be used. It is only here to satisfy interface mess caused by lite node handling
-func (mp *MessagePool) GetActor(_ context.Context, addr address.Address, _ types.TipSetKey) (*types.Actor, error) {
+func (mp *MessagePool) GetActor(_ context.Context, addr address.Address, _ cid.Cid) (*types.Actor, error) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 	return mp.api.GetActorAfter(addr, mp.curBH)
@@ -1456,71 +1456,69 @@ func (mp *MessagePool) HeadChange(ctx context.Context, revert *types.BlockHeader
 	return merr
 }
 
-//TODO:this function is not used when init node or start node
-func (mp *MessagePool) runHeadChange(from *types.TipSet, to *types.TipSet, rmsgs map[address.Address]map[uint64]*types.SignedMessage) error {
-	/*	add := func(m *types.SignedMessage) {
-			s, ok := rmsgs[m.Message.From]
-			if !ok {
-				s = make(map[uint64]*types.SignedMessage)
-				rmsgs[m.Message.From] = s
-			}
-			s[m.Message.Nonce] = m
+func (mp *MessagePool) runHeadChange(from *types.BlockHeader, to *types.BlockHeader, rmsgs map[address.Address]map[uint64]*types.SignedMessage) error {
+	add := func(m *types.SignedMessage) {
+		s, ok := rmsgs[m.Message.From]
+		if !ok {
+			s = make(map[uint64]*types.SignedMessage)
+			rmsgs[m.Message.From] = s
 		}
-		rm := func(from address.Address, nonce uint64) {
-			s, ok := rmsgs[from]
-			if !ok {
-				return
-			}
-
-			if _, ok := s[nonce]; ok {
-				delete(s, nonce)
-				return
-			}
-
+		s[m.Message.Nonce] = m
+	}
+	rm := func(from address.Address, nonce uint64) {
+		s, ok := rmsgs[from]
+		if !ok {
+			return
 		}
 
-		revert, apply, err := chain.ReorgOps(mp.api.LoadTipSet, from, to)
+		if _, ok := s[nonce]; ok {
+			delete(s, nonce)
+			return
+		}
+
+	}
+
+	revert, apply, err := chain.ReorgOps(mp.api.LoadBlock, from, to)
+	if err != nil {
+		return xerrors.Errorf("failed to compute reorg ops for mpool pending messages: %v", err)
+	}
+
+	var merr error
+
+	for _, ts := range revert {
+		msgs, err := mp.MessagesForBlocks([]*types.BlockHeader{ts})
 		if err != nil {
-			return xerrors.Errorf("failed to compute reorg ops for mpool pending messages: %v", err)
+			log.Errorf("error retrieving messages for reverted block: %s", err)
+			merr = multierror.Append(merr, err)
+			continue
 		}
 
-		var merr error
+		for _, msg := range msgs {
+			add(msg)
+		}
+	}
 
-		for _, ts := range revert {
-			msgs, err := mp.MessagesForBlocks(ts.Blocks())
-			if err != nil {
-				log.Errorf("error retrieving messages for reverted block: %s", err)
-				merr = multierror.Append(merr, err)
-				continue
-			}
-
-			for _, msg := range msgs {
-				add(msg)
-			}
+	for _, ts := range apply {
+		//for _, b := range ts.Blocks() {
+		bmsgs, smsgs, err := mp.api.MessagesForBlock(ts)
+		if err != nil {
+			xerr := xerrors.Errorf("failed to get messages for apply block %s(height %d) (msgroot = %s): %v", ts.Cid(), ts.Height, ts.Messages, err)
+			log.Errorf("error retrieving messages for block: %s", xerr)
+			merr = multierror.Append(merr, xerr)
+			continue
 		}
 
-		for _, ts := range apply {
-			for _, b := range ts.Blocks() {
-				bmsgs, smsgs, err := mp.api.MessagesForBlock(b)
-				if err != nil {
-					xerr := xerrors.Errorf("failed to get messages for apply block %s(height %d) (msgroot = %s): %v", b.Cid(), b.Height, b.Messages, err)
-					log.Errorf("error retrieving messages for block: %s", xerr)
-					merr = multierror.Append(merr, xerr)
-					continue
-				}
-
-				for _, msg := range smsgs {
-					rm(msg.Message.From, msg.Message.Nonce)
-				}
-
-				for _, msg := range bmsgs {
-					rm(msg.From, msg.Nonce)
-				}
-			}
+		for _, msg := range smsgs {
+			rm(msg.Message.From, msg.Message.Nonce)
 		}
 
-		return merr*/
-	return nil
+		for _, msg := range bmsgs {
+			rm(msg.From, msg.Nonce)
+		}
+		//}
+	}
+
+	return merr
 }
 
 type statBucket struct {

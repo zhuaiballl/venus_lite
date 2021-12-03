@@ -14,15 +14,15 @@ import (
 
 type uncachedAPI interface {
 	ChainNotify(context.Context) <-chan []*chain.HeadChange
-	ChainGetPath(ctx context.Context, from, to types.TipSetKey) ([]*chain.HeadChange, error)
-	StateSearchMsg(ctx context.Context, from types.TipSetKey, msg cid.Cid, limit abi.ChainEpoch, allowReplaced bool) (*chain.MsgLookup, error)
+	ChainGetPath(ctx context.Context, from, to cid.Cid) ([]*chain.HeadChange, error)
+	StateSearchMsg(ctx context.Context, from cid.Cid, msg cid.Cid, limit abi.ChainEpoch, allowReplaced bool) (*chain.MsgLookup, error)
 
-	StateGetActor(ctx context.Context, actor address.Address, tsk types.TipSetKey) (*types.Actor, error) // optional / for CalledMsg
+	StateGetActor(ctx context.Context, actor address.Address, tsk cid.Cid) (*types.Actor, error) // optional / for CalledMsg
 
-	ChainGetTipSetAfterHeight(context.Context, abi.ChainEpoch, types.TipSetKey) (*types.TipSet, error)
+	ChainGetTipSetAfterHeight(context.Context, abi.ChainEpoch, cid.Cid) (*types.BlockHeader, error)
 	ChainGetTipSetByHeight(context.Context, abi.ChainEpoch, types.TipSetKey) (*types.TipSet, error)
-	ChainGetTipSet(context.Context, types.TipSetKey) (*types.TipSet, error)
-	ChainHead(context.Context) (*types.TipSet, error)
+	ChainGetTipSet(context.Context, cid.Cid) (*types.BlockHeader, error)
+	ChainHead(context.Context) (*types.BlockHeader, error)
 }
 
 type cache struct {

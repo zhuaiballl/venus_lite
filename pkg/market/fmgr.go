@@ -15,7 +15,7 @@ import (
 // (used by the tests)
 type fundManager interface {
 	MpoolPushMessage(context.Context, *types.UnsignedMessage, *types.MessageSendSpec) (*types.SignedMessage, error)
-	StateMarketBalance(context.Context, address.Address, types.TipSetKey) (apitypes.MarketBalance, error)
+	StateMarketBalance(context.Context, address.Address, cid.Cid) (apitypes.MarketBalance, error)
 	StateWaitMsg(ctx context.Context, c cid.Cid, confidence uint64, limit abi.ChainEpoch, allowReplaced bool) (*apitypes.MsgLookup, error)
 }
 
@@ -39,7 +39,7 @@ func (o *fmgr) MpoolPushMessage(ctx context.Context, msg *types.UnsignedMessage,
 	return o.MPoolAPI.MpoolPushMessage(ctx, msg, spec)
 }
 
-func (o *fmgr) StateMarketBalance(ctx context.Context, address address.Address, tsk types.TipSetKey) (apitypes.MarketBalance, error) {
+func (o *fmgr) StateMarketBalance(ctx context.Context, address address.Address, tsk cid.Cid) (apitypes.MarketBalance, error) {
 	return o.MinerStateAPI.StateMarketBalance(ctx, address, tsk)
 }
 

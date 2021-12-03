@@ -13,8 +13,8 @@ import (
 func (me *messageEvents) CheckMsg(smsg types.ChainMsg, hnd MsgHandler) CheckFunc {
 	msg := smsg.VMMessage()
 
-	return func(ctx context.Context, ts *types.TipSet) (done bool, more bool, err error) {
-		fa, err := me.cs.StateGetActor(ctx, msg.From, ts.Key())
+	return func(ctx context.Context, ts *types.BlockHeader) (done bool, more bool, err error) {
+		fa, err := me.cs.StateGetActor(ctx, msg.From, ts.Cid())
 		if err != nil {
 			return false, true, err
 		}
@@ -24,15 +24,15 @@ func (me *messageEvents) CheckMsg(smsg types.ChainMsg, hnd MsgHandler) CheckFunc
 			return false, true, nil
 		}
 
-		ml, err := me.cs.StateSearchMsg(ctx, ts.Key(), msg.Cid(), constants.LookbackNoLimit, true)
+		ml, err := me.cs.StateSearchMsg(ctx, ts.Cid(), msg.Cid(), constants.LookbackNoLimit, true)
 		if err != nil {
 			return false, true, xerrors.Errorf("getting receipt in CheckMsg: %w", err)
 		}
 
 		if ml == nil {
-			more, err = hnd(msg, nil, ts, ts.Height())
+			more, err = hnd(msg, nil, ts, ts.Height)
 		} else {
-			more, err = hnd(msg, &ml.Receipt, ts, ts.Height())
+			more, err = hnd(msg, &ml.Receipt, ts, ts.Height)
 		}
 
 		return true, more, err

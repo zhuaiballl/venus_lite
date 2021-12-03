@@ -36,7 +36,7 @@ type msgChain struct {
 	prev         *msgChain
 }
 
-func (mp *MessagePool) SelectMessages(ctx context.Context, ts *types.TipSet, tq float64) (msgs []*types.SignedMessage, err error) {
+func (mp *MessagePool) SelectMessages(ctx context.Context, ts *types.BlockHeader, tq float64) (msgs []*types.SignedMessage, err error) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
@@ -47,9 +47,9 @@ func (mp *MessagePool) SelectMessages(ctx context.Context, ts *types.TipSet, tq 
 	// than any other block, then we don't bother with optimal selection because the
 	// first block will always have higher effective performance
 	if tq > 0.84 {
-		msgs, err = mp.selectMessagesGreedy(ctx, mp.curTS, ts)
+		msgs, err = mp.selectMessagesGreedy(ctx, mp.curBH, ts)
 	} else {
-		msgs, err = mp.selectMessagesOptimal(ctx, mp.curTS, ts, tq)
+		msgs, err = mp.selectMessagesOptimal(ctx, mp.curBH, ts, tq)
 	}
 
 	if err != nil {
@@ -73,7 +73,7 @@ func deleteSelectedMessages(pending map[address.Address]map[uint64]*types.Signed
 }
 
 // select the message multiple times and try not to repeat it each time
-func (mp *MessagePool) MultipleSelectMessages(ctx context.Context, ts *types.TipSet, tqs []float64) (msgss [][]*types.SignedMessage, err error) {
+func (mp *MessagePool) MultipleSelectMessages(ctx context.Context, ts *types.BlockHeader, tqs []float64) (msgss [][]*types.SignedMessage, err error) {
 	mp.curTSLk.Lock()
 	defer mp.curTSLk.Unlock()
 
@@ -82,7 +82,7 @@ func (mp *MessagePool) MultipleSelectMessages(ctx context.Context, ts *types.Tip
 
 	// Load messages for the target tipset; if it is the same as the current tipset in the mpool
 	//    then this is just the pending messages
-	pending, err := mp.getPendingMessages(mp.curTS, ts)
+	pending, err := mp.getPendingMessages(mp.curBH, ts)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +96,9 @@ func (mp *MessagePool) MultipleSelectMessages(ctx context.Context, ts *types.Tip
 		}
 
 		if tq > 0.84 {
-			msgs, err = mp.multiSelectMessagesGreedy(ctx, mp.curTS, ts, pending)
+			msgs, err = mp.multiSelectMessagesGreedy(ctx, mp.curBH, ts, pending)
 		} else {
-			msgs, err = mp.multiSelectMessagesOptimal(ctx, mp.curTS, ts, tq, pending)
+			msgs, err = mp.multiSelectMessagesOptimal(ctx, mp.curBH, ts, tq, pending)
 		}
 
 		if err != nil {
@@ -125,7 +125,7 @@ func (mp *MessagePool) MultipleSelectMessages(ctx context.Context, ts *types.Tip
 	return msgss, nil
 }
 
-func (mp *MessagePool) multiSelectMessagesOptimal(ctx context.Context, curTS, ts *types.TipSet, tq float64, pending map[address.Address]map[uint64]*types.SignedMessage) ([]*types.SignedMessage, error) {
+func (mp *MessagePool) multiSelectMessagesOptimal(ctx context.Context, curTS, ts *types.BlockHeader, tq float64, pending map[address.Address]map[uint64]*types.SignedMessage) ([]*types.SignedMessage, error) {
 	start := time.Now()
 
 	baseFee, err := mp.api.ChainComputeBaseFee(context.TODO(), ts)
@@ -442,7 +442,7 @@ tailLoop:
 	return result, nil
 }
 
-func (mp *MessagePool) selectMessagesOptimal(ctx context.Context, curTS, ts *types.TipSet, tq float64) ([]*types.SignedMessage, error) {
+func (mp *MessagePool) selectMessagesOptimal(ctx context.Context, curTS, ts *types.BlockHeader, tq float64) ([]*types.SignedMessage, error) {
 	start := time.Now()
 
 	baseFee, err := mp.api.ChainComputeBaseFee(context.TODO(), ts)
@@ -766,7 +766,7 @@ tailLoop:
 	return result, nil
 }
 
-func (mp *MessagePool) multiSelectMessagesGreedy(ctx context.Context, curTS, ts *types.TipSet, pending map[address.Address]map[uint64]*types.SignedMessage) ([]*types.SignedMessage, error) {
+func (mp *MessagePool) multiSelectMessagesGreedy(ctx context.Context, curTS, ts *types.BlockHeader, pending map[address.Address]map[uint64]*types.SignedMessage) ([]*types.SignedMessage, error) {
 	start := time.Now()
 
 	baseFee, err := mp.api.ChainComputeBaseFee(context.TODO(), ts)
@@ -895,7 +895,7 @@ tailLoop:
 	return result, nil
 }
 
-func (mp *MessagePool) selectMessagesGreedy(ctx context.Context, curTS, ts *types.TipSet) ([]*types.SignedMessage, error) {
+func (mp *MessagePool) selectMessagesGreedy(ctx context.Context, curTS, ts *types.BlockHeader) ([]*types.SignedMessage, error) {
 	start := time.Now()
 
 	baseFee, err := mp.api.ChainComputeBaseFee(context.TODO(), ts)
@@ -1031,7 +1031,7 @@ tailLoop:
 	return result, nil
 }
 
-func (mp *MessagePool) selectPriorityMessages(ctx context.Context, pending map[address.Address]map[uint64]*types.SignedMessage, baseFee tbig.Int, ts *types.TipSet) ([]*types.SignedMessage, int64) {
+func (mp *MessagePool) selectPriorityMessages(ctx context.Context, pending map[address.Address]map[uint64]*types.SignedMessage, baseFee tbig.Int, ts *types.BlockHeader) ([]*types.SignedMessage, int64) {
 	start := time.Now()
 	defer func() {
 		if dt := time.Since(start); dt > time.Millisecond {
@@ -1141,7 +1141,7 @@ tailLoop:
 	return result, gasLimit
 }
 
-func (mp *MessagePool) getPendingMessages(curTS, ts *types.TipSet) (map[address.Address]map[uint64]*types.SignedMessage, error) {
+func (mp *MessagePool) getPendingMessages(curTS, ts *types.BlockHeader) (map[address.Address]map[uint64]*types.SignedMessage, error) {
 	start := time.Now()
 
 	result := make(map[address.Address]map[uint64]*types.SignedMessage)
@@ -1153,7 +1153,7 @@ func (mp *MessagePool) getPendingMessages(curTS, ts *types.TipSet) (map[address.
 
 	// are we in sync?
 	inSync := false
-	if curTS.Height() == ts.Height() && curTS.Equals(ts) {
+	if curTS.Height == ts.Height && curTS.Equals(ts) {
 		inSync = true
 	}
 
@@ -1208,7 +1208,7 @@ func (*MessagePool) getGasPerf(gasReward *big.Int, gasLimit int64) float64 {
 	return r
 }
 
-func (mp *MessagePool) createMessageChains(actor address.Address, mset map[uint64]*types.SignedMessage, baseFee types.BigInt, ts *types.TipSet) []*msgChain {
+func (mp *MessagePool) createMessageChains(actor address.Address, mset map[uint64]*types.SignedMessage, baseFee types.BigInt, ts *types.BlockHeader) []*msgChain {
 	// collect all messages
 	msgs := make([]*types.SignedMessage, 0, len(mset))
 	for _, m := range mset {
@@ -1233,7 +1233,7 @@ func (mp *MessagePool) createMessageChains(actor address.Address, mset map[uint6
 		return nil
 	}
 
-	curHeight := ts.Height()
+	curHeight := ts.Height
 	curNonce := a.Nonce
 	balance := a.Balance.Int
 	gasLimit := int64(0)

@@ -14,7 +14,7 @@ import (
 
 func (mp *MessagePool) pruneExcessMessages() error {
 	mp.curTSLk.Lock()
-	ts := mp.curTS
+	ts := mp.curBH
 	mp.curTSLk.Unlock()
 
 	mp.lk.Lock()
@@ -37,7 +37,7 @@ func (mp *MessagePool) pruneExcessMessages() error {
 	}
 }
 
-func (mp *MessagePool) pruneMessages(ctx context.Context, ts *types.TipSet) error {
+func (mp *MessagePool) pruneMessages(ctx context.Context, ts *types.BlockHeader) error {
 	start := time.Now()
 	defer func() {
 		log.Infof("message pruning took %s", time.Since(start))

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/filecoin-project/venus_lite/pkg/crypto"
-	"github.com/filecoin-project/venus_lite/pkg/types"
-
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
@@ -82,7 +80,7 @@ func newChannelAccessor(pm *Manager, from address.Address, to address.Address) *
 }
 
 func (ca *channelAccessor) messageBuilder(ctx context.Context, from address.Address) (paych.MessageBuilder, error) {
-	nwVersion, err := ca.api.StateNetworkVersion(ctx, types.EmptyTSK)
+	nwVersion, err := ca.api.StateNetworkVersion(ctx, cid.Undef)
 	if err != nil {
 		return nil, err
 	}
