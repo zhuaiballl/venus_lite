@@ -19,7 +19,7 @@ import (
 
 // RequireSignedTestBlockFromTipSet creates a block with a valid signature by
 // the passed in miner work and a Miner field set to the minerAddr.
-func RequireSignedTestBlockFromTipSet(t *testing.T, baseTipSet types.TipSet, stateRootCid cid.Cid, receiptRootCid cid.Cid, height abi.ChainEpoch, minerAddr address.Address, minerWorker address.Address, signer types.Signer) *types.BlockHeader {
+func RequireSignedTestBlockFromTipSet(t *testing.T, baseBH types.BlockHeader, stateRootCid cid.Cid, receiptRootCid cid.Cid, height abi.ChainEpoch, minerAddr address.Address, minerWorker address.Address, signer types.Signer) *types.BlockHeader {
 	ticket := consensus.MakeFakeTicketForTest()
 	emptyBLSSig := crypto.Signature{
 		Type: crypto.SigTypeBLS,
@@ -29,7 +29,7 @@ func RequireSignedTestBlockFromTipSet(t *testing.T, baseTipSet types.TipSet, sta
 	b := &types.BlockHeader{
 		Miner:                 minerAddr,
 		Ticket:                ticket,
-		Parents:               baseTipSet.Key(),
+		Parent:                baseBH.Cid(),
 		ParentWeight:          fbig.NewInt(int64(height * 10000)),
 		Height:                height,
 		ParentStateRoot:       stateRootCid,
@@ -52,7 +52,7 @@ func NewFakeBlockValidator() *FakeBlockValidator {
 }
 
 // ValidateHeaderSemantic does nothing.
-func (fbv *FakeBlockValidator) ValidateHeaderSemantic(ctx context.Context, child *types.BlockHeader, parents types.TipSet) error {
+func (fbv *FakeBlockValidator) ValidateHeaderSemantic(ctx context.Context, child *types.BlockHeader, parent types.BlockHeader) error {
 	return nil
 }
 

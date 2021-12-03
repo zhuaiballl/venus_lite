@@ -65,16 +65,16 @@ func (v *MockMessagePoolValidator) ValidateSignedMessageSyntax(ctx context.Conte
 }
 
 // RequireTipset is a helper that constructs a tipset
-func RequireTipset(t *testing.T) *types.TipSet {
+func RequireTipset(t *testing.T) *types.BlockHeader {
 	return RequireTipsetWithHeight(t, abi.ChainEpoch(rand.Int()))
 }
 
-func RequireTipsetWithHeight(t *testing.T, height abi.ChainEpoch) *types.TipSet {
+func RequireTipsetWithHeight(t *testing.T, height abi.ChainEpoch) *types.BlockHeader {
 	newAddress := types.NewForTestGetter()
 	blk := &types.BlockHeader{
-		Miner:         newAddress(),
-		Ticket:        types.Ticket{VRFProof: []byte{0x03, 0x01, 0x02}},
-		ElectionProof: &types.ElectionProof{VRFProof: []byte{0x0c, 0x0d}},
+		Miner:  newAddress(),
+		Ticket: types.Ticket{VRFProof: []byte{0x03, 0x01, 0x02}},
+		//ElectionProof: &types.ElectionProof{VRFProof: []byte{0x0c, 0x0d}},
 		BeaconEntries: []*types.BeaconEntry{
 			{
 				Round: 44,
@@ -84,7 +84,7 @@ func RequireTipsetWithHeight(t *testing.T, height abi.ChainEpoch) *types.TipSet 
 		Height:                height,
 		Messages:              types.CidFromString(t, "someothercid"),
 		ParentMessageReceipts: types.CidFromString(t, "someothercid"),
-		Parents:               types.NewTipSetKey(types.CidFromString(t, "someothercid")),
+		Parent:                types.CidFromString(t, "someothercid"),
 		ParentWeight:          fbig.NewInt(1),
 		ForkSignaling:         2,
 		ParentStateRoot:       types.CidFromString(t, "someothercid"),
@@ -95,6 +95,6 @@ func RequireTipsetWithHeight(t *testing.T, height abi.ChainEpoch) *types.TipSet 
 			Data: []byte{0x4},
 		},
 	}
-	b, _ := types.NewTipSet(blk)
-	return b
+	//b, _ := types.NewTipSet(blk)
+	return blk
 }
