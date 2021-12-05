@@ -1,16 +1,32 @@
 package chain
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/go-state-types/network"
+	blockadt "github.com/filecoin-project/specs-actors/actors/util/adt"
+	"github.com/filecoin-project/venus_lite/pkg/constants"
 	"github.com/filecoin-project/venus_lite/pkg/state"
 	"github.com/filecoin-project/venus_lite/pkg/state/tree"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	_init "github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/init"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/market"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/miner"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/multisig"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/power"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/reward"
+	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin/verifreg"
 	"github.com/filecoin-project/venus_lite/pkg/types/specactors/policy"
 	"github.com/filecoin-project/venus_lite/pkg/util"
+	"github.com/ipld/go-car"
+	carutil "github.com/ipld/go-car/util"
+	cbg "github.com/whyrusleeping/cbor-gen"
 	"golang.org/x/xerrors"
+	"io"
 	"os"
 	"runtime/debug"
 	"sync"
@@ -665,4 +681,335 @@ func (store *Store) GetLookbackTipSetForRound(ctx context.Context, ts *types.Blo
 	}
 
 	return lbts, nextTS.ParentStateRoot, nil
+}
+
+// LsActors returns a channel with actors from the latest state on the chain
+func (store *Store) LsActors(ctx context.Context) (map[address.Address]*types.Actor, error) {
+	st, err := store.GetTipSetState(ctx, store.head)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[address.Address]*types.Actor)
+	err = st.ForEach(func(key address.Address, a *types.Actor) error {
+		result[key] = a
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// Ls returns an iterator over tipsets from head to genesis.
+func (store *Store) Ls(ctx context.Context, fromTS *types.BlockHeader, count int) ([]*types.BlockHeader, error) {
+	tipsets := []*types.BlockHeader{fromTS}
+	fromKey := fromTS.Parent
+	for i := 0; i < count-1; i++ {
+		ts, err := store.GetBlock(ctx, fromKey)
+		if err != nil {
+			return nil, err
+		}
+		tipsets = append(tipsets, ts)
+		fromKey = ts.Parent
+	}
+	types.ReverseBlockHeader(tipsets)
+	return tipsets, nil
+}
+
+// GetParentReceipt get the receipt of parent tipset at specify message slot
+func (store *Store) GetParentReceipt(b *types.BlockHeader, i int) (*types.MessageReceipt, error) {
+	ctx := context.TODO()
+	// block headers use adt0, for now.
+	a, err := blockadt.AsArray(adt.WrapStore(ctx, store.stateAndBlockSource), b.ParentMessageReceipts)
+	if err != nil {
+		return nil, xerrors.Errorf("amt load: %w", err)
+	}
+
+	var r types.MessageReceipt
+	if found, err := a.Get(uint64(i), &r); err != nil {
+		return nil, err
+	} else if !found {
+		return nil, xerrors.Errorf("failed to find receipt %d", i)
+	}
+
+	return &r, nil
+}
+
+func recurseLinks(bs blockstore.Blockstore, walked *cid.Set, root cid.Cid, in []cid.Cid) ([]cid.Cid, error) {
+	if root.Prefix().Codec != cid.DagCBOR {
+		return in, nil
+	}
+
+	data, err := bs.Get(root)
+	if err != nil {
+		return nil, xerrors.Errorf("recurse links get (%s) failed: %w", root, err)
+	}
+
+	var rerr error
+	err = cbg.ScanForLinks(bytes.NewReader(data.RawData()), func(c cid.Cid) {
+		if rerr != nil {
+			// No error return on ScanForLinks :(
+			return
+		}
+
+		// traversed this already...
+		if !walked.Visit(c) {
+			return
+		}
+
+		in = append(in, c)
+		var err error
+		in, err = recurseLinks(bs, walked, c, in)
+		if err != nil {
+			rerr = err
+		}
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("scanning for links failed: %w", err)
+	}
+
+	return in, rerr
+}
+
+func (store *Store) WalkSnapshot(ctx context.Context, ts *types.BlockHeader, inclRecentRoots abi.ChainEpoch, skipOldMsgs, skipMsgReceipts bool, cb func(cid.Cid) error) error {
+	if ts == nil {
+		ts = store.GetHead()
+	}
+
+	seen := cid.NewSet()
+	walked := cid.NewSet()
+
+	blocksToWalk := []cid.Cid{ts.Cid()}
+	currentMinHeight := ts.Height
+
+	walkChain := func(blk cid.Cid) error {
+		if !seen.Visit(blk) {
+			return nil
+		}
+
+		if err := cb(blk); err != nil {
+			return err
+		}
+
+		data, err := store.bsstore.Get(blk)
+		if err != nil {
+			return xerrors.Errorf("getting block: %w", err)
+		}
+
+		var b types.BlockHeader
+		if err := b.UnmarshalCBOR(bytes.NewBuffer(data.RawData())); err != nil {
+			return xerrors.Errorf("unmarshaling block header (cid=%s): %w", blk, err)
+		}
+
+		if currentMinHeight > b.Height {
+			currentMinHeight = b.Height
+			if currentMinHeight%builtin.EpochsInDay == 0 {
+				log.Infow("export", "height", currentMinHeight)
+			}
+		}
+
+		var cids []cid.Cid
+		if !skipOldMsgs || b.Height > ts.Height-inclRecentRoots {
+			if walked.Visit(b.Messages) {
+				mcids, err := recurseLinks(store.bsstore, walked, b.Messages, []cid.Cid{b.Messages})
+				if err != nil {
+					return xerrors.Errorf("recursing messages failed: %w", err)
+				}
+				cids = mcids
+			}
+		}
+
+		if b.Height > 0 {
+			blocksToWalk = append(blocksToWalk, b.Parent)
+		} else {
+			// include the genesis block
+			cids = append(cids, b.Parent)
+		}
+
+		out := cids
+
+		if b.Height == 0 || b.Height > ts.Height-inclRecentRoots {
+			if walked.Visit(b.ParentStateRoot) {
+				cids, err := recurseLinks(store.bsstore, walked, b.ParentStateRoot, []cid.Cid{b.ParentStateRoot})
+				if err != nil {
+					return xerrors.Errorf("recursing genesis state failed: %w", err)
+				}
+
+				out = append(out, cids...)
+			}
+
+			if !skipMsgReceipts && walked.Visit(b.ParentMessageReceipts) {
+				out = append(out, b.ParentMessageReceipts)
+			}
+		}
+
+		for _, c := range out {
+			if seen.Visit(c) {
+				if c.Prefix().Codec != cid.DagCBOR {
+					continue
+				}
+
+				if err := cb(c); err != nil {
+					return err
+				}
+
+			}
+		}
+
+		return nil
+	}
+
+	log.Infow("export started")
+	exportStart := constants.Clock.Now()
+
+	for len(blocksToWalk) > 0 {
+		next := blocksToWalk[0]
+		blocksToWalk = blocksToWalk[1:]
+		if err := walkChain(next); err != nil {
+			return xerrors.Errorf("walk chain failed: %w", err)
+		}
+	}
+
+	log.Infow("export finished", "duration", constants.Clock.Now().Sub(exportStart).Seconds())
+
+	return nil
+}
+
+func (store *Store) Export(ctx context.Context, ts *types.BlockHeader, inclRecentRoots abi.ChainEpoch, skipOldMsgs bool, w io.Writer) error {
+	h := &car.CarHeader{
+		Roots:   []cid.Cid{ts.Cid()},
+		Version: 1,
+	}
+
+	if err := car.WriteHeader(h, w); err != nil {
+		return xerrors.Errorf("failed to write car header: %s", err)
+	}
+
+	return store.WalkSnapshot(ctx, ts, inclRecentRoots, skipOldMsgs, true, func(c cid.Cid) error {
+		blk, err := store.bsstore.Get(c)
+		if err != nil {
+			return xerrors.Errorf("writing object to car, bs.Get: %w", err)
+		}
+
+		if err := carutil.LdWrite(w, c.Bytes(), blk.RawData()); err != nil {
+			return xerrors.Errorf("failed to write block to car output: %w", err)
+		}
+
+		return nil
+	})
+}
+
+// Store wrap adt store
+func (store *Store) Store(ctx context.Context) adt.Store {
+	return adt.WrapStore(ctx, cbor.NewCborStore(store.bsstore))
+}
+
+//StateCirculatingSupply get circulate supply at specify epoch
+func (store *Store) StateCirculatingSupply(ctx context.Context, tsk cid.Cid) (abi.TokenAmount, error) {
+	ts, err := store.GetBlock(ctx, tsk)
+	if err != nil {
+		return abi.TokenAmount{}, err
+	}
+
+	root, err := store.GetTipSetStateRoot(ts)
+	if err != nil {
+		return abi.TokenAmount{}, err
+	}
+
+	sTree, err := tree.LoadState(ctx, store.stateAndBlockSource, root)
+	if err != nil {
+		return abi.TokenAmount{}, err
+	}
+
+	return store.getCirculatingSupply(ctx, ts.Height, sTree)
+}
+
+func (store *Store) getCirculatingSupply(ctx context.Context, height abi.ChainEpoch, st tree.Tree) (abi.TokenAmount, error) {
+	adtStore := adt.WrapStore(ctx, store.stateAndBlockSource)
+	circ := big.Zero()
+	unCirc := big.Zero()
+	err := st.ForEach(func(a address.Address, actor *types.Actor) error {
+		switch {
+		case actor.Balance.IsZero():
+			// Do nothing for zero-balance actors
+			break
+		case a == _init.Address ||
+			a == reward.Address ||
+			a == verifreg.Address ||
+			// The power actor itself should never receive funds
+			a == power.Address ||
+			a == builtin.SystemActorAddr ||
+			a == builtin.CronActorAddr ||
+			a == builtin.BurntFundsActorAddr ||
+			a == builtin.SaftAddress ||
+			a == builtin.ReserveAddress:
+
+			unCirc = big.Add(unCirc, actor.Balance)
+
+		case a == market.Address:
+			mst, err := market.Load(adtStore, actor)
+			if err != nil {
+				return err
+			}
+
+			lb, err := mst.TotalLocked()
+			if err != nil {
+				return err
+			}
+
+			circ = big.Add(circ, big.Sub(actor.Balance, lb))
+			unCirc = big.Add(unCirc, lb)
+
+		case builtin.IsAccountActor(actor.Code) || builtin.IsPaymentChannelActor(actor.Code):
+			circ = big.Add(circ, actor.Balance)
+
+		case builtin.IsStorageMinerActor(actor.Code):
+			mst, err := miner.Load(adtStore, actor)
+			if err != nil {
+				return err
+			}
+
+			ab, err := mst.AvailableBalance(actor.Balance)
+
+			if err == nil {
+				circ = big.Add(circ, ab)
+				unCirc = big.Add(unCirc, big.Sub(actor.Balance, ab))
+			} else {
+				// Assume any error is because the miner state is "broken" (lower actor balance than locked funds)
+				// In this case, the actor's entire balance is considered "uncirculating"
+				unCirc = big.Add(unCirc, actor.Balance)
+			}
+
+		case builtin.IsMultisigActor(actor.Code):
+			mst, err := multisig.Load(adtStore, actor)
+			if err != nil {
+				return err
+			}
+
+			lb, err := mst.LockedBalance(height)
+			if err != nil {
+				return err
+			}
+
+			ab := big.Sub(actor.Balance, lb)
+			circ = big.Add(circ, big.Max(ab, big.Zero()))
+			unCirc = big.Add(unCirc, big.Min(actor.Balance, lb))
+		default:
+			return xerrors.Errorf("unexpected actor: %s", a)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return abi.TokenAmount{}, err
+	}
+
+	total := big.Add(circ, unCirc)
+	if !total.Equals(types.TotalFilecoinInt) {
+		return abi.TokenAmount{}, xerrors.Errorf("total filecoin didn't add to expected amount: %s != %s", total, types.TotalFilecoinInt)
+	}
+
+	return circ, nil
 }
