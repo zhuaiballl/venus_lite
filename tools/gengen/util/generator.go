@@ -334,11 +334,11 @@ func (g *GenesisGenerator) genBlock(ctx context.Context) (cid.Cid, error) {
 	}
 
 	geneblk := &types.BlockHeader{
-		Miner:                 builtin.SystemActorAddr,
-		Ticket:                genesis.Ticket,
-		BeaconEntries:         []*types.BeaconEntry{{Data: []byte{0xca, 0xfe, 0xfa, 0xce}}},
-		ElectionProof:         new(types.ElectionProof),
-		Parents:               types.NewTipSetKey(),
+		Miner:         builtin.SystemActorAddr,
+		Ticket:        genesis.Ticket,
+		BeaconEntries: []*types.BeaconEntry{{Data: []byte{0xca, 0xfe, 0xfa, 0xce}}},
+		//ElectionProof:         new(types.ElectionProof),
+		Parent:                cid.Undef,
 		ParentWeight:          big.Zero(),
 		Height:                0,
 		ParentStateRoot:       stateRoot,
