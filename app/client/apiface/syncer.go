@@ -6,6 +6,7 @@ import (
 	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 	syncTypes "github.com/filecoin-project/venus_lite/pkg/chainsync/types"
 	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/ipfs/go-cid"
 )
 
 type ISyncer interface {
@@ -18,11 +19,11 @@ type ISyncer interface {
 	// Rule[perm:read]
 	Concurrent(ctx context.Context) int64
 	// Rule[perm:read]
-	ChainTipSetWeight(ctx context.Context, tsk types.TipSetKey) (big.Int, error)
+	ChainTipSetWeight(ctx context.Context, tsk cid.Cid) (big.Int, error)
 	// Rule[perm:read]
 	SyncSubmitBlock(ctx context.Context, blk *types.BlockMsg) error
 	// Rule[perm:read]
-	StateCall(ctx context.Context, msg *types.UnsignedMessage, tsk types.TipSetKey) (*types.InvocResult, error)
+	StateCall(ctx context.Context, msg *types.UnsignedMessage, tsk cid.Cid) (*types.InvocResult, error)
 	// Rule[perm:read]
 	SyncState(ctx context.Context) (*apitypes.SyncState, error)
 }

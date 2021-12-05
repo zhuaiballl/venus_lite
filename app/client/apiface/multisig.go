@@ -2,6 +2,7 @@ package apiface
 
 import (
 	"context"
+	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -35,5 +36,5 @@ type IMultiSig interface {
 	// Rule[perm:read]
 	MsigRemoveSigner(ctx context.Context, msig address.Address, proposer address.Address, toRemove address.Address, decrease bool) (*apitypes.MessagePrototype, error)
 	// Rule[perm:read]
-	MsigGetVested(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error)
+	MsigGetVested(ctx context.Context, addr address.Address, start cid.Cid, end cid.Cid) (types.BigInt, error)
 }

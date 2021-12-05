@@ -23,15 +23,15 @@ type IChainInfo interface {
 	// Rule[perm:read]
 	BlockTime(ctx context.Context) time.Duration
 	// Rule[perm:read]
-	ChainList(ctx context.Context, tsKey types.TipSetKey, count int) ([]types.TipSetKey, error)
+	ChainList(ctx context.Context, tsKey cid.Cid, count int) ([]cid.Cid, error)
 	// Rule[perm:read]
-	ChainHead(ctx context.Context) (*types.TipSet, error)
+	ChainHead(ctx context.Context) (*types.BlockHeader, error)
 	// Rule[perm:read]
-	ChainSetHead(ctx context.Context, key types.TipSetKey) error
+	ChainSetHead(ctx context.Context, key cid.Cid) error
 	// Rule[perm:read]
-	ChainGetTipSet(ctx context.Context, key types.TipSetKey) (*types.TipSet, error)
+	ChainGetTipSet(ctx context.Context, key cid.Cid) (*types.BlockHeader, error)
 	// Rule[perm:read]
-	ChainGetTipSetByHeight(ctx context.Context, height abi.ChainEpoch, tsk types.TipSetKey) (*types.TipSet, error)
+	ChainGetTipSetByHeight(ctx context.Context, height abi.ChainEpoch, tsk cid.Cid) (*types.BlockHeader, error)
 	// Rule[perm:read]
 	ChainGetRandomnessFromBeacon(ctx context.Context, key cid.Cid, personalization acrypto.DomainSeparationTag, randEpoch abi.ChainEpoch, entropy []byte) (abi.Randomness, error)
 	// Rule[perm:read]
@@ -55,7 +55,7 @@ type IChainInfo interface {
 	// Rule[perm:read]
 	GetActor(ctx context.Context, addr address.Address) (*types.Actor, error)
 	// Rule[perm:read]
-	GetParentStateRootActor(ctx context.Context, ts *types.TipSet, addr address.Address) (*types.Actor, error)
+	GetParentStateRootActor(ctx context.Context, ts *types.BlockHeader, addr address.Address) (*types.Actor, error)
 	// Rule[perm:read]
 	GetEntry(ctx context.Context, height abi.ChainEpoch, round uint64) (*types.BeaconEntry, error)
 	// Rule[perm:read]
@@ -63,11 +63,11 @@ type IChainInfo interface {
 	// Rule[perm:read]
 	ProtocolParameters(ctx context.Context) (*apitypes.ProtocolParams, error)
 	// Rule[perm:read]
-	ResolveToKeyAddr(ctx context.Context, addr address.Address, ts *types.TipSet) (address.Address, error)
+	ResolveToKeyAddr(ctx context.Context, addr address.Address, ts *types.BlockHeader) (address.Address, error)
 	// Rule[perm:read]
 	StateNetworkName(ctx context.Context) (apitypes.NetworkName, error)
 	// Rule[perm:read]
-	StateGetReceipt(ctx context.Context, msg cid.Cid, from types.TipSetKey) (*types.MessageReceipt, error)
+	StateGetReceipt(ctx context.Context, msg cid.Cid, from cid.Cid) (*types.MessageReceipt, error)
 	// Rule[perm:read]
 	StateSearchMsg(ctx context.Context, msg cid.Cid) (*apitypes.MsgLookup, error)
 	// Rule[perm:read]
@@ -77,13 +77,13 @@ type IChainInfo interface {
 	// Rule[perm:read]
 	StateWaitMsgLimited(ctx context.Context, cid cid.Cid, confidence uint64, limit abi.ChainEpoch) (*apitypes.MsgLookup, error)
 	// Rule[perm:read]
-	StateNetworkVersion(ctx context.Context, tsk types.TipSetKey) (network.Version, error)
+	StateNetworkVersion(ctx context.Context, tsk cid.Cid) (network.Version, error)
 	// Rule[perm:read]
 	VerifyEntry(parent, child *types.BeaconEntry, height abi.ChainEpoch) bool
 	// Rule[perm:read]
-	ChainExport(p0 context.Context, p1 abi.ChainEpoch, p2 bool, p3 types.TipSetKey) (<-chan []byte, error)
+	ChainExport(p0 context.Context, p1 abi.ChainEpoch, p2 bool, p3 cid.Cid) (<-chan []byte, error)
 	// Rule[perm:read]
-	StateVerifiedRegistryRootKey(ctx context.Context, tsk types.TipSetKey) (address.Address, error)
+	StateVerifiedRegistryRootKey(ctx context.Context, tsk cid.Cid) (address.Address, error)
 	// Rule[perm:read]
-	StateVerifierStatus(ctx context.Context, addr address.Address, tsk types.TipSetKey) (*abi.StoragePower, error)
+	StateVerifierStatus(ctx context.Context, addr address.Address, tsk cid.Cid) (*abi.StoragePower, error)
 }
