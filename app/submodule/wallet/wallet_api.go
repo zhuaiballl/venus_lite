@@ -28,7 +28,7 @@ type WalletAPI struct { // nolint
 func (walletAPI *WalletAPI) WalletBalance(ctx context.Context, addr address.Address) (abi.TokenAmount, error) {
 	chainReader := walletAPI.walletModule.ChainReader
 	head := chainReader.GetHead()
-	parent, err := chainReader.GetTipSet(head.Parents())
+	parent, err := chainReader.GetBlock(ctx, head.Parent)
 	if err != nil {
 		return abi.NewTokenAmount(0), err
 	}

@@ -33,9 +33,9 @@ type MiningAPI struct { //nolint
 }
 
 //MinerGetBaseInfo get current miner information
-func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.Address, round abi.ChainEpoch, tsk types.TipSetKey) (*apitypes.MiningBaseInfo, error) {
+func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.Address, round abi.ChainEpoch, tsk cid.Cid) (*apitypes.MiningBaseInfo, error) {
 	chainStore := miningAPI.Ming.ChainModule.ChainReader
-	ts, err := chainStore.GetTipSet(tsk)
+	ts, err := chainStore.GetBlock(ctx, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load tipset for mining base: %v", err)
 	}
@@ -52,7 +52,7 @@ func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.
 		prev = &types.BeaconEntry{}
 	}
 
-	entries, err := beacon.BeaconEntriesForBlock(ctx, miningAPI.Ming.ChainModule.Drand, round, ts.Height(), *prev)
+	entries, err := beacon.BeaconEntriesForBlock(ctx, miningAPI.Ming.ChainModule.Drand, round, ts.Height, *prev)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.
 	act, err := view.LoadActor(ctx, maddr)
 	if xerrors.Is(err, types.ErrActorNotFound) {
 		//todo why
-		view = state.NewView(chainStore.Store(ctx), ts.At(0).ParentStateRoot)
+		view = state.NewView(chainStore.Store(ctx), ts.ParentStateRoot)
 		_, err := view.LoadActor(ctx, maddr)
 		if err != nil {
 			return nil, xerrors.Errorf("loading miner in current state: %v", err)
@@ -97,7 +97,7 @@ func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.
 		return nil, xerrors.Errorf("failed to get randomness for winning post: %v", err)
 	}
 
-	nv := miningAPI.Ming.ChainModule.Fork.GetNtwkVersion(ctx, ts.Height())
+	nv := miningAPI.Ming.ChainModule.Fork.GetNtwkVersion(ctx, ts.Height)
 
 	pv := miningAPI.Ming.proofVerifier
 	sectors, err := view.GetSectorsForWinningPoSt(ctx, nv, pv, maddr, prand)
@@ -109,7 +109,7 @@ func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.
 		return nil, nil
 	}
 
-	mpow, tpow, _, err := view.StateMinerPower(ctx, maddr, ts.Key())
+	mpow, tpow, _, err := view.StateMinerPower(ctx, maddr, ts.Cid())
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get power: %v", err)
 	}
@@ -129,7 +129,7 @@ func (miningAPI *MiningAPI) MinerGetBaseInfo(ctx context.Context, maddr address.
 	}
 
 	// TODO: Not ideal performance...This method reloads miner and power state (already looked up here and in GetPowerRaw)
-	eligible, err := miningAPI.Ming.SyncModule.BlockValidator.MinerEligibleToMine(ctx, maddr, pt, ts.Height(), lbts)
+	eligible, err := miningAPI.Ming.SyncModule.BlockValidator.MinerEligibleToMine(ctx, maddr, pt, ts.Height, lbts)
 	if err != nil {
 		return nil, xerrors.Errorf("determining miner eligibility: %v", err)
 	}
@@ -169,12 +169,12 @@ func (miningAPI *MiningAPI) minerCreateBlock(ctx context.Context, bt *apitypes.B
 	chainStore := miningAPI.Ming.ChainModule.ChainReader
 	messageStore := miningAPI.Ming.ChainModule.MessageStore
 	cfg := miningAPI.Ming.Config.Repo().Config()
-	pts, err := chainStore.GetTipSet(bt.Parents)
+	pts, err := chainStore.GetBlock(ctx, bt.Parent)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load parent tipset: %v", err)
 	}
 
-	parentStateRoot := pts.Blocks()[0].ParentStateRoot
+	parentStateRoot := pts.ParentStateRoot
 	st, receiptCid, err := miningAPI.Ming.SyncModule.Consensus.RunStateTransition(ctx, pts, parentStateRoot)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to load tipset state: %v", err)
@@ -193,15 +193,15 @@ func (miningAPI *MiningAPI) minerCreateBlock(ctx context.Context, bt *apitypes.B
 	}
 
 	next := &types.BlockHeader{
-		Miner:         bt.Miner,
-		Parents:       bt.Parents,
-		Ticket:        bt.Ticket,
-		ElectionProof: bt.Eproof,
+		Miner:  bt.Miner,
+		Parent: bt.Parent,
+		Ticket: bt.Ticket,
+		//ElectionProof: bt.Eproof,
 
-		BeaconEntries:         bt.BeaconValues,
-		Height:                bt.Epoch,
-		Timestamp:             bt.Timestamp,
-		WinPoStProof:          bt.WinningPoStProof,
+		BeaconEntries: bt.BeaconValues,
+		Height:        bt.Epoch,
+		Timestamp:     bt.Timestamp,
+		//WinPoStProof:          bt.WinningPoStProof,
 		ParentStateRoot:       st,
 		ParentMessageReceipts: receiptCid,
 	}

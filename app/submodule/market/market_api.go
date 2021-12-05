@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"github.com/filecoin-project/venus_lite/app/submodule/apitypes"
 	"github.com/filecoin-project/venus_lite/pkg/statemanger"
-	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-address"
@@ -22,7 +22,7 @@ func newMarketAPI(c apiface.IChain, stmgr statemanger.IStateManager) apiface.IMa
 }
 
 // StateMarketParticipants returns the Escrow and Locked balances of every participant in the Storage Market
-func (m *marketAPI) StateMarketParticipants(ctx context.Context, tsk types.TipSetKey) (map[string]apitypes.MarketBalance, error) {
+func (m *marketAPI) StateMarketParticipants(ctx context.Context, tsk cid.Cid) (map[string]apitypes.MarketBalance, error) {
 	out := map[string]apitypes.MarketBalance{}
 	ts, err := m.chain.ChainGetTipSet(ctx, tsk)
 	if err != nil {

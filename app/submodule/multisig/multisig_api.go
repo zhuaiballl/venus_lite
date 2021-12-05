@@ -3,6 +3,7 @@ package multisig
 import (
 	"context"
 	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -36,7 +37,7 @@ func newMultiSig(m *MultiSigSubmodule) apiface.IMultiSig {
 }
 
 func (a *multiSig) messageBuilder(ctx context.Context, from address.Address) (multisig.MessageBuilder, error) {
-	nver, err := a.state.StateNetworkVersion(ctx, types.EmptyTSK)
+	nver, err := a.state.StateNetworkVersion(ctx, cid.Undef)
 	if err != nil {
 		return nil, err
 	}
@@ -189,20 +190,20 @@ func (a *multiSig) MsigRemoveSigner(ctx context.Context, msig address.Address, p
 
 // MsigGetVested returns the amount of FIL that vested in a multisig in a certain period.
 // It takes the following params: <multisig address>, <start epoch>, <end epoch>
-func (a *multiSig) MsigGetVested(ctx context.Context, addr address.Address, start types.TipSetKey, end types.TipSetKey) (types.BigInt, error) {
+func (a *multiSig) MsigGetVested(ctx context.Context, addr address.Address, start cid.Cid, end cid.Cid) (types.BigInt, error) {
 	startTS, err := a.state.ChainGetTipSet(ctx, start)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("loading start tipset %s: %w", start, err)
+		return types.EmptyInt, xerrors.Errorf("loading start blockheader %s: %w", start, err)
 	}
 
 	endTS, err := a.state.ChainGetTipSet(ctx, end)
 	if err != nil {
-		return types.EmptyInt, xerrors.Errorf("loading end tipset %s: %w", end, err)
+		return types.EmptyInt, xerrors.Errorf("loading end blockheader %s: %w", end, err)
 	}
 
-	if startTS.Height() > endTS.Height() {
-		return types.EmptyInt, xerrors.Errorf("start tipset %d is after end tipset %d", startTS.Height(), endTS.Height())
-	} else if startTS.Height() == endTS.Height() {
+	if startTS.Height > endTS.Height {
+		return types.EmptyInt, xerrors.Errorf("start blockheader %d is after end blockheader %d", startTS.Height, endTS.Height)
+	} else if startTS.Height == endTS.Height {
 		return big.Zero(), nil
 	}
 
@@ -217,12 +218,12 @@ func (a *multiSig) MsigGetVested(ctx context.Context, addr address.Address, star
 		return types.EmptyInt, xerrors.Errorf("failed to load multisig actor state: %w", err)
 	}
 
-	startLk, err := msas.LockedBalance(startTS.Height())
+	startLk, err := msas.LockedBalance(startTS.Height)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to compute locked balance at start height: %w", err)
 	}
 
-	endLk, err := msas.LockedBalance(endTS.Height())
+	endLk, err := msas.LockedBalance(endTS.Height)
 	if err != nil {
 		return types.EmptyInt, xerrors.Errorf("failed to compute locked balance at end height: %w", err)
 	}
@@ -270,7 +271,7 @@ func (a *multiSig) msigApproveOrCancelTxnHash(ctx context.Context, operation Msi
 	}
 
 	if proposer.Protocol() != address.ID {
-		proposerID, err := a.state.StateLookupID(ctx, proposer, types.EmptyTSK)
+		proposerID, err := a.state.StateLookupID(ctx, proposer, cid.Undef)
 		if err != nil {
 			return nil, err
 		}

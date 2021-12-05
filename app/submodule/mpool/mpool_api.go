@@ -56,7 +56,7 @@ func (a *MessagePoolAPI) MpoolSetConfig(ctx context.Context, cfg *messagepool.Mp
 }
 
 // MpoolSelect returns a list of pending messages for inclusion in the next block
-func (a *MessagePoolAPI) MpoolSelect(ctx context.Context, tsk types.TipSetKey, ticketQuality float64) ([]*types.SignedMessage, error) {
+func (a *MessagePoolAPI) MpoolSelect(ctx context.Context, tsk cid.Cid, ticketQuality float64) ([]*types.SignedMessage, error) {
 	ts, err := a.mp.chain.API().ChainGetTipSet(ctx, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
@@ -66,7 +66,7 @@ func (a *MessagePoolAPI) MpoolSelect(ctx context.Context, tsk types.TipSetKey, t
 }
 
 //MpoolSelects The batch selection message is used when multiple blocks need to select messages at the same time
-func (a *MessagePoolAPI) MpoolSelects(ctx context.Context, tsk types.TipSetKey, ticketQualitys []float64) ([][]*types.SignedMessage, error) {
+func (a *MessagePoolAPI) MpoolSelects(ctx context.Context, tsk cid.Cid, ticketQualitys []float64) ([][]*types.SignedMessage, error) {
 	ts, err := a.mp.chain.API().ChainGetTipSet(ctx, tsk)
 	if err != nil {
 		return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
@@ -76,10 +76,10 @@ func (a *MessagePoolAPI) MpoolSelects(ctx context.Context, tsk types.TipSetKey, 
 }
 
 // MpoolPending returns pending mempool messages.
-func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk types.TipSetKey) ([]*types.SignedMessage, error) {
-	var ts *types.TipSet
+func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk cid.Cid) ([]*types.SignedMessage, error) {
+	var ts *types.BlockHeader
 	var err error
-	if tsk.IsEmpty() {
+	if tsk == cid.Undef {
 		ts, err = a.mp.chain.API().ChainHead(ctx)
 		if err != nil {
 			return nil, xerrors.Errorf("loading tipset %s: %w", tsk, err)
@@ -98,24 +98,24 @@ func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk types.TipSetKey) 
 		haveCids[m.Cid()] = struct{}{}
 	}
 
-	mptsH := mpts.Height()
-	tsH := ts.Height()
+	mptsH := mpts.Height
+	tsH := ts.Height
 	if ts == nil || mptsH > tsH {
 		return pending, nil
 	}
 
 	for {
-		mptsH = mpts.Height()
-		tsH = ts.Height()
+		mptsH = mpts.Height
+		tsH = ts.Height
 		if mptsH == tsH {
 			if mpts.Equals(ts) {
 				return pending, nil
 			}
 			// different blocks in tipsets
 
-			have, err := a.mp.MPool.MessagesForBlocks(ts.Blocks())
+			have, err := a.mp.MPool.MessagesForBlocks([]*types.BlockHeader{ts})
 			if err != nil {
-				return nil, xerrors.Errorf("getting messages for base ts: %w", err)
+				return nil, xerrors.Errorf("getting messages for base bh: %w", err)
 			}
 
 			for _, m := range have {
@@ -123,7 +123,7 @@ func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk types.TipSetKey) 
 			}
 		}
 
-		msgs, err := a.mp.MPool.MessagesForBlocks(ts.Blocks())
+		msgs, err := a.mp.MPool.MessagesForBlocks([]*types.BlockHeader{ts})
 		if err != nil {
 			return nil, xerrors.Errorf(": %w", err)
 		}
@@ -138,13 +138,13 @@ func (a *MessagePoolAPI) MpoolPending(ctx context.Context, tsk types.TipSetKey) 
 			pending = append(pending, m)
 		}
 
-		mptsH = mpts.Height()
-		tsH = ts.Height()
+		mptsH = mpts.Height
+		tsH = ts.Height
 		if mptsH >= tsH {
 			return pending, nil
 		}
 
-		ts, err = a.mp.chain.API().ChainGetTipSet(ctx, ts.Parents())
+		ts, err = a.mp.chain.API().ChainGetTipSet(ctx, ts.Parent)
 		if err != nil {
 			return nil, xerrors.Errorf("loading parent tipset: %w", err)
 		}
@@ -172,7 +172,7 @@ func (a *MessagePoolAPI) MpoolPushMessage(ctx context.Context, msg *types.Unsign
 	cp := *msg
 	msg = &cp
 	inMsg := *msg
-	fromA, err := a.mp.chain.API().StateAccountKey(ctx, msg.From, types.EmptyTSK)
+	fromA, err := a.mp.chain.API().StateAccountKey(ctx, msg.From, cid.Undef)
 	if err != nil {
 		return nil, xerrors.Errorf("getting key address: %w", err)
 	}
@@ -188,7 +188,7 @@ func (a *MessagePoolAPI) MpoolPushMessage(ctx context.Context, msg *types.Unsign
 		return nil, xerrors.Errorf("MpoolPushMessage expects message nonce to be 0, was %d", msg.Nonce)
 	}
 
-	msg, err = a.GasEstimateMessageGas(ctx, msg, spec, types.TipSetKey{})
+	msg, err = a.GasEstimateMessageGas(ctx, msg, spec, cid.Undef)
 	if err != nil {
 		return nil, xerrors.Errorf("GasEstimateMessageGas error: %w", err)
 	}
@@ -271,7 +271,7 @@ func (a *MessagePoolAPI) MpoolBatchPushMessage(ctx context.Context, msgs []*type
 // MpoolGetNonce gets next nonce for the specified sender.
 // Note that this method may not be atomic. Use MpoolPushMessage instead.
 func (a *MessagePoolAPI) MpoolGetNonce(ctx context.Context, addr address.Address) (uint64, error) {
-	return a.mp.MPool.GetNonce(ctx, addr, types.EmptyTSK)
+	return a.mp.MPool.GetNonce(ctx, addr, cid.Undef)
 }
 
 func (a *MessagePoolAPI) MpoolSub(ctx context.Context) (<-chan messagepool.MpoolUpdate, error) {
@@ -279,26 +279,26 @@ func (a *MessagePoolAPI) MpoolSub(ctx context.Context) (<-chan messagepool.Mpool
 }
 
 // GasEstimateMessageGas estimates gas values for unset message gas fields
-func (a *MessagePoolAPI) GasEstimateMessageGas(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec, tsk types.TipSetKey) (*types.UnsignedMessage, error) {
+func (a *MessagePoolAPI) GasEstimateMessageGas(ctx context.Context, msg *types.UnsignedMessage, spec *types.MessageSendSpec, tsk cid.Cid) (*types.UnsignedMessage, error) {
 	return a.mp.MPool.GasEstimateMessageGas(ctx, &types.EstimateMessage{Msg: msg, Spec: spec}, tsk)
 }
 
-func (a *MessagePoolAPI) GasBatchEstimateMessageGas(ctx context.Context, estimateMessages []*types.EstimateMessage, fromNonce uint64, tsk types.TipSetKey) ([]*types.EstimateResult, error) {
+func (a *MessagePoolAPI) GasBatchEstimateMessageGas(ctx context.Context, estimateMessages []*types.EstimateMessage, fromNonce uint64, tsk cid.Cid) ([]*types.EstimateResult, error) {
 	return a.mp.MPool.GasBatchEstimateMessageGas(ctx, estimateMessages, fromNonce, tsk)
 }
 
 // GasEstimateFeeCap estimates gas fee cap
-func (a *MessagePoolAPI) GasEstimateFeeCap(ctx context.Context, msg *types.UnsignedMessage, maxqueueblks int64, tsk types.TipSetKey) (big.Int, error) {
+func (a *MessagePoolAPI) GasEstimateFeeCap(ctx context.Context, msg *types.UnsignedMessage, maxqueueblks int64, tsk cid.Cid) (big.Int, error) {
 	return a.mp.MPool.GasEstimateFeeCap(ctx, msg, maxqueueblks, tsk)
 }
 
-func (a *MessagePoolAPI) GasEstimateGasLimit(ctx context.Context, msgIn *types.UnsignedMessage, tsk types.TipSetKey) (int64, error) {
+func (a *MessagePoolAPI) GasEstimateGasLimit(ctx context.Context, msgIn *types.UnsignedMessage, tsk cid.Cid) (int64, error) {
 	return a.mp.MPool.GasEstimateGasLimit(ctx, msgIn, tsk)
 }
 
 // GasEstimateGasPremium estimates what gas price should be used for a
 // message to have high likelihood of inclusion in `nblocksincl` epochs.
-func (a *MessagePoolAPI) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk types.TipSetKey) (big.Int, error) {
+func (a *MessagePoolAPI) GasEstimateGasPremium(ctx context.Context, nblocksincl uint64, sender address.Address, gaslimit int64, tsk cid.Cid) (big.Int, error) {
 	return a.mp.MPool.GasEstimateGasPremium(ctx, nblocksincl, sender, gaslimit, tsk, a.mp.MPool.PriceCache)
 }
 

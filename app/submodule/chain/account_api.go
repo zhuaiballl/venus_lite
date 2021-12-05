@@ -3,7 +3,7 @@ package chain
 import (
 	"context"
 	"github.com/filecoin-project/venus_lite/app/client/apiface"
-	"github.com/filecoin-project/venus_lite/pkg/types"
+	"github.com/ipfs/go-cid"
 
 	"github.com/filecoin-project/go-address"
 	xerrors "github.com/pkg/errors"
@@ -21,8 +21,8 @@ func NewAccountAPI(chain *ChainSubmodule) apiface.IAccount {
 }
 
 // StateAccountKey returns the public key address of the given ID address
-func (accountAPI *accountAPI) StateAccountKey(ctx context.Context, addr address.Address, tsk types.TipSetKey) (address.Address, error) {
-	ts, err := accountAPI.chain.ChainReader.GetTipSet(tsk)
+func (accountAPI *accountAPI) StateAccountKey(ctx context.Context, addr address.Address, tsk cid.Cid) (address.Address, error) {
+	ts, err := accountAPI.chain.ChainReader.GetBlock(ctx, tsk)
 	if err != nil {
 		return address.Undef, xerrors.Errorf("loading tipset %s: %v", tsk, err)
 	}
