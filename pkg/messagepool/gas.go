@@ -273,7 +273,7 @@ func (mp *MessagePool) evalMessageGasLimit(ctx context.Context, msgIn *types.Mes
 	return res.Receipt.GasUsed + 76e3, nil
 }
 
-func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessage *types.EstimateMessage, _ types.TipSetKey) (*types.Message, error) {
+func (mp *MessagePool) GasEstimateMessageGas(ctx context.Context, estimateMessage *types.EstimateMessage, _ cid.Cid) (*types.Message, error) {
 	if estimateMessage == nil || estimateMessage.Msg == nil {
 		return nil, xerrors.Errorf("estimate message is nil")
 	}

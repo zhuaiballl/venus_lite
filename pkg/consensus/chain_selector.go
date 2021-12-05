@@ -35,8 +35,8 @@ func NewChainSelector(cs cbor.IpldStore, state StateViewer) *ChainSelector {
 }
 
 // Weight returns the EC weight of this TipSet as a filecoin big int.
-func (c *ChainSelector) Weight(ctx context.Context, ts *types.TipSet) (fbig.Int, error) {
-	pStateID := ts.At(0).ParentStateRoot
+func (c *ChainSelector) Weight(ctx context.Context, ts *types.BlockHeader) (fbig.Int, error) {
+	pStateID := ts.ParentStateRoot
 	// Retrieve parent weight.
 	if !pStateID.Defined() {
 		return fbig.Zero(), errors.New("undefined state passed to Chain selector new weight")
@@ -56,7 +56,7 @@ func (c *ChainSelector) Weight(ctx context.Context, ts *types.TipSet) (fbig.Int,
 		return fbig.Zero(), xerrors.Errorf("All power in the net is gone. You network might be disconnected, or the net is dead!")
 	}
 
-	weight := ts.ParentWeight()
+	weight := ts.ParentWeight
 	var out = new(big.Int).Set(weight.Int)
 	out.Add(out, big.NewInt(log2P<<8))
 
@@ -80,7 +80,7 @@ func (c *ChainSelector) Weight(ctx context.Context, ts *types.TipSet) (fbig.Int,
 // IsHeavier returns true if tipset a is heavier than tipset b, and false
 // vice versa.  In the rare case where two tipsets have the same weight ties
 // are broken by taking the tipset with more blocks.
-func (c *ChainSelector) IsHeavier(ctx context.Context, a, b *types.TipSet) (bool, error) {
+func (c *ChainSelector) IsHeavier(ctx context.Context, a, b *types.BlockHeader) (bool, error) {
 	aW, err := c.Weight(ctx, a)
 	if err != nil {
 		return false, err
@@ -100,8 +100,9 @@ func (c *ChainSelector) IsHeavier(ctx context.Context, a, b *types.TipSet) (bool
 }
 
 // true if ts1 wins according to the filecoin tie-break rule
-func breakWeightTie(ts1, ts2 *types.TipSet) bool {
-	s := len(ts1.Blocks())
+//TODO: breakweighttie need not to use in chain structure
+func breakWeightTie(ts1, ts2 *types.BlockHeader) bool {
+	/*s := len(ts1.Blocks())
 	if s > len(ts2.Blocks()) {
 		s = len(ts2.Blocks())
 	}
@@ -115,5 +116,6 @@ func breakWeightTie(ts1, ts2 *types.TipSet) bool {
 	}
 
 	log.Infof("weight tie left unbroken, default to %s", ts2.Key())
-	return false
+	return false*/
+	return true
 }
