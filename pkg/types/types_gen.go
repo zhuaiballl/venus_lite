@@ -77,6 +77,7 @@ var CidArrsEqual = internal.CidArrsEqual
 var NewFullTipSet = internal.NewFullTipSet
 var ReverseFullBlock = internal.ReverseFullBlock
 var ReverseTipSet = internal.ReverseTipSet
+var ReverseBlockHeader = internal.ReverseBlockHeader
 var NewSignedMessage = internal.NewSignedMessage
 var NewAttoFIL = internal.NewAttoFIL
 var NewAttoFILFromFIL = internal.NewAttoFILFromFIL
