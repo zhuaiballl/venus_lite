@@ -229,3 +229,11 @@ func (b *BlockHeader) SetValidated() {
 func (b *BlockHeader) IsValidated() bool {
 	return b.validated
 }
+
+func ReverseBlockHeader(chain []*BlockHeader) {
+	// https://github.com/golang/go/wiki/SliceTricks#reversing
+	for i := len(chain)/2 - 1; i >= 0; i-- {
+		opp := len(chain) - 1 - i
+		chain[i], chain[opp] = chain[opp], chain[i]
+	}
+}
