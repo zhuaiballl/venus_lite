@@ -87,6 +87,7 @@ type ExecuteTipsetResult struct {
 // This method returns the the receipts root, the poststate root, and the VM
 // message results. The latter _include_ implicit messages, such as cron ticks
 // and reward withdrawal per miner.
+//TODO:*schama.Tipset??? I don`t know how to change this function. Although it is not used in this program.
 func (d *Driver) ExecuteTipset(bs blockstore.Blockstore, chainDs ds.Batching, preroot cid.Cid, parentEpoch abi.ChainEpoch, tipset *schema.Tipset, execEpoch abi.ChainEpoch) (*ExecuteTipsetResult, error) {
 	ipldStore := cbor.NewCborStore(bs)
 	mainNetParams := networks.Mainnet()
@@ -147,9 +148,9 @@ func (d *Driver) ExecuteTipset(bs blockstore.Blockstore, chainDs ds.Batching, pr
 		sb := types.BlockMessagesInfo{
 			Block: &types.BlockHeader{
 				Miner: b.MinerAddr,
-				ElectionProof: &types.ElectionProof{
+				/*ElectionProof: &types.ElectionProof{
 					WinCount: b.WinCount,
-				},
+				},*/
 			},
 		}
 		for _, m := range b.Messages {
