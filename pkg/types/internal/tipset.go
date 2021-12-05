@@ -1,10 +1,8 @@
 package internal
 
+//As we don`t use tipset anymore,just return nil
 import (
-	"bytes"
 	"encoding/json"
-	"sort"
-
 	"github.com/filecoin-project/go-state-types/abi"
 	fbig "github.com/filecoin-project/go-state-types/big"
 	"github.com/ipfs/go-cid"
@@ -36,7 +34,7 @@ var UndefTipSet = &TipSet{}
 // NewTipSet builds a new TipSet from a collection of blocks.
 // The blocks must be distinct (different CIDs), have the same height, and same parent set.
 func NewTipSet(blocks ...*BlockHeader) (*TipSet, error) {
-	if len(blocks) == 0 {
+	/*if len(blocks) == 0 {
 		return nil, errNoBlocks
 	}
 
@@ -81,7 +79,8 @@ func NewTipSet(blocks ...*BlockHeader) (*TipSet, error) {
 	}
 	// Duplicate blocks (CIDs) are rejected here, pass that error through.
 	key := NewTipSetKey(cids...)
-	return &TipSet{sorted, key}, nil
+	return &TipSet{sorted, key}, nil*/
+	return &TipSet{}, nil
 }
 
 // Defined checks whether the tipset is defined.
@@ -157,9 +156,10 @@ func (ts *TipSet) Height() abi.ChainEpoch {
 
 // Parents returns the CIDs of the parents of the blocks in the tipset.
 func (ts *TipSet) Parents() TipSetKey {
-	if ts.Defined() {
+	/*if ts.Defined() {
 		return ts.blocks[0].Parents
 	}
+	return TipSetKey{}*/
 	return TipSetKey{}
 }
 
@@ -256,7 +256,7 @@ func (ts *TipSet) UnmarshalJSON(b []byte) error {
 }
 
 func (ts *TipSet) MinTicketBlock() *BlockHeader {
-	blks := ts.Blocks()
+	/*blks := ts.Blocks()
 
 	min := blks[0]
 
@@ -264,9 +264,9 @@ func (ts *TipSet) MinTicketBlock() *BlockHeader {
 		if b.LastTicket().Less(min.LastTicket()) {
 			min = b
 		}
-	}
+	}*/
 
-	return min
+	return nil
 }
 
 func CidArrsEqual(a, b []cid.Cid) bool {
