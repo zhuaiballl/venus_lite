@@ -53,8 +53,8 @@ func (v SyncStateStage) String() string {
 
 type ActiveSync struct {
 	WorkerID uint64
-	Base     *types.TipSet
-	Target   *types.TipSet
+	Base     *types.BlockHeader
+	Target   *types.BlockHeader
 
 	Stage  SyncStateStage
 	Height abi.ChainEpoch

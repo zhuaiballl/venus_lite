@@ -6,6 +6,7 @@ import (
 	proof2 "github.com/filecoin-project/specs-actors/v2/actors/runtime/proof"
 	"github.com/filecoin-project/venus_lite/pkg/types"
 	"github.com/filecoin-project/venus_lite/pkg/types/specactors/builtin"
+	"github.com/ipfs/go-cid"
 )
 
 type MiningBaseInfo struct { //nolint
@@ -20,10 +21,10 @@ type MiningBaseInfo struct { //nolint
 }
 
 type BlockTemplate struct {
-	Miner            address.Address
-	Parents          types.TipSetKey
-	Ticket           types.Ticket
-	Eproof           *types.ElectionProof
+	Miner  address.Address
+	Parent cid.Cid
+	Ticket types.Ticket
+	//Eproof           *types.ElectionProof
 	BeaconValues     []*types.BeaconEntry
 	Messages         []*types.SignedMessage
 	Epoch            abi.ChainEpoch
