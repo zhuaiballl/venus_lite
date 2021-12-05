@@ -65,8 +65,8 @@ type syncerConfig interface {
 }
 
 type nodeChainSelector interface {
-	Weight(context.Context, *types.TipSet) (fbig.Int, error)
-	IsHeavier(ctx context.Context, a, b *types.TipSet) (bool, error)
+	Weight(context.Context, *types.BlockHeader) (fbig.Int, error)
+	IsHeavier(ctx context.Context, a, b *types.BlockHeader) (bool, error)
 }
 
 // NewSyncerSubmodule creates a new chain submodule.

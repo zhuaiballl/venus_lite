@@ -15,7 +15,6 @@ import (
 	"github.com/filecoin-project/venus_lite/app/client"
 	"github.com/filecoin-project/venus_lite/app/client/v0api"
 	"github.com/filecoin-project/venus_lite/pkg/constants"
-	"github.com/filecoin-project/venus_lite/pkg/types"
 )
 
 const Filecoin = "Filecoin"
@@ -59,7 +58,7 @@ func main() {
 	var checkOver bool
 	var i int
 	for ; !checkOver; i++ {
-		fullBlock, err := cliV0.GetFullBlock(ctx, head.Blocks()[0].Cid())
+		fullBlock, err := cliV0.GetFullBlock(ctx, head.Cid())
 		checkErr(err)
 		fmt.Println("GetFullBlock ", fullBlock.Header)
 
@@ -73,7 +72,7 @@ func main() {
 			checkErr(err)
 			fmt.Println("StateSearchMsg ", msgLookup)
 
-			receipt, err := cliV0.StateGetReceipt(ctx, m.Cid(), types.TipSetKey{})
+			receipt, err := cliV0.StateGetReceipt(ctx, m.Cid(), cid.Undef)
 			checkErr(err)
 			fmt.Println("StateGetReceipt ", receipt)
 
@@ -86,16 +85,16 @@ func main() {
 			checkErr(err)
 			fmt.Println("StateWaitMsg ", msgLookup)
 
-			msgLookup, err = cliV1.StateSearchMsg(ctx, types.TipSetKey{}, m.Cid(), constants.LookbackNoLimit, true)
+			msgLookup, err = cliV1.StateSearchMsg(ctx, cid.Undef, m.Cid(), constants.LookbackNoLimit, true)
 			checkErr(err)
 			fmt.Println("StateSearchMsg ", msgLookup)
 
 			break
 		}
 
-		pt, err := cliV0.ChainGetTipSet(ctx, head.Parents())
+		pt, err := cliV0.ChainGetBlock(ctx, head.Parent)
 		checkErr(err)
-		fmt.Println("parent ", pt, "height ", pt.Height())
+		fmt.Println("parent ", pt, "height ", pt.Height)
 		head = pt
 	}
 

@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"github.com/filecoin-project/venus_lite/app/client/apiface"
 	"github.com/filecoin-project/venus_lite/pkg/vm/vmcontext"
+	"github.com/ipfs/go-cid"
 	"sync"
-
-	"github.com/filecoin-project/venus_lite/pkg/types"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/crypto"
@@ -22,7 +21,7 @@ type RecordingRand struct {
 	// can be removed when https://github.com/filecoin-project/lotus/issues/4223
 	// is fixed.
 	once     sync.Once
-	head     types.TipSetKey
+	head     cid.Cid
 	lk       sync.Mutex
 	recorded schema.Randomness
 }
@@ -49,7 +48,7 @@ func (r *RecordingRand) loadHead() {
 	if err != nil {
 		panic(fmt.Sprintf("could not fetch chain head while fetching randomness: %s", err))
 	}
-	r.head = head.Key()
+	r.head = head.Cid()
 }
 
 func (r *RecordingRand) GetChainRandomnessV2(ctx context.Context, pers crypto.DomainSeparationTag, round abi.ChainEpoch, entropy []byte) ([]byte, error) {

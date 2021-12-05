@@ -104,9 +104,9 @@ type messageStore interface {
 type ChainSelector interface {
 	// IsHeavier returns true if tipset a is heavier than tipset b and false if
 	// tipset b is heavier than tipset a.
-	IsHeavier(ctx context.Context, a, b *types.TipSet) (bool, error)
+	IsHeavier(ctx context.Context, a, b *types.BlockHeader) (bool, error)
 	// Weight returns the weight of a tipset after the upgrade to version 1
-	Weight(ctx context.Context, ts *types.TipSet) (big.Int, error)
+	Weight(ctx context.Context, ts *types.BlockHeader) (big.Int, error)
 }
 
 //Syncer used to synchronize the block from the specified target, including acquiring the relevant block data and message data,

@@ -22,7 +22,7 @@ var RepublishBatchDelay = 100 * time.Millisecond
 
 func (mp *MessagePool) republishPendingMessages(ctx context.Context) error {
 	mp.curTSLk.Lock()
-	ts := mp.curTS
+	ts := mp.curBH
 
 	baseFee, err := mp.api.ChainComputeBaseFee(context.TODO(), ts)
 	if err != nil {
