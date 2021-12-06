@@ -506,7 +506,8 @@ func (cia *chainInfoAPI) StateSearchMsg(ctx context.Context, from cid.Cid, mCid 
 			Message: mCid,
 			Receipt: *msgResult.Receipt,
 			TipSet:  msgResult.TS.Key(), //msgResult.TS is always nil (see it in function receiptForTipset in waiter.go)
-			Height:  msgResult.TS.Height(),
+			Block:   msgResult.Block.Cid(),
+			Height:  msgResult.Block.Height,
 		}, nil
 	}
 	return nil, nil
@@ -528,7 +529,8 @@ func (cia *chainInfoAPI) StateWaitMsg(ctx context.Context, mCid cid.Cid, confide
 			Message: mCid,
 			Receipt: *msgResult.Receipt,
 			TipSet:  msgResult.TS.Key(),
-			Height:  msgResult.TS.Height(),
+			Block:   msgResult.Block.Cid(),
+			Height:  msgResult.Block.Height,
 		}, nil
 	}
 	return nil, nil
