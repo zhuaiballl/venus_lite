@@ -168,12 +168,12 @@ var msigInspectCmd = &cmds.Command{
 			return err
 		}
 
-		act, err := env.(*node.Env).ChainAPI.StateGetActor(req.Context, maddr, head.Key())
+		act, err := env.(*node.Env).ChainAPI.StateGetActor(req.Context, maddr, head.Cid())
 		if err != nil {
 			return err
 		}
 
-		ownId, err := env.(*node.Env).ChainAPI.StateLookupID(req.Context, maddr, types.EmptyTSK) //nolint
+		ownId, err := env.(*node.Env).ChainAPI.StateLookupID(req.Context, maddr, cid.Undef) //nolint
 		if err != nil {
 			return err
 		}
@@ -181,7 +181,7 @@ var msigInspectCmd = &cmds.Command{
 		if err != nil {
 			return err
 		}
-		locked, err := mstate.LockedBalance(head.Height())
+		locked, err := mstate.LockedBalance(head.Height)
 		if err != nil {
 			return err
 		}
@@ -222,7 +222,7 @@ var msigInspectCmd = &cmds.Command{
 		signerTable := tabwriter.NewWriter(cliw, 8, 4, 2, ' ', 0)
 		fmt.Fprintf(signerTable, "ID\tAddress\n")
 		for _, s := range signers {
-			signerActor, err := env.(*node.Env).ChainAPI.StateAccountKey(req.Context, s, types.EmptyTSK)
+			signerActor, err := env.(*node.Env).ChainAPI.StateAccountKey(req.Context, s, cid.Undef)
 			if err != nil {
 				fmt.Fprintf(signerTable, "%s\t%s\n", s, "N/A")
 			} else {
@@ -260,7 +260,7 @@ var msigInspectCmd = &cmds.Command{
 				if tx.To == ownId {
 					target += " (self)"
 				}
-				targAct, err := env.(*node.Env).ChainAPI.StateGetActor(req.Context, tx.To, types.EmptyTSK)
+				targAct, err := env.(*node.Env).ChainAPI.StateGetActor(req.Context, tx.To, cid.Undef)
 				paramStr := fmt.Sprintf("%x", tx.Params)
 
 				if err != nil {
@@ -356,7 +356,7 @@ var msigProposeCmd = &cmds.Command{
 			return err
 		}
 
-		act, err := env.(*node.Env).ChainAPI.StateGetActor(ctx, msig, types.EmptyTSK)
+		act, err := env.(*node.Env).ChainAPI.StateGetActor(ctx, msig, cid.Undef)
 		if err != nil {
 			return fmt.Errorf("failed to look up multisig %s: %w", msig, err)
 		}
@@ -517,7 +517,7 @@ var msigApproveCmd = &cmds.Command{
 			}
 
 			if proposer.Protocol() != address.ID {
-				proposer, err = env.(*node.Env).ChainAPI.StateLookupID(ctx, proposer, types.EmptyTSK)
+				proposer, err = env.(*node.Env).ChainAPI.StateLookupID(ctx, proposer, cid.Undef)
 				if err != nil {
 					return err
 				}
@@ -1208,11 +1208,11 @@ var msigVestedCmd = &cmds.Command{
 		if err != nil {
 			return err
 		}
-		start, err := env.(*node.Env).ChainAPI.ChainGetTipSetByHeight(ctx, reqChainEpochOption(req, "start-epoch"), types.EmptyTSK)
+		start, err := env.(*node.Env).ChainAPI.ChainGetTipSetByHeight(ctx, reqChainEpochOption(req, "start-epoch"), cid.Undef)
 		if err != nil {
 			return err
 		}
-		var end *types.TipSet
+		var end *types.BlockHeader
 		endEpoch := reqChainEpochOption(req, "end-epoch")
 		if endEpoch < 0 {
 			end, err = env.(*node.Env).ChainAPI.ChainHead(ctx)
@@ -1220,17 +1220,17 @@ var msigVestedCmd = &cmds.Command{
 				return err
 			}
 		} else {
-			end, err = env.(*node.Env).ChainAPI.ChainGetTipSetByHeight(ctx, endEpoch, types.EmptyTSK)
+			end, err = env.(*node.Env).ChainAPI.ChainGetTipSetByHeight(ctx, endEpoch, cid.Undef)
 			if err != nil {
 				return err
 			}
 		}
 
-		ret, err := env.(*node.Env).MultiSigAPI.MsigGetVested(ctx, msig, start.Key(), end.Key())
+		ret, err := env.(*node.Env).MultiSigAPI.MsigGetVested(ctx, msig, start.Cid(), end.Cid())
 		if err != nil {
 			return err
 		}
-		return re.Emit(fmt.Sprintf("Vested: %s between %d and %d", types.FIL(ret), start.Height(), end.Height()))
+		return re.Emit(fmt.Sprintf("Vested: %s between %d and %d", types.FIL(ret), start.Height, end.Height))
 	},
 }
 

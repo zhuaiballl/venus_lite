@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"strings"
 
 	"github.com/filecoin-project/venus_lite/pkg/constants"
@@ -78,7 +79,7 @@ var actorSetAddrsCmd = &cmds.Command{
 			addrs = append(addrs, maddrNop2p.Bytes())
 		}
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -130,7 +131,7 @@ var actorSetPeeridCmd = &cmds.Command{
 			return fmt.Errorf("failed to parse input as a peerId: %w", err)
 		}
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -173,12 +174,12 @@ var actorWithdrawCmd = &cmds.Command{
 			return err
 		}
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
 
-		available, err := env.(*node.Env).ChainAPI.StateMinerAvailableBalance(ctx, maddr, types.EmptyTSK)
+		available, err := env.(*node.Env).ChainAPI.StateMinerAvailableBalance(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -236,7 +237,7 @@ var actorRepayDebtCmd = &cmds.Command{
 			return err
 		}
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -251,7 +252,7 @@ var actorRepayDebtCmd = &cmds.Command{
 
 			amount = abi.TokenAmount(f)
 		} else {
-			mact, err := env.(*node.Env).ChainAPI.StateGetActor(ctx, maddr, types.EmptyTSK)
+			mact, err := env.(*node.Env).ChainAPI.StateGetActor(ctx, maddr, cid.Undef)
 			if err != nil {
 				return err
 			}
@@ -281,7 +282,7 @@ var actorRepayDebtCmd = &cmds.Command{
 			fromAddr = addr
 		}
 
-		fromID, err := env.(*node.Env).ChainAPI.StateLookupID(ctx, fromAddr, types.EmptyTSK)
+		fromID, err := env.(*node.Env).ChainAPI.StateLookupID(ctx, fromAddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -335,12 +336,12 @@ var actorSetOwnerCmd = &cmds.Command{
 			return err
 		}
 
-		newAddr, err := api.StateLookupID(ctx, na, types.EmptyTSK)
+		newAddr, err := api.StateLookupID(ctx, na, cid.Undef)
 		if err != nil {
 			return err
 		}
 
-		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := api.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -434,7 +435,7 @@ var actorControlList = &cmds.Command{
 		ctx := req.Context
 		api := env.(*node.Env).ChainAPI
 
-		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := api.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -462,7 +463,7 @@ var actorControlList = &cmds.Command{
 				return
 			}
 
-			k, err := env.(*node.Env).ChainAPI.StateAccountKey(ctx, a, types.EmptyTSK)
+			k, err := env.(*node.Env).ChainAPI.StateAccountKey(ctx, a, cid.Undef)
 			if err != nil {
 				_ = re.Emit(fmt.Sprintf("%s  %s: error getting account key: %s", name, a, err))
 				return
@@ -531,7 +532,7 @@ var actorControlSet = &cmds.Command{
 		ctx := req.Context
 		api := env.(*node.Env).ChainAPI
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -539,7 +540,7 @@ var actorControlSet = &cmds.Command{
 		del := map[address.Address]struct{}{}
 		existing := map[address.Address]struct{}{}
 		for _, controlAddress := range mi.ControlAddresses {
-			ka, err := api.StateAccountKey(ctx, controlAddress, types.EmptyTSK)
+			ka, err := api.StateAccountKey(ctx, controlAddress, cid.Undef)
 			if err != nil {
 				return err
 			}
@@ -557,13 +558,13 @@ var actorControlSet = &cmds.Command{
 				return xerrors.Errorf("parsing address %d: %w", i, err)
 			}
 
-			ka, err := api.StateAccountKey(ctx, a, types.EmptyTSK)
+			ka, err := api.StateAccountKey(ctx, a, cid.Undef)
 			if err != nil {
 				return err
 			}
 
 			// make sure the address exists on chain
-			_, err = api.StateLookupID(ctx, ka, types.EmptyTSK)
+			_, err = api.StateLookupID(ctx, ka, cid.Undef)
 			if err != nil {
 				return xerrors.Errorf("looking up %s: %w", ka, err)
 			}
@@ -640,12 +641,12 @@ var actorProposeChangeWorker = &cmds.Command{
 		ctx := req.Context
 		api := env.(*node.Env).ChainAPI
 
-		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := api.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
 
-		newAddr, err := api.StateLookupID(ctx, na, types.EmptyTSK)
+		newAddr, err := api.StateLookupID(ctx, na, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -700,7 +701,7 @@ var actorProposeChangeWorker = &cmds.Command{
 			return err
 		}
 
-		mi, err = api.StateMinerInfo(ctx, maddr, wait.TipSet)
+		mi, err = api.StateMinerInfo(ctx, maddr, wait.Block)
 		if err != nil {
 			return err
 		}
@@ -739,12 +740,12 @@ var actorConfirmChangeWorker = &cmds.Command{
 		ctx := req.Context
 		api := env.(*node.Env).ChainAPI
 
-		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := api.StateMinerInfo(ctx, maddr, cid.Undef)
 		if err != nil {
 			return err
 		}
 
-		newAddr, err := api.StateLookupID(ctx, na, types.EmptyTSK)
+		newAddr, err := api.StateLookupID(ctx, na, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -764,7 +765,7 @@ var actorConfirmChangeWorker = &cmds.Command{
 			return xerrors.Errorf("failed to get the chain head: %w", err)
 		}
 
-		height := head.Height()
+		height := head.Height
 		if height < mi.WorkerChangeEpoch {
 			return xerrors.Errorf("worker key change cannot be confirmed until %d, current height is %d", mi.WorkerChangeEpoch, height)
 		}
@@ -798,7 +799,7 @@ var actorConfirmChangeWorker = &cmds.Command{
 			return err
 		}
 
-		mi, err = api.StateMinerInfo(ctx, maddr, wait.TipSet)
+		mi, err = api.StateMinerInfo(ctx, maddr, wait.Block)
 		if err != nil {
 			return err
 		}
