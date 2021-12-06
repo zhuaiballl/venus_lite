@@ -88,7 +88,7 @@ var mpoolSelect = &cmds.Command{
 		if err != nil {
 			return err
 		}
-		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolSelect(ctx, head.Key(), quality)
+		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolSelect(ctx, head.Cid(), quality)
 		if err != nil {
 			return err
 		}
@@ -156,7 +156,7 @@ var mpoolFindCmd = &cmds.Command{
 		method, _ := req.Options["method"].(int64)
 
 		ctx := context.TODO()
-		pending, err := env.(*node.Env).MessagePoolAPI.MpoolPending(ctx, types.TipSetKey{})
+		pending, err := env.(*node.Env).MessagePoolAPI.MpoolPending(ctx, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -272,7 +272,7 @@ var mpoolReplaceCmd = &cmds.Command{
 			return xerrors.Errorf("getting chain head: %w", err)
 		}
 
-		pending, err := env.(*node.Env).MessagePoolAPI.MpoolPending(req.Context, ts.Key())
+		pending, err := env.(*node.Env).MessagePoolAPI.MpoolPending(req.Context, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -319,7 +319,7 @@ var mpoolReplaceCmd = &cmds.Command{
 			// msg.GasLimit = 0 // TODO: need to fix the way we estimate gas limits to account for the messages already being in the mempool
 			msg.GasFeeCap = abi.NewTokenAmount(0)
 			msg.GasPremium = abi.NewTokenAmount(0)
-			retm, err := env.(*node.Env).MessagePoolAPI.GasEstimateMessageGas(req.Context, &msg, mss, types.TipSetKey{})
+			retm, err := env.(*node.Env).MessagePoolAPI.GasEstimateMessageGas(req.Context, &msg, mss, cid.Undef)
 			if err != nil {
 				return fmt.Errorf("failed to estimate gas values: %w", err)
 			}
@@ -335,7 +335,7 @@ var mpoolReplaceCmd = &cmds.Command{
 		} else {
 			msg.GasFeeCap = abi.NewTokenAmount(0)
 			msg.GasPremium = abi.NewTokenAmount(0)
-			newMsg, err := env.(*node.Env).MessagePoolAPI.GasEstimateMessageGas(req.Context, &msg, nil, types.TipSetKey{})
+			newMsg, err := env.(*node.Env).MessagePoolAPI.GasEstimateMessageGas(req.Context, &msg, nil, cid.Undef)
 			if err != nil {
 				return fmt.Errorf("failed to estimate gas values: %w", err)
 			}
@@ -388,17 +388,17 @@ Get pending messages.
 		if err != nil {
 			return xerrors.Errorf("getting chain head: %w", err)
 		}
-		currBF := ts.Blocks()[0].ParentBaseFee
+		currBF := ts.ParentBaseFee
 		minBF := currBF
 		{
 			currTS := ts
 			for i := 0; i < basefee; i++ {
-				key := currTS.Parents()
+				key := currTS.Parent
 				currTS, err = env.(*node.Env).ChainAPI.ChainGetTipSet(req.Context, key)
 				if err != nil {
 					return xerrors.Errorf("walking chain: %w", err)
 				}
-				if newBF := currTS.Blocks()[0].ParentBaseFee; newBF.LessThan(minBF) {
+				if newBF := currTS.ParentBaseFee; newBF.LessThan(minBF) {
 					minBF = newBF
 				}
 			}
@@ -415,7 +415,7 @@ Get pending messages.
 			}
 		}
 
-		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolPending(ctx, types.TipSetKey{})
+		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolPending(ctx, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -452,7 +452,7 @@ Get pending messages.
 		var out []mpStat
 
 		for a, bkt := range buckets {
-			act, err := env.(*node.Env).ChainAPI.StateGetActor(ctx, a, ts.Key())
+			act, err := env.(*node.Env).ChainAPI.StateGetActor(ctx, a, cid.Undef)
 			if err != nil {
 				fmt.Printf("%s, err: %s\n", a, err)
 				continue
@@ -564,7 +564,7 @@ Get pending messages.
 			}
 		}
 
-		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolPending(req.Context, types.TipSetKey{})
+		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolPending(req.Context, cid.Undef)
 
 		if err != nil {
 			return err
@@ -692,7 +692,7 @@ Check gas performance of messages in mempool
 
 		ctx := context.TODO()
 
-		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolPending(ctx, types.TipSetKey{})
+		msgs, err := env.(*node.Env).MessagePoolAPI.MpoolPending(ctx, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -723,7 +723,7 @@ Check gas performance of messages in mempool
 			return xerrors.Errorf("failed to get chain head: %w", err)
 		}
 
-		baseFee := ts.Blocks()[0].ParentBaseFee
+		baseFee := ts.ParentBaseFee
 
 		bigBlockGasLimit := big.NewInt(constants.BlockGasLimit)
 

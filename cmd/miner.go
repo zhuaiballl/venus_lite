@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	cid2 "github.com/ipfs/go-cid"
 	"time"
 
 	"github.com/docker/go-units"
@@ -97,7 +98,7 @@ var newMinerCmd = &cmds.Command{
 		}
 
 		// make sure the worker account exists on chain
-		_, err = env.(*node.Env).ChainAPI.StateLookupID(ctx, worker, types.EmptyTSK)
+		_, err = env.(*node.Env).ChainAPI.StateLookupID(ctx, worker, cid2.Undef)
 		if err != nil {
 			signed, err := env.(*node.Env).MessagePoolAPI.MpoolPushMessage(ctx, &types.UnsignedMessage{
 				From:  owner,
@@ -123,7 +124,7 @@ var newMinerCmd = &cmds.Command{
 			}
 		}
 
-		nv, err := env.(*node.Env).ChainAPI.StateNetworkVersion(ctx, types.EmptyTSK)
+		nv, err := env.(*node.Env).ChainAPI.StateNetworkVersion(ctx, cid2.Undef)
 		if err != nil {
 			return xerrors.Errorf("getting network version: %v", err)
 		}
@@ -233,18 +234,18 @@ var minerInfoCmd = &cmds.Command{
 		writer := NewSilentWriter(buf)
 		var chainSyncStr string
 		switch {
-		case time.Now().Unix()-int64(head.MinTimestamp()) < int64(blockDelay*3/2): // within 1.5 epochs
+		case time.Now().Unix()-int64(head.Timestamp) < int64(blockDelay*3/2): // within 1.5 epochs
 			chainSyncStr = "[Chain: sync ok]"
-		case time.Now().Unix()-int64(head.MinTimestamp()) < int64(blockDelay*5): // within 5 epochs
-			chainSyncStr = fmt.Sprintf("[Chain: sync slow (%s behind)]", time.Since(time.Unix(int64(head.MinTimestamp()), 0)).Truncate(time.Second))
+		case time.Now().Unix()-int64(head.Timestamp) < int64(blockDelay*5): // within 5 epochs
+			chainSyncStr = fmt.Sprintf("[Chain: sync slow (%s behind)]", time.Since(time.Unix(int64(head.Timestamp), 0)).Truncate(time.Second))
 		default:
-			chainSyncStr = fmt.Sprintf("[Chain: sync behind! (%s behind)]", time.Since(time.Unix(int64(head.MinTimestamp()), 0)).Truncate(time.Second))
+			chainSyncStr = fmt.Sprintf("[Chain: sync behind! (%s behind)]", time.Since(time.Unix(int64(head.Timestamp), 0)).Truncate(time.Second))
 		}
 
-		basefee := head.MinTicketBlock().ParentBaseFee
+		basefee := head.ParentBaseFee
 		writer.Printf("%s [basefee %s]\n", chainSyncStr, types.FIL(basefee).Short())
 
-		mact, err := api.StateGetActor(ctx, maddr, types.EmptyTSK)
+		mact, err := api.StateGetActor(ctx, maddr, cid2.Undef)
 		if err != nil {
 			return err
 		}
@@ -256,7 +257,7 @@ var minerInfoCmd = &cmds.Command{
 		}
 
 		// Sector size
-		mi, err := api.StateMinerInfo(ctx, maddr, types.EmptyTSK)
+		mi, err := api.StateMinerInfo(ctx, maddr, cid2.Undef)
 		if err != nil {
 			return err
 		}
@@ -264,7 +265,7 @@ var minerInfoCmd = &cmds.Command{
 		ssize := types.SizeStr(big.NewInt(int64(mi.SectorSize)))
 		writer.Printf("Miner: %s (%s sectors)\n", maddr, ssize)
 
-		pow, err := api.StateMinerPower(ctx, maddr, types.EmptyTSK)
+		pow, err := api.StateMinerPower(ctx, maddr, cid2.Undef)
 		if err != nil {
 			return err
 		}
@@ -282,7 +283,7 @@ var minerInfoCmd = &cmds.Command{
 			types.SizeStr(pow.TotalPower.RawBytePower),
 			float64(rpercI.Int64())/10000)
 
-		secCounts, err := api.StateMinerSectorCount(ctx, maddr, types.EmptyTSK)
+		secCounts, err := api.StateMinerSectorCount(ctx, maddr, cid2.Undef)
 		if err != nil {
 			return err
 		}
@@ -340,7 +341,7 @@ var minerInfoCmd = &cmds.Command{
 		writer.Printf("      Vesting:    %s\n", types.FIL(lockedFunds.VestingFunds).Short())
 		writer.Printf("      Available:  %s\n", types.FIL(availBalance).Short())
 
-		mb, err := api.StateMarketBalance(ctx, maddr, types.EmptyTSK)
+		mb, err := api.StateMarketBalance(ctx, maddr, cid2.Undef)
 		if err != nil {
 			return xerrors.Errorf("getting market balance: %w", err)
 		}

@@ -55,12 +55,12 @@ var chainHeadCmd = &cmds.Command{
 			return err
 		}
 
-		h := head.Height()
-		pw := head.ParentWeight()
+		h := head.Height
+		pw := head.ParentWeight
 
-		strTt := time.Unix(int64(head.MinTimestamp()), 0).Format("2006-01-02 15:04:05")
+		strTt := time.Unix(int64(head.Timestamp), 0).Format("2006-01-02 15:04:05")
 
-		return re.Emit(&ChainHeadResult{Height: h, ParentWeight: pw, Cids: head.Key().Cids(), Timestamp: strTt})
+		return re.Emit(&ChainHeadResult{Height: h, ParentWeight: pw, Cids: []cid.Cid{head.Cid()}, Timestamp: strTt})
 	},
 	Type: &ChainHeadResult{},
 }
@@ -99,17 +99,17 @@ var chainLsCmd = &cmds.Command{
 		}
 
 		height, _ := req.Options["height"].(int64)
-		if height >= 0 && abi.ChainEpoch(height) < startTS.Height() {
-			startTS, err = env.(*node.Env).ChainAPI.ChainGetTipSetByHeight(req.Context, abi.ChainEpoch(height), startTS.Key())
+		if height >= 0 && abi.ChainEpoch(height) < startTS.Height {
+			startTS, err = env.(*node.Env).ChainAPI.ChainGetTipSetByHeight(req.Context, abi.ChainEpoch(height), startTS.Cid())
 			if err != nil {
 				return err
 			}
 		}
 
-		if abi.ChainEpoch(count) > startTS.Height()+1 {
-			count = uint(startTS.Height() + 1)
+		if abi.ChainEpoch(count) > startTS.Height+1 {
+			count = uint(startTS.Height + 1)
 		}
-		tipSetKeys, err := env.(*node.Env).ChainAPI.ChainList(req.Context, startTS.Key(), int(count))
+		tipSetKeys, err := env.(*node.Env).ChainAPI.ChainList(req.Context, startTS.Cid(), int(count))
 		if err != nil {
 			return err
 		}
@@ -123,12 +123,12 @@ var chainLsCmd = &cmds.Command{
 				return err
 			}
 
-			strTt := time.Unix(int64(tp.MinTimestamp()), 0).Format("2006-01-02 15:04:05")
+			strTt := time.Unix(int64(tp.Timestamp), 0).Format("2006-01-02 15:04:05")
 
-			oneTpInfoStr := fmt.Sprintf("%v: (%s) [ ", tp.Height(), strTt)
-			for _, blk := range tp.Blocks() {
-				oneTpInfoStr += fmt.Sprintf("%s: %s,", blk.Cid().String(), blk.Miner)
-			}
+			oneTpInfoStr := fmt.Sprintf("%v: (%s) [ ", tp.Height, strTt)
+			//for _, blk := range tp.Blocks() {
+			oneTpInfoStr += fmt.Sprintf("%s: %s,", tp.Cid().String(), tp.Miner)
+			//}
 			oneTpInfoStr += " ]"
 
 			tpInfoStr += oneTpInfoStr + "\n"
@@ -152,7 +152,7 @@ var chainSetHeadCmd = &cmds.Command{
 		if err != nil {
 			return err
 		}
-		maybeNewHead := types.NewTipSetKey(headCids...)
+		maybeNewHead := headCids[0] //only one cid in a block
 		return env.(*node.Env).ChainAPI.ChainSetHead(req.Context, maybeNewHead)
 	},
 }
@@ -285,7 +285,7 @@ var chainExportCmd = &cmds.Command{
 			return fmt.Errorf("must pass recent stateroots along with skip-old-msgs")
 		}
 
-		stream, err := env.(*node.Env).ChainAPI.ChainExport(req.Context, rsrs, skipold, ts.Key())
+		stream, err := env.(*node.Env).ChainAPI.ChainExport(req.Context, rsrs, skipold, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -311,7 +311,7 @@ var chainExportCmd = &cmds.Command{
 // LoadTipSet gets the tipset from the context, or the head from the API.
 //
 // It always gets the head from the API so commands use a consistent tipset even if time pases.
-func LoadTipSet(ctx context.Context, req *cmds.Request, chainAPI apiface.IChain) (*types.TipSet, error) {
+func LoadTipSet(ctx context.Context, req *cmds.Request, chainAPI apiface.IChain) (*types.BlockHeader, error) {
 	tss := req.Options["tipset"].(string)
 	if tss == "" {
 		return chainAPI.ChainHead(ctx)
@@ -320,7 +320,7 @@ func LoadTipSet(ctx context.Context, req *cmds.Request, chainAPI apiface.IChain)
 	return ParseTipSetRef(ctx, chainAPI, tss)
 }
 
-func ParseTipSetRef(ctx context.Context, chainAPI apiface.IChain, tss string) (*types.TipSet, error) {
+func ParseTipSetRef(ctx context.Context, chainAPI apiface.IChain, tss string) (*types.BlockHeader, error) {
 	if tss[0] == '@' {
 		if tss == "@head" {
 			return chainAPI.ChainHead(ctx)
@@ -331,7 +331,7 @@ func ParseTipSetRef(ctx context.Context, chainAPI apiface.IChain, tss string) (*
 			return nil, xerrors.Errorf("parsing height tipset ref: %w", err)
 		}
 
-		return chainAPI.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(h), types.EmptyTSK)
+		return chainAPI.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(h), cid.Undef)
 	}
 
 	cids, err := ParseTipSetString(tss)
@@ -343,7 +343,7 @@ func ParseTipSetRef(ctx context.Context, chainAPI apiface.IChain, tss string) (*
 		return nil, nil
 	}
 
-	k := types.NewTipSetKey(cids...)
+	k := cids[0] //only one cid in a block
 	ts, err := chainAPI.ChainGetTipSet(ctx, k)
 	if err != nil {
 		return nil, err

@@ -86,9 +86,9 @@ func importChain(r repo.Repo, fname string) error {
 	if err != nil {
 		return xerrors.Errorf("importing chain failed: %s", err)
 	}
-	logImport.Infof("accepting %s as new head", tip.Key().String())
+	logImport.Infof("accepting %s as new head", tip.Cid().String())
 
-	err = chainStore.WriteCheckPoint(context.TODO(), tip.Key())
+	err = chainStore.WriteCheckPoint(context.TODO(), tip.Cid())
 	if err != nil {
 		logImport.Errorf("set check point error: %s", err.Error())
 	}

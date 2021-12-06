@@ -92,12 +92,12 @@ var stateSearchMsgCmd = &cmds.Command{
 		cmds.StringArg("cid", true, false, "CID of message to show"),
 	},
 	Run: func(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment) error {
-		cid, err := cid.Decode(req.Arguments[0])
+		tcid, err := cid.Decode(req.Arguments[0])
 		if err != nil {
 			return err
 		}
 
-		mw, err := env.(*node.Env).ChainAPI.StateSearchMsg(req.Context, types.EmptyTSK, cid, constants.LookbackNoLimit, true)
+		mw, err := env.(*node.Env).ChainAPI.StateSearchMsg(req.Context, cid.Undef, tcid, constants.LookbackNoLimit, true)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ var statePowerCmd = &cmds.Command{
 			return err
 		}
 
-		power, err := env.(*node.Env).ChainAPI.StateMinerPower(req.Context, maddr, ts.Key())
+		power, err := env.(*node.Env).ChainAPI.StateMinerPower(req.Context, maddr, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -179,7 +179,7 @@ var stateSectorsCmd = &cmds.Command{
 			return err
 		}
 
-		sectors, err := env.(*node.Env).ChainAPI.StateMinerSectors(req.Context, maddr, nil, ts.Key())
+		sectors, err := env.(*node.Env).ChainAPI.StateMinerSectors(req.Context, maddr, nil, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -212,7 +212,7 @@ var stateActiveSectorsCmd = &cmds.Command{
 			return err
 		}
 
-		sectors, err := env.(*node.Env).ChainAPI.StateMinerActiveSectors(req.Context, maddr, ts.Key())
+		sectors, err := env.(*node.Env).ChainAPI.StateMinerActiveSectors(req.Context, maddr, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -259,7 +259,7 @@ var stateSectorCmd = &cmds.Command{
 			return err
 		}
 
-		si, err := env.(*node.Env).ChainAPI.StateSectorGetInfo(req.Context, maddr, abi.SectorNumber(sid), ts.Key())
+		si, err := env.(*node.Env).ChainAPI.StateSectorGetInfo(req.Context, maddr, abi.SectorNumber(sid), ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -267,7 +267,7 @@ var stateSectorCmd = &cmds.Command{
 			return xerrors.Errorf("sector %d for miner %s not found", sid, maddr)
 		}
 
-		height := ts.Height()
+		height := ts.Height
 		buf := new(bytes.Buffer)
 		writer := NewSilentWriter(buf)
 
@@ -286,7 +286,7 @@ var stateSectorCmd = &cmds.Command{
 		writer.Println("ExpectedStoragePledge: ", types.FIL(si.ExpectedStoragePledge))
 		writer.Println()
 
-		sp, err := env.(*node.Env).ChainAPI.StateSectorPartition(req.Context, maddr, abi.SectorNumber(sid), ts.Key())
+		sp, err := env.(*node.Env).ChainAPI.StateSectorPartition(req.Context, maddr, abi.SectorNumber(sid), ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -334,7 +334,7 @@ var stateGetActorCmd = &cmds.Command{
 			return err
 		}
 
-		a, err := env.(*node.Env).ChainAPI.StateGetActor(req.Context, addr, ts.Key())
+		a, err := env.(*node.Env).ChainAPI.StateGetActor(req.Context, addr, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -375,9 +375,9 @@ var stateLookupIDCmd = &cmds.Command{
 
 		var a address.Address
 		if ok, _ := req.Options["r"].(bool); ok {
-			a, err = env.(*node.Env).ChainAPI.StateAccountKey(req.Context, addr, ts.Key())
+			a, err = env.(*node.Env).ChainAPI.StateAccountKey(req.Context, addr, ts.Cid())
 		} else {
-			a, err = env.(*node.Env).ChainAPI.StateLookupID(req.Context, addr, ts.Key())
+			a, err = env.(*node.Env).ChainAPI.StateLookupID(req.Context, addr, ts.Cid())
 		}
 
 		if err != nil {
@@ -407,7 +407,7 @@ var stateSectorSizeCmd = &cmds.Command{
 			return err
 		}
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(req.Context, maddr, ts.Key())
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(req.Context, maddr, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -435,7 +435,7 @@ var stateGetDealSetCmd = &cmds.Command{
 			return err
 		}
 
-		deal, err := env.(*node.Env).ChainAPI.StateMarketStorageDeal(req.Context, abi.DealID(dealid), ts.Key())
+		deal, err := env.(*node.Env).ChainAPI.StateMarketStorageDeal(req.Context, abi.DealID(dealid), ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -468,12 +468,12 @@ var stateMinerInfo = &cmds.Command{
 			return err
 		}
 
-		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(req.Context, addr, ts.Key())
+		mi, err := env.(*node.Env).ChainAPI.StateMinerInfo(req.Context, addr, ts.Cid())
 		if err != nil {
 			return err
 		}
 
-		availableBalance, err := env.(*node.Env).ChainAPI.StateMinerAvailableBalance(req.Context, addr, ts.Key())
+		availableBalance, err := env.(*node.Env).ChainAPI.StateMinerAvailableBalance(req.Context, addr, ts.Cid())
 		if err != nil {
 			return xerrors.Errorf("getting miner available balance: %w", err)
 		}
@@ -502,7 +502,7 @@ var stateMinerInfo = &cmds.Command{
 		writer.Printf("Consensus Fault End:\t%d\n", mi.ConsensusFaultElapsed)
 
 		writer.Printf("SectorSize:\t%s (%d)\n", types.SizeStr(big.NewInt(int64(mi.SectorSize))), mi.SectorSize)
-		pow, err := env.(*node.Env).ChainAPI.StateMinerPower(req.Context, addr, ts.Key())
+		pow, err := env.(*node.Env).ChainAPI.StateMinerPower(req.Context, addr, ts.Cid())
 		if err != nil {
 			return err
 		}
@@ -522,7 +522,7 @@ var stateMinerInfo = &cmds.Command{
 
 		writer.Println()
 
-		cd, err := env.(*node.Env).ChainAPI.StateMinerProvingDeadline(req.Context, addr, ts.Key())
+		cd, err := env.(*node.Env).ChainAPI.StateMinerProvingDeadline(req.Context, addr, ts.Cid())
 		if err != nil {
 			return xerrors.Errorf("getting miner info: %w", err)
 		}
@@ -543,7 +543,7 @@ var stateNtwkVersionCmd = &cmds.Command{
 			return err
 		}
 
-		nv, err := env.(*node.Env).ChainAPI.StateNetworkVersion(req.Context, ts.Key())
+		nv, err := env.(*node.Env).ChainAPI.StateNetworkVersion(req.Context, ts.Cid())
 		if err != nil {
 			return err
 		}

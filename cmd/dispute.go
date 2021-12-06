@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/filecoin-project/venus_lite/app/client/apiface"
+	"github.com/ipfs/go-cid"
 	"strconv"
 	"time"
 
@@ -102,7 +103,7 @@ var disputerMsgCmd = &cmds.Command{
 			Params: dpp,
 		}
 
-		rslt, err := env.(*node.Env).SyncerAPI.StateCall(req.Context, dmsg, types.EmptyTSK)
+		rslt, err := env.(*node.Env).SyncerAPI.StateCall(req.Context, dmsg, cid.Undef)
 		if err != nil {
 			return xerrors.Errorf("failed to simulate dispute: %w", err)
 		}
@@ -180,12 +181,12 @@ var disputerStartCmd = &cmds.Command{
 			return xerrors.Errorf("expected current head on Notify stream (got %s)", head[0].Type)
 		}
 
-		lastEpoch := head[0].Val.Height()
+		lastEpoch := head[0].Val.Height
 		lastStatusCheckEpoch := lastEpoch
 
 		// build initial deadlineMap
 
-		minerList, err := env.(*node.Env).ChainAPI.StateListMiners(ctx, types.EmptyTSK)
+		minerList, err := env.(*node.Env).ChainAPI.StateListMiners(ctx, cid.Undef)
 		if err != nil {
 			return err
 		}
@@ -209,7 +210,7 @@ var disputerStartCmd = &cmds.Command{
 
 		disputeLog.Info("starting up window post disputer")
 
-		applyTsk := func(tsk types.TipSetKey) error {
+		applyTsk := func(tsk cid.Cid) error {
 			disputeLog.Infow("last checked epoch", "epoch", lastEpoch)
 			dls, ok := deadlineMap[lastEpoch]
 			delete(deadlineMap, lastEpoch)
@@ -278,8 +279,8 @@ var disputerStartCmd = &cmds.Command{
 				for _, val := range notif {
 					switch val.Type {
 					case chainpkg.HCApply:
-						for ; lastEpoch <= val.Val.Height(); lastEpoch++ {
-							err := applyTsk(val.Val.Key())
+						for ; lastEpoch <= val.Val.Height; lastEpoch++ {
+							err := applyTsk(val.Val.Cid())
 							if err != nil {
 								return err
 							}
@@ -293,7 +294,7 @@ var disputerStartCmd = &cmds.Command{
 			case <-statusCheckTicker.C:
 				disputeLog.Infof("running status check")
 
-				minerList, err = env.(*node.Env).ChainAPI.StateListMiners(ctx, types.EmptyTSK)
+				minerList, err = env.(*node.Env).ChainAPI.StateListMiners(ctx, cid.Undef)
 				if err != nil {
 					return xerrors.Errorf("getting miner list: %w", err)
 				}
@@ -369,7 +370,7 @@ func makeDisputeWindowedPosts(ctx context.Context, api apiface.ISyncer, dl miner
 			Params: dpp,
 		}
 
-		rslt, err := api.StateCall(ctx, dispute, types.EmptyTSK)
+		rslt, err := api.StateCall(ctx, dispute, cid.Undef)
 		if err == nil && rslt.MsgRct.ExitCode == 0 {
 			disputes = append(disputes, dispute)
 		}
@@ -380,7 +381,7 @@ func makeDisputeWindowedPosts(ctx context.Context, api apiface.ISyncer, dl miner
 }
 
 func makeMinerDeadline(ctx context.Context, api apiface.IChain, mAddr address.Address) (abi.ChainEpoch, *minerDeadline, error) {
-	dl, err := api.StateMinerProvingDeadline(ctx, mAddr, types.EmptyTSK)
+	dl, err := api.StateMinerProvingDeadline(ctx, mAddr, cid.Undef)
 	if err != nil {
 		return -1, nil, xerrors.Errorf("getting proving index list: %w", err)
 	}

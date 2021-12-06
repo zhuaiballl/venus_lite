@@ -22,6 +22,7 @@ type MsgLookup struct {
 	ReturnDec interface{}
 	TipSet    types.TipSetKey
 	Height    abi.ChainEpoch
+	Block     cid.Cid
 }
 
 // Abstracts over a store of blockchain state.

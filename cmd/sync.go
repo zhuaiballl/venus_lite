@@ -76,11 +76,11 @@ var storeStatusCmd = &cmds.Command{
 		writer.Println("Syncing:")
 		for _, t := range inSyncing {
 			writer.Println("SyncTarget:", strconv.Itoa(count))
-			writer.Println("\tBase:", t.Base.Height(), t.Base.Key().String())
-			writer.Println("\tTarget:", t.Head.Height(), t.Head.Key().String())
+			writer.Println("\tBase:", t.Base.Height, t.Base.Cid().String())
+			writer.Println("\tTarget:", t.Head.Height, t.Head.Cid().String())
 
 			if t.Current != nil {
-				writer.Println("\tCurrent:", t.Current.Height(), t.Current.Key().String())
+				writer.Println("\tCurrent:", t.Current.Height, t.Current.Cid().String())
 			} else {
 				writer.Println("\tCurrent:")
 			}
@@ -94,11 +94,11 @@ var storeStatusCmd = &cmds.Command{
 		writer.Println("Waiting:")
 		for _, t := range waitTarget {
 			writer.Println("SyncTarget:", strconv.Itoa(count))
-			writer.Println("\tBase:", t.Base.Height(), t.Base.Key().String())
-			writer.Println("\tTarget:", t.Head.Height(), t.Head.Key().String())
+			writer.Println("\tBase:", t.Base.Height, t.Base.Cid().String())
+			writer.Println("\tTarget:", t.Head.Height, t.Head.Cid().String())
 
 			if t.Current != nil {
-				writer.Println("\tCurrent:", t.Current.Height(), t.Current.Key().String())
+				writer.Println("\tCurrent:", t.Current.Height, t.Current.Cid().String())
 			} else {
 				writer.Println("\tCurrent:")
 			}
@@ -130,12 +130,12 @@ var historyCmd = &cmds.Command{
 		count := 1
 		for _, t := range history {
 			writer.Println("SyncTarget:", strconv.Itoa(count))
-			writer.Println("\tBase:", t.Base.Height(), t.Base.Key().String())
+			writer.Println("\tBase:", t.Base.Height, t.Base.Cid().String())
 
-			writer.Println("\tTarget:", t.Head.Height(), t.Head.Key().String())
+			writer.Println("\tTarget:", t.Head.Height, t.Head.Cid().String())
 
 			if t.Current != nil {
-				writer.Println("\tCurrent:", t.Current.Height(), t.Current.Key().String())
+				writer.Println("\tCurrent:", t.Current.Height, t.Current.Cid().String())
 			} else {
 				writer.Println("\tCurrent:")
 			}

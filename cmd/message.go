@@ -146,7 +146,7 @@ var msgSendCmd = &cmds.Command{
 }
 
 func decodeTypedParams(ctx context.Context, fapi *node.Env, to address.Address, method abi.MethodNum, paramstr string) ([]byte, error) {
-	act, err := fapi.ChainAPI.StateGetActor(ctx, to, types.EmptyTSK)
+	act, err := fapi.ChainAPI.StateGetActor(ctx, to, cid.Undef)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"os"
 	"strings"
 
@@ -120,7 +121,7 @@ var addrsLsCmd = &cmds.Command{
 				writer := NewSilentWriter(buf)
 				writer.WriteStringln(addr.String())
 			} else {
-				a, err := api.ChainAPI.StateGetActor(ctx, addr, types.EmptyTSK)
+				a, err := api.ChainAPI.StateGetActor(ctx, addr, cid.Undef)
 				if err != nil {
 					if !strings.Contains(err.Error(), "actor not found") {
 						tw.Write(map[string]interface{}{
@@ -145,7 +146,7 @@ var addrsLsCmd = &cmds.Command{
 				}
 
 				if _, ok := req.Options["id"]; ok {
-					id, err := api.ChainAPI.StateLookupID(ctx, addr, types.EmptyTSK)
+					id, err := api.ChainAPI.StateLookupID(ctx, addr, cid.Undef)
 					if err != nil {
 						row["ID"] = "n/a"
 					} else {
@@ -154,7 +155,7 @@ var addrsLsCmd = &cmds.Command{
 				}
 
 				if _, ok := req.Options["market"]; ok {
-					mbal, err := api.ChainAPI.StateMarketBalance(ctx, addr, types.EmptyTSK)
+					mbal, err := api.ChainAPI.StateMarketBalance(ctx, addr, cid.Undef)
 					if err == nil {
 						row["Market(Avail)"] = types.FIL(types.BigSub(mbal.Escrow, mbal.Locked))
 						row["Market(Locked)"] = types.FIL(mbal.Locked)
