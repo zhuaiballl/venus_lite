@@ -876,6 +876,65 @@ func (store *Store) WalkSnapshot(ctx context.Context, ts *types.BlockHeader, inc
 	return nil
 }
 
+//Import import a car file into local db
+func (store *Store) Import(r io.Reader) (*types.BlockHeader, error) {
+	header, err := car.LoadCar(store.bsstore, r)
+	if err != nil {
+		return nil, xerrors.Errorf("loadcar failed: %w", err)
+	}
+	headerRoot := header.Roots[0]
+	root, err := store.GetBlock(nil, headerRoot)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load root tipset from chainfile: %w", err)
+	}
+
+	// Notice here is different with lotus, because the head tipset in lotus is not computed,
+	// but in venus the head tipset is computed, so here we will fallback a pre tipset
+	// and the chain store must has a metadata for each tipset, below code is to build the tipset metadata
+
+	// Todo What to do if it is less than 900
+	var (
+		loopBack  = 900
+		curTipset = root
+	)
+
+	log.Info("import height: ", root.Height, " root: ", root.String(), " parents: ", root.Parent)
+	for i := 0; i < loopBack; i++ {
+		if curTipset.Height <= 0 {
+			break
+		}
+		curTipsetKey := curTipset.Parent
+		curParentTipset, err := store.GetBlock(nil, curTipsetKey)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to load root tipset from chainfile: %w", err)
+		}
+
+		if curParentTipset.Height == 0 {
+			break
+		}
+
+		//save fake root
+		/*err = store.PutTipSetMetadata(context.Background(), &TipSetMetadata{
+			TipSetStateRoot: curTipset.At(0).ParentStateRoot,
+			TipSet:          curParentTipset,
+			TipSetReceipts:  curTipset.At(0).ParentMessageReceipts,
+		})*/
+		_, err = store.PutObject(nil, curTipset)
+		if err != nil {
+			return nil, err
+		}
+		curTipset = curParentTipset
+	}
+
+	if root.Height > 0 {
+		root, err = store.GetBlock(nil, root.Parent)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to load root tipset from chainfile: %w", err)
+		}
+	}
+	return root, nil
+}
+
 func (store *Store) Export(ctx context.Context, ts *types.BlockHeader, inclRecentRoots abi.ChainEpoch, skipOldMsgs bool, w io.Writer) error {
 	h := &car.CarHeader{
 		Roots:   []cid.Cid{ts.Cid()},
@@ -1012,4 +1071,10 @@ func (store *Store) getCirculatingSupply(ctx context.Context, height abi.ChainEp
 	}
 
 	return circ, nil
+}
+
+// WriteCheckPoint writes the given cids to disk.
+func (store *Store) WriteCheckPoint(ctx context.Context, cids cid.Cid) error {
+	log.Infof("WriteCheckPoint %v", cids)
+	return store.ds.Put(CheckPoint, cids.Bytes())
 }
